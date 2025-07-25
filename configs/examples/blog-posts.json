@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "name": "Blog Posts Generator",
+    "version": "1.0",
+    "description": "Generate blog posts in Markdown format"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.8,
+    "maxTokens": 3000
+  },
+  "output": {
+    "format": "text",
+    "fileExtension": ".md",
+    "outputPath": "./output/blog/",
+    "fileNameTemplate": "{topic_translit}_{index}.md"
+  },
+  "prompts": {
+    "system": "You are an expert blog writer. Write engaging, informative blog posts in Markdown format. Include proper headings, formatting, and structure.",
+    "userPrompt": "Write a blog post about {topic}. Requirements:\n- Use proper Markdown formatting\n- Include an engaging title\n- Add subheadings\n- Write at least 500 words\n- Make it informative and engaging\n- Include a brief introduction and conclusion"
+  },
+  "generation": {
+    "tasks": [
+      {
+        "topic": "Artificial Intelligence in Healthcare",
+        "count": 2
+      },
+      {
+        "topic": "Remote Work Best Practices",
+        "count": 2
+      }
+    ]
+  }
+}

@@ -38,7 +38,7 @@
               "type": "string",
               "x-llm-generate": {
                 "prompt": "Создай детальный вопрос на тему '{theme}' (минимум 10-15 слов)",
-                "minLength": 50,
+                "minLength": 10,
                 "maxLength": 300,
                 "requirements": [
                   "Вопрос должен быть полным и детальным",

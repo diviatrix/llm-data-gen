@@ -40,7 +40,6 @@
               "type": "string",
               "x-llm-generate": {
                 "prompt": "Write a compelling product description (2-3 sentences)",
-                "minLength": 100,
                 "maxLength": 300
               }
             },
@@ -85,9 +84,9 @@
   },
   "generation": {
     "tasks": [
-      {"category": "electronics", "count": 20},
-      {"category": "clothing", "count": 15},
-      {"category": "home-garden", "count": 10}
+      {"category": "electronics", "count": 2},
+      {"category": "clothing", "count": 1},
+      {"category": "home-garden", "count": 1}
     ]
   }
 }

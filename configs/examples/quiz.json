@@ -38,7 +38,7 @@
               "type": "string",
               "x-llm-generate": {
                 "prompt": "Создай детальный вопрос на тему '{theme}' (минимум 10-15 слов)",
-                "minLength": 50,
+                "minLength": 10,
                 "maxLength": 300,
                 "requirements": [
                   "Вопрос должен быть полным и детальным",
@@ -118,11 +118,11 @@
   },
   "generation": {
     "tasks": [
-      {"theme": "Аниме", "count": 30, "difficulty": "easy", "answers": 3},
-      {"theme": "Аниме", "count": 40, "difficulty": "easy", "answers": 4},
-      {"theme": "Аниме", "count": 20, "difficulty": "medium", "answers": 3},
-      {"theme": "История", "count": 20, "difficulty": "easy", "answers": 2},
-      {"theme": "PC игры", "count": 40, "difficulty": "medium", "answers": 4}
+      {"theme": "Аниме", "count": 5, "difficulty": "easy", "answers": 3},
+      {"theme": "Аниме", "count": 5, "difficulty": "easy", "answers": 4},
+      {"theme": "Аниме", "count": 5, "difficulty": "medium", "answers": 3},
+      {"theme": "История", "count": 5, "difficulty": "easy", "answers": 2},
+      {"theme": "PC игры", "count": 5, "difficulty": "medium", "answers": 4}
     ]
   }
 }

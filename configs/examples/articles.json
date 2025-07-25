@@ -1,14 +1,14 @@
 {
   "meta": {
-    "name": "Blog Articles Generator",
-    "version": "1.0",
-    "description": "Generate blog articles with metadata"
+    "name": "Генератор статей для блога",
+    "version": "1.1",
+    "description": "Генерирует статьи для блога с метаданными и основным текстом на русском языке"
   },
   "api": {
     "provider": "openrouter",
     "model": "openrouter/auto",
     "temperature": 0.8,
-    "maxTokens": 3000
+    "maxTokens": 3500
   },
   "output": {
     "type": "array",
@@ -32,35 +32,41 @@
             "title": {
               "type": "string",
               "x-llm-generate": {
-                "prompt": "Create an engaging article title about {topic}",
+                "prompt": "Придумай интересный заголовок статьи на тему {topic} на русском языке",
                 "maxLength": 100
               }
             },
             "summary": {
               "type": "string",
               "x-llm-generate": {
-                "prompt": "Write a brief summary of the article (2-3 sentences)",
-                "minLength": 100,
+                "prompt": "Напиши краткое описание (2-3 предложения) к статье на русском языке",
                 "maxLength": 250
+              }
+            },
+            "body": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Напиши основное содержимое статьи на русском языке (5-8 абзацев, 1500-2500 символов), избегай повторов, используй интересные факты и структуруй текст.",
+                "maxLength": 2500
               }
             },
             "author": {
               "type": "string",
               "x-llm-generate": {
-                "prompt": "Generate a realistic author name"
+                "prompt": "Сгенерируй реалистичное имя автора на русском языке"
               }
             },
             "publishDate": {
               "type": "string",
               "format": "date",
               "x-llm-generate": {
-                "prompt": "Generate a publication date in the last 30 days (YYYY-MM-DD format)"
+                "prompt": "Сгенерируй дату публикации за последние 30 дней в формате YYYY-MM-DD, например: 2024-01-15"
               }
             },
             "readTime": {
               "type": "integer",
               "x-llm-generate": {
-                "description": "Estimated reading time in minutes",
+                "description": "Оценочное время чтения в минутах",
                 "range": [3, 15]
               }
             },
@@ -70,7 +76,7 @@
                 "type": "string"
               },
               "x-llm-generate": {
-                "prompt": "Generate 3-6 relevant tags for the article",
+                "prompt": "Сгенерируй 3-6 релевантных тега к статье на русском языке",
                 "minItems": 3,
                 "maxItems": 6
               }
@@ -78,23 +84,23 @@
             "featured": {
               "type": "boolean",
               "x-llm-generate": {
-                "description": "Random featured status"
+                "description": "Случайный статус избранного"
               }
             }
           },
-          "required": ["id", "title", "summary", "author", "publishDate", "readTime", "tags"]
+          "required": ["id", "title", "summary", "body", "author", "publishDate", "readTime", "tags"]
         }
       }
     }
   },
   "prompts": {
-    "system": "You are a content creator specializing in blog articles. Generate realistic article metadata that would appear on a modern blog platform. Ensure all content is engaging and professional. Return only valid JSON."
+    "system": "Ты — профессиональный автор, специализирующийся на написании статей для блога на русском языке. Генерируй реалистичные метаданные и содержимое статей, которые могли бы появиться на современном блоге. ВАЖНО: publishDate — строго в формате YYYY-MM-DD (например, 2024-01-15). readTime — целое число минут (например, 5). Возвращай только валидный JSON. Все тексты должны быть преимущественно на русском языке."
   },
   "generation": {
     "tasks": [
-      {"topic": "Technology Trends", "count": 10},
-      {"topic": "Health and Wellness", "count": 8},
-      {"topic": "Travel Destinations", "count": 12}
+      {"topic": "Гачи культура", "count": 1},
+      {"topic": "Жратва", "count": 1},
+      {"topic": "Технологии", "count": 1}
     ]
   }
 }

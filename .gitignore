@@ -16,3 +16,6 @@ logs/
 .env.*
 # OS
 Thumbs.db
+CLAUDE.md
+# Project-specific
+output/

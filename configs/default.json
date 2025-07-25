@@ -46,7 +46,7 @@
               "type": "string",
               "x-llm-generate": {
                 "prompt": "Generate a description",
-                "minLength": 50,
+                "minLength": 10,
                 "maxLength": 500
               }
             }

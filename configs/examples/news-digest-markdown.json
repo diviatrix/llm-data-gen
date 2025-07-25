@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "name": "News Digest Markdown Generator",
+    "version": "1.0",
+    "description": "Generates news digests in readable Markdown format with web search"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "anthropic/claude-sonnet-4",
+    "temperature": 0.4,
+    "maxTokens": 5000
+  },
+  "output": {
+    "format": "text",
+    "fileExtension": ".md",
+    "outputPath": "./output/news-digests/",
+    "fileNameTemplate": "{topic_translit}_digest_{date}.md"
+  },
+  "prompts": {
+    "system": "You are an expert news curator and writer with web search capabilities. Create comprehensive, well-formatted news digests in Markdown by searching for and analyzing the most recent news. Verify all sources and present accurate, up-to-date information.",
+    "userPrompt": "Search the web and create a comprehensive news digest about {topic} covering the last {days} days.\n\nRequirements:\n1. Start with an executive summary of the major developments\n2. Search for and include 8-12 most important news items\n3. For each news item provide:\n   - Clear, accurate headline\n   - 2-3 paragraph detailed summary\n   - Actual source name and publication date\n   - Direct link to the original article\n   - Key takeaways in bullet points\n   - Relevant tags\n\n4. End with a trends analysis section discussing:\n   - Major themes across the news\n   - Industry implications\n   - What to watch for next\n\n5. Use professional Markdown formatting with:\n   - Clear section headers\n   - Bullet points for readability\n   - Bold for emphasis\n   - Proper link formatting\n\n6. Focus your search on: {focus_areas}\n\nAll information must be factual, from reputable sources, with working URLs."
+  },
+  "generation": {
+    "tasks": [
+      {
+        "topic": "Artificial Intelligence and LLMs",
+        "days": 7,
+        "focus_areas": "ChatGPT updates, Claude developments, open source models, AI regulation, enterprise adoption",
+        "count": 1
+      },
+      {
+        "topic": "Mobile Technology and Smartphones",
+        "days": 7,
+        "focus_areas": "flagship releases, Android/iOS updates, 5G/6G news, foldable phones, mobile security",
+        "count": 1
+      },
+      {
+        "topic": "Gaming Industry",
+        "days": 7,
+        "focus_areas": "AAA game releases, indie games, gaming hardware, industry acquisitions, esports",
+        "count": 1
+      }
+    ]
+  }
+}

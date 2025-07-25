@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "name": "CSV Data Generator",
+    "version": "1.0",
+    "description": "Generate data in CSV format"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.3,
+    "maxTokens": 2000
+  },
+  "output": {
+    "format": "text",
+    "fileExtension": ".csv",
+    "outputPath": "./output/data/",
+    "fileNameTemplate": "{dataType}_export.csv"
+  },
+  "prompts": {
+    "system": "You are a data generator. Generate data in CSV format with proper headers and comma-separated values. Ensure data consistency and proper escaping of special characters.",
+    "userPrompt": "Generate a CSV file with {count} rows of {dataType} data. Include the following columns: {columns}. Make the data realistic and varied."
+  },
+  "generation": {
+    "tasks": [
+      {
+        "dataType": "customers",
+        "count": 5,
+        "columns": "id,first_name,last_name,email,phone,city,registration_date"
+      },
+      {
+        "dataType": "products",
+        "count": 5,
+        "columns": "sku,name,category,price,stock,description"
+      }
+    ]
+  }
+}

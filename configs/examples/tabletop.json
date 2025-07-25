@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "name": "Генератор карточек персонажей \"Котики на острове\"",
+    "version": "1.0",
+    "description": "Генерирует карточки персонажей для карточной игры с котиками на тропическом острове"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.7,
+    "maxTokens": 2000
+  },
+  "output": {
+    "type": "array",
+    "outputPath": "./output/cards/",
+    "fileNameTemplate": "{tribe}_{rarity}.json"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "cards": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "x-llm-generate": {
+                "template": "CAT_{name_translit}_{index}"
+              }
+            },
+            "name": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Придумай интересное имя для кота-персонажа племени {tribe} редкости {rarity}. Имя должно отражать характер и тематику острова",
+                "maxLength": 30
+              }
+            },
+            "description": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Напиши краткое описание персонажа-кота (2-3 предложения), его истории и роли на острове",
+                "maxLength": 200
+              }
+            },
+            "rarity": {
+              "type": "string",
+              "enum": ["common", "uncommon", "rare", "epic", "legendary"],
+              "x-llm-generate": {
+                "value": "{rarity}"
+              }
+            },
+            "cost": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10,
+              "x-llm-generate": {
+                "prompt": "Определи стоимость призыва персонажа от 0 до 10 в зависимости от редкости: common(1-3), uncommon(2-4), rare(3-6), epic(5-8), legendary(6-10)",
+                "description": "Стоимость призыва персонажа"
+              }
+            },
+            "stats": {
+              "type": "object",
+              "properties": {
+                "health": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20,
+                  "x-llm-generate": {
+                    "prompt": "Определи здоровье от 1 до 20 в зависимости от редкости и стоимости"
+                  }
+                },
+                "attack": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 15,
+                  "x-llm-generate": {
+                    "prompt": "Определи силу атаки от 0 до 15 в зависимости от редкости и стоимости"
+                  }
+                },
+                "agility": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10,
+                  "x-llm-generate": {
+                    "prompt": "Определи ловкость от 1 до 10 (влияет на порядок хода)"
+                  }
+                }
+              },
+              "required": ["health", "attack", "agility"]
+            },
+            "tribe": {
+              "type": "string",
+              "enum": ["island_native", "pirate_cat", "fishing_cat", "jungle_cat", "beach_cat", "treasure_hunter", "sailor_cat"],
+              "x-llm-generate": {
+                "value": "{tribe}"
+              }
+            },
+            "abilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "x-llm-generate": {
+                      "prompt": "Придумай название способности, соответствующей племени {tribe} и тематике острова"
+                    }
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["passive", "active", "triggered", "battlecry", "deathrattle"],
+                    "x-llm-generate": {
+                      "prompt": "Выбери тип способности подходящий для данного персонажа"
+                    }
+                  },
+                  "description": {
+                    "type": "string",
+                    "x-llm-generate": {
+                      "prompt": "Опиши эффект способности кратко и понятно для игроков"
+                    }
+                  }
+                },
+                "required": ["name", "type", "description"]
+              },
+              "x-llm-generate": {
+                "prompt": "Сгенерируй 1-2 способности для персонажа в зависимости от редкости: common(1), uncommon-rare(1-2), epic-legendary(2)",
+                "minItems": 1,
+                "maxItems": 2
+              }
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["stealth", "flying", "swimming", "climbing", "leader", "support", "tank", "damage_dealer", "healer"]
+              },
+              "x-llm-generate": {
+                "prompt": "Выбери 1-3 подходящих тега для персонажа исходя из его племени и способностей",
+                "minItems": 1,
+                "maxItems": 3
+              }
+            },
+            "island_element": {
+              "type": "string",
+              "enum": ["water", "earth", "air", "fire", "nature"],
+              "x-llm-generate": {
+                "prompt": "Выбери стихию острова подходящую для племени {tribe}: pirate_cat/sailor_cat/fishing_cat->water, jungle_cat->nature, beach_cat->air, treasure_hunter->earth, island_native->любая"
+              }
+            },
+            "flavor_text": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Напиши короткую атмосферную фразу или цитату персонажа, отражающую его характер",
+                "maxLength": 150
+              }
+            }
+          },
+          "required": ["id", "name", "rarity", "stats", "abilities", "tribe", "cost"]
+        }
+      }
+    }
+  },
+  "prompts": {
+    "system": "Ты — профессиональный дизайнер карточных игр, создающий персонажей для игры \"Котики на острове\". Генерируй сбалансированных персонажей с интересными способностями. Учитывай баланс: более редкие карты должны быть сильнее, но и дороже. Все имена и описания на русском языке. Возвращай только валидный JSON."
+  },
+  "generation": {
+    "tasks": [
+      {"tribe": "pirate_cat", "rarity": "common", "count": 2},
+      {"tribe": "pirate_cat", "rarity": "legendary", "count": 1},
+      {"tribe": "fishing_cat", "rarity": "uncommon", "count": 2},
+      {"tribe": "jungle_cat", "rarity": "rare", "count": 2},
+      {"tribe": "beach_cat", "rarity": "common", "count": 2},
+      {"tribe": "treasure_hunter", "rarity": "epic", "count": 1},
+      {"tribe": "sailor_cat", "rarity": "uncommon", "count": 1},
+      {"tribe": "island_native", "rarity": "rare", "count": 1}
+    ]
+  }
+}

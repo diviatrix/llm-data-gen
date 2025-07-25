@@ -1,0 +1,37 @@
+# Development files
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# Output directories
+output/
+data/
+
+# Test files
+test/
+*.test.js
+*.spec.js
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation source files
+docs/
+
+# Development dependencies
+node_modules/
+npm-debug.log*
+
+# Configuration files that shouldn't be published
+.eslintrc*
+.prettierrc*
+
+# Keep configs folder as it contains examples
+# Keep all other necessary files

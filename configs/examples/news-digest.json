@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "name": "News Digest Generator",
+    "version": "1.0",
+    "description": "Generates curated news digests on specific topics using web search"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "anthropic/claude-sonnet-4",
+    "temperature": 0.3,
+    "maxTokens": 4000
+  },
+  "output": {
+    "format": "json",
+    "type": "array",
+    "outputPath": "./output/news/",
+    "fileNameTemplate": "{topic_translit}_news_{date}.json"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "x-llm-generate": {
+          "template": "{topic_translit}_{index}"
+        }
+      },
+      "title": {
+        "type": "string",
+        "description": "News article title",
+        "maxLength": 200
+      },
+      "summary": {
+        "type": "string",
+        "description": "Brief summary of the news (2-3 sentences)",
+        "minLength": 100,
+        "maxLength": 500
+      },
+      "source": {
+        "type": "string",
+        "description": "Name of the news source"
+      },
+      "url": {
+        "type": "string",
+        "format": "uri",
+        "description": "Link to the original article"
+      },
+      "publishDate": {
+        "type": "string",
+        "format": "date",
+        "description": "Publication date (YYYY-MM-DD)"
+      },
+      "relevanceScore": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 10,
+        "description": "How relevant this news is to the topic (0-10)"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 3,
+        "maxItems": 7,
+        "description": "Relevant tags for categorization"
+      },
+      "keyPoints": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 5,
+        "description": "Key takeaways from the article"
+      },
+      "sentiment": {
+        "type": "string",
+        "enum": ["positive", "neutral", "negative", "mixed"],
+        "description": "Overall sentiment of the news"
+      }
+    },
+    "required": ["id", "title", "summary", "source", "url", "publishDate", "relevanceScore", "tags", "keyPoints", "sentiment"]
+  },
+  "prompts": {
+    "system": "You are a news curator AI with web search capabilities. Search for and analyze the most recent news articles about the given topics. Provide accurate, up-to-date information with real sources and URLs.",
+    "userPrompt": "Search the web for the latest news about {topic} from the last {days} days. Find {count} most relevant and important articles. For each article provide:\n\n1. Accurate title and summary\n2. Real source name and publication date\n3. Working URL to the original article\n4. Key insights and takeaways\n5. Relevant tags for categorization\n6. Sentiment analysis\n\nFocus your search on: {focus_areas}\n\nEnsure all information is factual and from reputable sources. Prioritize breaking news and significant developments."
+  },
+  "generation": {
+    "tasks": [
+      {
+        "topic": "Large Language Models (LLM)",
+        "days": 7,
+        "count": 10,
+        "focus_areas": "new model releases, research breakthroughs, industry applications, regulatory news"
+      },
+      {
+        "topic": "Video Games Industry",
+        "days": 7,
+        "count": 10,
+        "focus_areas": "new game releases, industry acquisitions, gaming technology, esports news"
+      },
+      {
+        "topic": "Android Development",
+        "days": 7,
+        "count": 10,
+        "focus_areas": "Android updates, new features, security patches, popular apps, development tools"
+      },
+      {
+        "topic": "Mobile Phones Technology",
+        "days": 7,
+        "count": 10,
+        "focus_areas": "new phone releases, smartphone technology, 5G developments, market trends"
+      }
+    ]
+  }
+}
