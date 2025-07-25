@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "name": "Quiz Questions Generator",
+    "version": "1.0",
+    "description": "Генератор вопросов для викторины QuizChat"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.6,
+    "maxTokens": 4000,
+    "batchDelay": 1000
+  },
+  "output": {
+    "type": "array",
+    "itemsPerBatch": 1,
+    "mergeStrategy": "append",
+    "outputPath": "./output/",
+    "fileNameTemplate": "{theme_translit}_{date}.json"
+  },
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "x-llm-generate": {
+                "template": "{theme_translit}_{index}",
+                "description": "Уникальный идентификатор вопроса"
+              }
+            },
+            "text": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Создай детальный вопрос на тему '{theme}' (минимум 10-15 слов)",
+                "minLength": 50,
+                "maxLength": 300,
+                "requirements": [
+                  "Вопрос должен быть полным и детальным",
+                  "НЕ содержать ответ или подсказку",
+                  "Тексты на русском, но названия оставлять на английском"
+                ]
+              }
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "x-llm-generate": {
+                "prompt": "Создай {answers} правдоподобных вариантов ответа",
+                "count": "{answers}",
+                "requirements": [
+                  "Все варианты должны выглядеть реалистично",
+                  "Неправильные ответы должны быть похожими на правильный"
+                ]
+              }
+            },
+            "correct": {
+              "type": "integer",
+              "x-llm-generate": {
+                "description": "Индекс правильного ответа (0-based)",
+                "range": [0, "{answers_minus_1}"]
+              }
+            },
+            "category": {
+              "type": "string",
+              "x-llm-generate": {
+                "value": "{theme}"
+              }
+            },
+            "difficulty": {
+              "type": "integer",
+              "enum": [1, 2, 3],
+              "x-llm-generate": {
+                "mapping": {
+                  "easy": 1,
+                  "medium": 2,
+                  "hard": 3
+                },
+                "value": "{difficulty_num}"
+              }
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "x-llm-generate": {
+                "prompt": "Добавь 1-3 конкретных тега, связанных с вопросом",
+                "minItems": 1,
+                "maxItems": 3
+              }
+            }
+          },
+          "required": ["id", "text", "options", "correct", "category", "difficulty", "tags"]
+        }
+      }
+    }
+  },
+  "prompts": {
+    "system": "Ты эксперт по созданию вопросов для викторин. Твои вопросы должны быть детальными, интересными и никогда не содержать ответ в самом вопросе. Названия игр, фильмов, сериалов и другие собственные названия оставляй на английском. Всегда возвращай только валидный JSON без дополнительного текста. Все варианты ответов должны выглядеть правдоподобно.",
+    "examples": {
+      "good": [
+        "В каком году состоялась премьера первого сезона аниме-сериала Naruto, рассказывающего о приключениях юного ниндзя из деревни Коноха?",
+        "Какой химический элемент в периодической таблице Менделеева имеет атомный номер 79 и часто используется в ювелирных изделиях?"
+      ],
+      "bad": [
+        "Столица Франции? (слишком короткий)",
+        "В каком аниме главный герой получает способность Death Note? (содержит ответ)"
+      ]
+    }
+  },
+  "generation": {
+    "tasks": [
+      {"theme": "Аниме", "count": 30, "difficulty": "easy", "answers": 3},
+      {"theme": "Аниме", "count": 40, "difficulty": "easy", "answers": 4},
+      {"theme": "Аниме", "count": 20, "difficulty": "medium", "answers": 3},
+      {"theme": "История", "count": 20, "difficulty": "easy", "answers": 2},
+      {"theme": "PC игры", "count": 40, "difficulty": "medium", "answers": 4}
+    ]
+  }
+}

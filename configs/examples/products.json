@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "name": "Product Catalog Generator",
+    "version": "1.0",
+    "description": "Generate e-commerce product listings"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.7,
+    "maxTokens": 2000
+  },
+  "output": {
+    "type": "array",
+    "outputPath": "./output/products/",
+    "fileNameTemplate": "{category}.json"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "products": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "x-llm-generate": {
+                "template": "PRD_{category}_{index}"
+              }
+            },
+            "name": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Generate a creative product name for {category} category",
+                "maxLength": 100
+              }
+            },
+            "description": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Write a compelling product description (2-3 sentences)",
+                "minLength": 100,
+                "maxLength": 300
+              }
+            },
+            "price": {
+              "type": "number",
+              "x-llm-generate": {
+                "prompt": "Generate a realistic price in USD",
+                "range": [10, 500]
+              }
+            },
+            "category": {
+              "type": "string",
+              "x-llm-generate": {
+                "value": "{category}"
+              }
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "x-llm-generate": {
+                "prompt": "Generate 3-5 relevant product tags",
+                "minItems": 3,
+                "maxItems": 5
+              }
+            },
+            "inStock": {
+              "type": "boolean",
+              "x-llm-generate": {
+                "description": "Random stock availability"
+              }
+            }
+          },
+          "required": ["id", "name", "description", "price", "category", "tags", "inStock"]
+        }
+      }
+    }
+  },
+  "prompts": {
+    "system": "You are a product catalog specialist. Generate realistic and appealing product data for e-commerce. Ensure all products sound authentic and marketable. Return only valid JSON."
+  },
+  "generation": {
+    "tasks": [
+      {"category": "electronics", "count": 20},
+      {"category": "clothing", "count": 15},
+      {"category": "home-garden", "count": 10}
+    ]
+  }
+}

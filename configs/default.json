@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "name": "Default Data Generator",
+    "version": "1.0",
+    "description": "Default configuration for LLM Data Generator"
+  },
+  "api": {
+    "provider": "openrouter",
+    "model": "openrouter/auto",
+    "temperature": 0.7,
+    "maxTokens": 2000,
+    "batchDelay": 1000
+  },
+  "output": {
+    "type": "array",
+    "itemsPerBatch": 10,
+    "mergeStrategy": "append",
+    "outputPath": "./output/",
+    "fileNameTemplate": "data_{timestamp}.json"
+  },
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "x-llm-generate": {
+                "template": "item_{index}",
+                "description": "Unique identifier"
+              }
+            },
+            "title": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Generate a title",
+                "minLength": 10,
+                "maxLength": 100
+              }
+            },
+            "description": {
+              "type": "string",
+              "x-llm-generate": {
+                "prompt": "Generate a description",
+                "minLength": 50,
+                "maxLength": 500
+              }
+            }
+          },
+          "required": ["id", "title", "description"]
+        }
+      }
+    }
+  },
+  "prompts": {
+    "system": "You are a helpful data generator. Generate data according to the schema requirements. Return only valid JSON.",
+    "examples": {}
+  },
+  "generation": {
+    "tasks": [
+      {"theme": "Sample", "count": 10}
+    ]
+  }
+}
