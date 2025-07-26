@@ -35,6 +35,31 @@ git checkout -b feature/your-feature-name
 
 ## Troubleshooting
 
+### Command Not Found
+
+If `llmdatagen` command is not found after installation:
+
+1. Check where npm installs global packages:
+   ```bash
+   npm config get prefix
+   ```
+
+2. Add the bin directory to your PATH:
+   ```bash
+   # For bash
+   echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
+   source ~/.bashrc
+   
+   # For zsh
+   echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+3. Or use npx without global installation:
+   ```bash
+   npx @1337plus/llmdatagen
+   ```
+
 ### Permission Errors
 
 If you encounter permission errors during global installation:
@@ -50,19 +75,6 @@ source ~/.bashrc
 npm install -g @1337plus/llmdatagen
 ```
 
-### Link Errors
-
-If `npm link` fails:
-
-```bash
-# Force link
-npm link --force
-
-# Or unlink first then link again
-npm unlink
-npm link
-```
-
 ### Node Version Issues
 
 This package requires Node.js 18 or higher. Check your version:
@@ -72,12 +84,3 @@ node --version
 ```
 
 If you need to update Node.js, consider using a version manager like `nvm`:
-
-```bash
-# Install nvm (if not already installed)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-
-# Install and use Node 18
-nvm install 18
-nvm use 18
-```
