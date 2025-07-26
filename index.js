@@ -15,6 +15,11 @@ import { setupApiKey } from './lib/setupApiKey.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Read package.json for metadata
+const packageJson = JSON.parse(
+  await fs.readFile(path.join(__dirname, 'package.json'), 'utf-8')
+);
+
 const program = new Command();
 
 // Global variable to store session API key
@@ -1089,9 +1094,9 @@ function calculateEstimatedCost(pricePerMillion, tasks, maxTokens) {
 }
 
 program
-  .name('llm-data-gen')
-  .description('Universal JSON data generator using LLM')
-  .version('1.0.0');
+  .name(packageJson.name.split('/').pop()) // Remove scope if present
+  .description(packageJson.description)
+  .version(packageJson.version);
 
 program
   .command('generate', { isDefault: true })
@@ -1125,7 +1130,8 @@ program
             message: 'How would you like to configure the generation?',
             choices: [
               { name: '📁 Use existing config file', value: 'config' },
-              { name: '🛠️  Set up manually', value: 'manual' }
+              { name: '🛠️  Set up manually', value: 'manual' },
+              { name: '📂 Open configs folder', value: 'open_configs' }
             ]
           }
         ]);
@@ -1140,7 +1146,7 @@ program
             const currentModel = config.api?.model || 'openrouter/auto';
             selectedModel = await selectModel(currentModel);
           }
-        } else {
+        } else if (setupMode === 'manual') {
           // Manual setup: guide user through configuration
           config = await setupManualConfig();
           
@@ -1149,6 +1155,37 @@ program
             const currentModel = 'openrouter/auto';
             selectedModel = await selectModel(currentModel);
           }
+        } else if (setupMode === 'open_configs') {
+          // Open configs folder
+          const configsPath = path.join(__dirname, 'configs');
+          console.log(chalk.cyan(`\n📂 Opening configs folder: ${configsPath}`));
+          
+          // Try to open folder based on platform
+          const { platform } = process;
+          const { exec } = await import('child_process');
+          
+          let command;
+          if (platform === 'darwin') {
+            command = `open "${configsPath}"`;
+          } else if (platform === 'win32') {
+            command = `start "" "${configsPath}"`;
+          } else {
+            // Linux and others
+            command = `xdg-open "${configsPath}" 2>/dev/null || echo "Please open: ${configsPath}"`;
+          }
+          
+          exec(command, (error) => {
+            if (error) {
+              console.log(chalk.yellow(`\nCouldn't open folder automatically.`));
+              console.log(chalk.white(`Please manually open: ${configsPath}`));
+            } else {
+              console.log(chalk.green('✓ Folder opened in your file manager'));
+            }
+            console.log(chalk.gray('\nPress Ctrl+C to exit or run the command again to continue.'));
+          });
+          
+          // Exit after opening folder
+          return;
         }
       } else {
         // Non-interactive mode: use default
@@ -1443,10 +1480,18 @@ program
     }
   });
 
+// Create dynamic header based on package.json
+const appDisplayName = 'LLM Data Generator'; // Short display name
+const version = packageJson.version;
+const headerText = `${appDisplayName} v${version}`;
+const headerWidth = Math.max(headerText.length + 4, 40); // Min width 40
+const padding = Math.floor((headerWidth - headerText.length) / 2);
+const paddedHeader = ' '.repeat(padding) + headerText + ' '.repeat(headerWidth - headerText.length - padding);
+
 console.log(chalk.blue.bold(`
-╔═══════════════════════════════════╗
-║     LLM Data Generator v1.0.0     ║
-╚═══════════════════════════════════╝
+╔${'═'.repeat(headerWidth)}╗
+║${paddedHeader}║
+╚${'═'.repeat(headerWidth)}╝
 `));
 
 program.parse(process.argv);
