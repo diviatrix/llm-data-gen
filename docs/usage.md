@@ -68,13 +68,7 @@ List all available example configurations:
 llmdatagen list-examples
 ```
 
-Output:
-```
-Available example configurations:
-  - quiz.json: Quiz Questions Generator
-  - products.json: E-commerce Product Catalog
-  - articles.json: Blog Articles Generator
-```
+Output shows available example configurations with their properties and task counts.
 
 #### Create Config
 
@@ -177,11 +171,14 @@ Define what data to generate:
 ### Template Variables
 
 Use placeholders in your configurations:
-- `{index}` - Current item index
-- `{theme}` - Current theme/category
-- `{theme_translit}` - Transliterated theme
-- `{count}` - Total count
-- `{field_minus_1}` - Field value minus 1
+- `{index}` - Current item index (0-based)
+- `{date}` - Current date (YYYY-MM-DD)
+- `{datetime}` - Full ISO datetime
+- `{timestamp}` - Unix timestamp in milliseconds
+- `{theme}`, `{topic}`, `{category}` - Task fields
+- `{theme_translit}` - Transliterated theme (Cyrillic to Latin)
+- `{topic_translit}`, `{category_translit}` - Other transliterations
+- `{field_minus_1}`, `{field_plus_1}` - Numeric field ± 1
 
 Example:
 ```json
@@ -247,11 +244,7 @@ The validator supports (JSON format only):
 
 ### Verbose Mode
 
-Enable verbose mode to see generation details:
-
-```bash
-llmdatagen --config configs/examples/quiz.json --verbose
-```
+Enable verbose mode during interactive parameter configuration. When prompted "Enable verbose mode?", choose Yes.
 
 Verbose mode shows:
 - Token usage for each request
@@ -316,9 +309,14 @@ Features:
 - **Live model list** - Always up-to-date from OpenRouter API
 - **Sorted by newest** - Shows the 25 most recently added models
 - **Context window** - Shows token limit in brackets
-- **Capabilities** - Icons show model features
+- **Capabilities** - Icons show model features:
+  - 🔧 = Function calling support
+  - 👁️ = Vision/image support
+  - ⚡ = Streaming support
+  - 🧠 = Reasoning support
 - **Price display** - 🆓 for free models, 💰 with cost per million tokens
 - **Release dates** - Shows when model was added
+- **Filters** - Filter by free/paid, capabilities, parameters, modalities
 - **Manual entry** - Option to enter any model ID manually
 
 ## Troubleshooting

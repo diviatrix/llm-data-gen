@@ -6,8 +6,8 @@
   },
   "api": {
     "provider": "openrouter",
-    "model": "anthropic/claude-sonnet-4",
-    "temperature": 0.3,
+    "model": "anthropic/claude-sonnet-4:online",
+    "temperature": 0.6,
     "maxTokens": 4000
   },
   "output": {
@@ -27,14 +27,12 @@
       },
       "title": {
         "type": "string",
-        "description": "News article title",
-        "maxLength": 200
+        "description": "News article title"
       },
       "summary": {
         "type": "string",
-        "description": "Brief summary of the news (2-3 sentences)",
-        "minLength": 100,
-        "maxLength": 500
+        "description": "capacitive overview of the news article with numbers and facts",
+        "minLength": 200
       },
       "source": {
         "type": "string",
@@ -47,8 +45,7 @@
       },
       "publishDate": {
         "type": "string",
-        "format": "date",
-        "description": "Publication date (YYYY-MM-DD)"
+        "description": "Publication date of original search result (YYYY-MM-DD)"
       },
       "relevanceScore": {
         "type": "number",
@@ -62,7 +59,6 @@
           "type": "string"
         },
         "minItems": 3,
-        "maxItems": 7,
         "description": "Relevant tags for categorization"
       },
       "keyPoints": {
@@ -70,8 +66,6 @@
         "items": {
           "type": "string"
         },
-        "minItems": 2,
-        "maxItems": 5,
         "description": "Key takeaways from the article"
       },
       "sentiment": {
@@ -84,32 +78,20 @@
   },
   "prompts": {
     "system": "You are a news curator AI with web search capabilities. Search for and analyze the most recent news articles about the given topics. Provide accurate, up-to-date information with real sources and URLs.",
-    "userPrompt": "Search the web for the latest news about {topic} from the last {days} days. Find {count} most relevant and important articles. For each article provide:\n\n1. Accurate title and summary\n2. Real source name and publication date\n3. Working URL to the original article\n4. Key insights and takeaways\n5. Relevant tags for categorization\n6. Sentiment analysis\n\nFocus your search on: {focus_areas}\n\nEnsure all information is factual and from reputable sources. Prioritize breaking news and significant developments."
+    "userPrompt": "Search the web for the latest news about {topic} from the last {days} days, now is {date}. Find {count} most relevant and important articles. For each article provide:\n\n1. Accurate title and summary\n2. Real source name and publication date\n3. Working URL to the original article\n4. Key insights and takeaways\n5. Relevant tags for categorization\n6. Sentiment analysis\n\nFocus your search on: {focus_areas}\n\nEnsure all information is factual and from reputable sources. Prioritize breaking news and significant developments."
   },
   "generation": {
     "tasks": [
       {
-        "topic": "Large Language Models (LLM)",
-        "days": 7,
-        "count": 10,
-        "focus_areas": "new model releases, research breakthroughs, industry applications, regulatory news"
-      },
-      {
         "topic": "Video Games Industry",
-        "days": 7,
-        "count": 10,
+        "days": 30,
+        "count": 3,
         "focus_areas": "new game releases, industry acquisitions, gaming technology, esports news"
       },
       {
-        "topic": "Android Development",
-        "days": 7,
-        "count": 10,
-        "focus_areas": "Android updates, new features, security patches, popular apps, development tools"
-      },
-      {
         "topic": "Mobile Phones Technology",
-        "days": 7,
-        "count": 10,
+        "days": 30,
+        "count": 3,
         "focus_areas": "new phone releases, smartphone technology, 5G developments, market trends"
       }
     ]

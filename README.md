@@ -110,7 +110,7 @@ llmdatagen --config configs/examples/news-digest.json
 - Real-time news search and analysis
 - Actual sources, URLs, dates
 - Relevance scoring and sentiment
-- Uses models with web search (Claude 4)
+- Uses models with web search capabilities
 
 ### Text Format (Freeform Content)
 
@@ -147,7 +147,7 @@ llmdatagen --config configs/examples/news-digest-markdown.json
 - Real-time web search for news
 - Professional digest format
 - Executive summaries & trend analysis
-- Uses models with web search
+- Uses models with web search capabilities
 
 
 

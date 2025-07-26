@@ -6,7 +6,7 @@
   },
   "api": {
     "provider": "openrouter",
-    "model": "anthropic/claude-sonnet-4",
+    "model": "anthropic/claude-sonnet-4:online",
     "temperature": 0.4,
     "maxTokens": 5000
   },

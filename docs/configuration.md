@@ -201,9 +201,10 @@ Variables can be used in various places using `{variable}` syntax:
 
 ### Built-in Variables
 
-- `{index}` - Current item index (1-based)
+- `{index}` - Current item index (0-based)
 - `{date}` - Current date (YYYY-MM-DD)
-- `{timestamp}` - Current timestamp
+- `{datetime}` - Full ISO datetime (e.g., 2024-01-26T15:30:45.123Z)
+- `{timestamp}` - Unix timestamp in milliseconds
 
 ### Task Variables
 
@@ -231,7 +232,7 @@ Any field from the task object:
     "properties": {
       "id": {
         "x-llm-generate": {
-          "template": "{category}_{index:04d}"
+          "template": "{category}_{index}"
         }
       }
     }
@@ -326,11 +327,15 @@ Modern LLM models available through OpenRouter (such as Claude 3.5 Sonnet and ne
   - Trend analysis sections
 
 #### Supported models with web search:
-- `anthropic/claude-sonnet-4` - Claude Sonnet 4
-- `anthropic/claude-4-opus-20250522` - Claude Opus 4
+- `anthropic/claude-sonnet-4:online` - Claude Sonnet 4 with web search
+- `anthropic/claude-4-opus-20250522:online` - Claude Opus 4 with web search
 - Other modern models - check OpenRouter documentation
 
-Note: Web search capabilities depend on the model. Older models may not support this feature.
+**Important**: To enable web search, you must add `:online` suffix to the model name. For example:
+- `anthropic/claude-sonnet-4` - Regular model without web search
+- `anthropic/claude-sonnet-4:online` - Same model with web search enabled
+
+Note: Web search capabilities depend on the model. Not all models support the `:online` suffix.
 
 ## Examples
 
@@ -357,7 +362,7 @@ Note: Web search capabilities depend on the model. Older models may not support 
       "sku": {
         "type": "string",
         "x-llm-generate": {
-          "template": "SKU-{category}-{index:04d}"
+          "template": "SKU-{category}-{index}"
         }
       },
       "name": { "type": "string" },
