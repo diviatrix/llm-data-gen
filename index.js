@@ -13,6 +13,7 @@ import { selectModel } from './lib/cli/modelSelector.js';
 import { selectConfig, configureParameters, setupManualConfig } from './lib/cli/configWizard.js';
 import { testConnection, validateFile, createConfig, listExamples } from './lib/cli/commands.js';
 import { displayAccountInfo, getModelPrice, calculateEstimatedCost } from './lib/cli/uiHelpers.js';
+import { UserPaths } from './lib/userPaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,7 +125,7 @@ program
             choices: [
               { name: '📁 Use existing config file', value: 'config' },
               { name: '🛠️  Set up manually', value: 'manual' },
-              { name: '📂 Open configs folder', value: 'open_configs' },
+              { name: '📂 Open llmdatagen folder in Documents', value: 'open_configs' },
               { name: '❌ Exit', value: 'exit' }
             ]
           }
@@ -208,25 +209,25 @@ program
           
           break;
         } else if (setupMode === 'open_configs') {
-          const configsPath = path.join(__dirname, 'configs');
-          console.log(chalk.cyan(`\n📂 Opening configs folder: ${configsPath}`));
+          const dataPath = UserPaths.getUserDataDir();
+          console.log(chalk.cyan(`\n📂 Opening llmdatagen folder: ${dataPath}`));
           
           const { platform } = process;
           const { exec } = await import('child_process');
           
           let command;
           if (platform === 'darwin') {
-            command = `open "${configsPath}"`;
+            command = `open "${dataPath}"`;
           } else if (platform === 'win32') {
-            command = `start "" "${configsPath}"`;
+            command = `start "" "${dataPath}"`;
           } else {
-            command = `xdg-open "${configsPath}" 2>/dev/null || echo "Please open: ${configsPath}"`;
+            command = `xdg-open "${dataPath}" 2>/dev/null || echo "Please open: ${dataPath}"`;
           }
           
           exec(command, (error) => {
             if (error) {
               console.log(chalk.yellow(`\nCouldn't open folder automatically.`));
-              console.log(chalk.white(`Please manually open: ${configsPath}`));
+              console.log(chalk.white(`Please manually open: ${dataPath}`));
             } else {
               console.log(chalk.green('✓ Folder opened in your file manager'));
             }
@@ -395,5 +396,15 @@ console.log(chalk.blue.bold(`
 ║${paddedHeader}║
 ╚${'═'.repeat(headerWidth)}╝
 `));
+
+// Initialize user directories
+await UserPaths.ensureUserDirs().catch(err => {
+  console.warn(chalk.yellow('Note: Could not create user directories:'), err.message);
+});
+
+// Copy system configs to user directory if needed
+await UserPaths.copySystemConfigs().catch(err => {
+  console.warn(chalk.yellow('Note: Could not copy system configs:'), err.message);
+});
 
 program.parse(process.argv);

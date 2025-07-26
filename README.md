@@ -68,6 +68,10 @@ This will:
 3. Guide you through configuration setup
 4. Start generating data
 
+**Note**: The tool stores configurations and outputs in your Documents folder:
+- Configurations: `~/Documents/llmdatagen/configs/`
+- Generated files: `~/Documents/llmdatagen/output/`
+
 For detailed usage instructions, command-line options, and advanced features, see [docs/usage.md](docs/usage.md).
 
 

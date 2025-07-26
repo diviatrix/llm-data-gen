@@ -1,5 +1,17 @@
 # Usage Guide
 
+## User Directories
+
+The tool stores all user data in your Documents folder:
+
+- **Configurations**: `~/Documents/llmdatagen/configs/`
+- **Generated outputs**: `~/Documents/llmdatagen/output/`
+- **Example configs**: `~/Documents/llmdatagen/configs/examples/`
+
+On first install, the tool automatically:
+1. Creates these directories
+2. Copies example configurations for you to use and modify
+
 ## Command Line Options
 
 ### Generate Command (default)
