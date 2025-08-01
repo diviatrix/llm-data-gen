@@ -3,6 +3,7 @@ class APIClient {
   constructor() {
     this.baseURL = '/api';
     this.token = localStorage.getItem('token');
+    this.isCloud = null; // Will be set by checkMode
   }
 
   async request(method, path, data) {
@@ -25,16 +26,22 @@ class APIClient {
       const response = await fetch(this.baseURL + path, options);
 
       if (response.status === 401) {
-        // Token expired or invalid
-        localStorage.removeItem('token');
-        window.location.href = '/login.html';
-        return;
+        // Only redirect to login in cloud mode
+        // Skip redirect for /mode endpoint to avoid infinite loop
+        if (this.isCloud !== false && path !== '/mode') {
+          localStorage.removeItem('token');
+          window.location.href = '/login.html';
+          return;
+        }
       }
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Request failed');
+        // Create error with response data
+        const error = new Error(result.error || 'Request failed');
+        error.response = { data: result };
+        throw error;
       }
 
       return result;

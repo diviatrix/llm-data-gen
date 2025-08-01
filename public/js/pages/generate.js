@@ -89,7 +89,7 @@ export function generatePage() {
               this.parameters.prompt = this.configContent.prompt;
             }
 
-            // Skip to step 2 directly
+            // Skip to step 2 (Select Model) directly
             this.step = 2;
           } else {
             notify.error(`Configuration "${configName}" not found`);
@@ -163,7 +163,7 @@ export function generatePage() {
             this.parameters.prompt = this.configContent.prompt;
           }
 
-          this.step = 2;
+          this.step = 2; // Go to Select Model
         }
       } catch (error) {
         notify.error('Failed to load configuration content');
@@ -172,7 +172,7 @@ export function generatePage() {
 
     // Navigate to next step
     nextStep() {
-      if (this.step < 4) {
+      if (this.step < 3) {
         this.step++;
       }
     },
@@ -192,7 +192,7 @@ export function generatePage() {
       }
 
       this.isGenerating = true;
-      this.step = 5;
+      this.step = 4; // Generating step
       this.progress = {
         current: 0,
         total: this.parameters.count,
@@ -271,7 +271,7 @@ export function generatePage() {
     // Override selectModel to move to next step
     selectModel(model) {
       modelSelector.selectModel.call(this, model);
-      this.step = 4;
+      this.step = 3; // Go to Confirm step
     },
 
     // Get estimated cost
@@ -279,7 +279,7 @@ export function generatePage() {
       if (!this.selectedModel || !this.parameters.count) return null;
 
       const pricing = this.selectedModel.pricing;
-      if (!pricing) return { prompt: 0, completion: 0, total: 0 };
+      if (!pricing) return { prompt: 0, completion: 0, webSearch: 0, total: 0 };
 
       // Estimate tokens per item (rough estimate)
       const tokensPerItem = this.parameters.maxTokens || 1000;
@@ -290,11 +290,23 @@ export function generatePage() {
 
       const promptCost = (totalPromptTokens / 1000000) * pricing.prompt;
       const completionCost = (totalCompletionTokens / 1000000) * pricing.completion;
+      
+      // Calculate web search cost if enabled
+      let webSearchCost = 0;
+      if (this.enableOnlineSearch && this.selectedModel.supports_web_search) {
+        // Get web search pricing
+        const webSearchPricing = this.getWebSearchPricing(this.selectedModel);
+        if (webSearchPricing) {
+          // Estimate 1 web search per generation item
+          webSearchCost = (this.parameters.count / 1000) * webSearchPricing.price;
+        }
+      }
 
       return {
         prompt: promptCost.toFixed(4),
         completion: completionCost.toFixed(4),
-        total: (promptCost + completionCost).toFixed(4)
+        webSearch: webSearchCost.toFixed(4),
+        total: (promptCost + completionCost + webSearchCost).toFixed(4)
       };
     }
   };

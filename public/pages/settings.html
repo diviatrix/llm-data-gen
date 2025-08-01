@@ -8,7 +8,11 @@
   <!-- API Key Section -->
   <div class="card">
     <div class="card-header">
-      <h3 class="text-lg font-semibold">OpenRouter API Key</h3>
+      <h3 class="text-lg font-semibold">
+        <span x-show="$root.isCloud">Personal API Key</span>
+        <span x-show="!$root.isCloud && !$root.isAdmin">Personal API Key</span>
+        <span x-show="!$root.isCloud && $root.isAdmin">Admin Personal API Key</span>
+      </h3>
     </div>
     <div class="card-body">
       <!-- Loading -->
@@ -62,7 +66,7 @@
                      @keyup.enter="saveApiKey()"
                      placeholder="sk-or-..." 
                      class="form-input">
-              <p class="text-xs text-gray-500 mt-s">Your API key will be securely stored</p>
+              <p class="text-xs text-gray-500 mt-s" x-text="$root.isCloud ? 'Your API key will be securely stored' : 'This API key will be used system-wide for all users'"></p>
             </div>
             
             <div class="flex gap-s">
@@ -84,6 +88,78 @@
     </div>
   </div>
   
+  <!-- System API Key Section (Admin only) -->
+  <div class="card" x-show="$root.isAdmin && !$root.isCloud">
+    <div class="card-header">
+      <h3 class="text-lg font-semibold">System API Key <span class="text-sm font-normal text-gray-600">(Admin Only)</span></h3>
+    </div>
+    <div class="card-body">
+      <div x-show="!isLoadingSystemKey">
+        <!-- Has System API Key -->
+        <div x-show="hasSystemApiKey">
+          <div class="alert alert-success mb-m">
+            <p>✓ System API key is configured</p>
+          </div>
+          
+          <p class="meta-text mb-m">
+            The system API key is configured. This key will be used as default for the system operations.
+          </p>
+          
+          <div class="flex gap-s">
+            <button @click="showSystemApiKey = true" 
+                    x-show="!showSystemApiKey"
+                    class="btn btn-secondary btn-sm">
+              Update System API Key
+            </button>
+            <button @click="deleteSystemApiKey()" 
+                    :disabled="isDeletingSystemKey"
+                    class="btn btn-danger btn-sm">
+              <span x-show="!isDeletingSystemKey">Delete System API Key</span>
+              <span x-show="isDeletingSystemKey">Deleting...</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- No System API Key or Updating -->
+        <div x-show="!hasSystemApiKey || showSystemApiKey">
+          <div x-show="!hasSystemApiKey" class="alert alert-warning mb-m">
+            <p>⚠️ No system API key configured</p>
+          </div>
+          
+          <p class="meta-text mb-m">
+            Configure a system-wide OpenRouter API key for default operations.
+          </p>
+          
+          <div class="space-y-m">
+            <div>
+              <label class="form-label">System API Key</label>
+              <input type="password" 
+                     x-model="systemApiKey" 
+                     @keyup.enter="saveSystemApiKey()"
+                     placeholder="sk-or-..." 
+                     class="form-input">
+              <p class="text-xs text-gray-500 mt-s">This key will be used for system-wide operations</p>
+            </div>
+            
+            <div class="flex gap-s">
+              <button @click="saveSystemApiKey()" 
+                      :disabled="!systemApiKey || isSavingSystemKey"
+                      class="btn btn-primary">
+                <span x-show="!isSavingSystemKey">Save System API Key</span>
+                <span x-show="isSavingSystemKey">Saving...</span>
+              </button>
+              <button @click="showSystemApiKey = false; systemApiKey = ''" 
+                      x-show="hasSystemApiKey && showSystemApiKey"
+                      class="btn btn-ghost">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Account Info Section -->
   <div class="card" x-show="$root.user">
     <div class="card-header">

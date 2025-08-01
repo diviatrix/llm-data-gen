@@ -21,6 +21,7 @@ import { viewerPage } from './pages/viewer.js';
 import { editorPage } from './pages/editor.js';
 import { fileManagerPage } from './pages/fileManager.js';
 import { settingsPage } from './pages/settings.js';
+import { adminPage } from './pages/admin.js';
 
 // Export page components to global scope
 window.generatePage = generatePage;
@@ -32,7 +33,7 @@ window.editorPage = editorPage;
 window.fileManagerPage = fileManagerPage;
 window.settingsPage = settingsPage;
 window.dashboardPage = () => ({ init() {} }); // Simple dashboard
-window.adminPage = () => ({ init() {} }); // Admin page
+window.adminPage = adminPage;
 
 // Register component
 document.addEventListener('alpine:init', () => {
@@ -71,6 +72,12 @@ document.addEventListener('alpine:init', () => {
             window.location.href = '/login.html';
             return;
           }
+        } else {
+          // Local mode - set as authenticated admin
+          this.isAuthenticated = true;
+          this.isAdmin = true;
+          authStore.isAuthenticated = true;
+          authStore.isAdmin = true;
         }
 
         // Set auth state
@@ -106,8 +113,14 @@ document.addEventListener('alpine:init', () => {
         this.isAdmin = response.isAdmin;
         authStore.isAdmin = response.isAdmin;
         authStore.isCloud = response.isCloud;
+        // Set cloud mode in API client to handle auth properly
+        api.isCloud = response.isCloud;
       } catch (error) {
         console.error('Mode check failed:', error);
+        // Assume local mode if check fails
+        this.isCloud = false;
+        this.isAdmin = true;
+        api.isCloud = false;
       }
     },
 
@@ -117,6 +130,8 @@ document.addEventListener('alpine:init', () => {
         const response = await api.get('/account');
         if (response.success) {
           this.accountInfo = response.account;
+          // If we got account info, it means API key is configured
+          this.hasApiKey = true;
         }
       } catch (error) {
         if (error.response?.data?.needsApiKey) {
@@ -129,6 +144,12 @@ document.addEventListener('alpine:init', () => {
 
     // Check if user has API key
     async checkApiKey() {
+      // Skip personal API key check for admin in local mode
+      if (!this.isCloud && this.isAdmin) {
+        // Admin in local mode doesn't need personal key, uses system key
+        return;
+      }
+      
       try {
         const response = await api.get('/user/api-key');
         this.hasApiKey = response.hasKey;

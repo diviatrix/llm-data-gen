@@ -1,0 +1,149 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold">User Management</h2>
+    <p class="meta-text mt-s">Manage system users and permissions</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-3 mb-l">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-2xl font-bold" x-text="stats.total || 0"></div>
+        <div class="meta-text">Total Users</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-2xl font-bold text-success" x-text="stats.active || 0"></div>
+        <div class="meta-text">Active Users</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="text-2xl font-bold text-error" x-text="stats.inactive || 0"></div>
+        <div class="meta-text">Inactive Users</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row mb-m">
+    <h3 class="text-lg font-semibold">Users</h3>
+    <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
+      + Add User
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div x-show="isLoading" class="flex justify-center py-l">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Users Table -->
+  <div x-show="!isLoading" class="card">
+    <div class="overflow-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left p-m">ID</th>
+            <th class="text-left p-m">Email</th>
+            <th class="text-left p-m">Status</th>
+            <th class="text-left p-m">Created</th>
+            <th class="text-left p-m">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="user in users" :key="user.id">
+            <tr class="border-b">
+              <td class="p-m font-mono text-sm" x-text="user.id"></td>
+              <td class="p-m" x-text="user.email"></td>
+              <td class="p-m">
+                <span class="badge" :class="user.is_active ? 'badge-success' : 'badge-secondary'"
+                      x-text="user.is_active ? 'Active' : 'Inactive'"></span>
+              </td>
+              <td class="p-m meta-text" x-text="formatDate(user.created_at)"></td>
+              <td class="p-m">
+                <div class="flex gap-s">
+                  <button @click="toggleUserStatus(user)" 
+                          class="btn btn-ghost btn-sm"
+                          :class="user.is_active ? 'text-warning' : 'text-success'">
+                    <span x-text="user.is_active ? '⏸️ Deactivate' : '▶️ Activate'"></span>
+                  </button>
+                  <button @click="resetPassword(user)" class="btn btn-ghost btn-sm">
+                    🔑 Reset Password
+                  </button>
+                  <button @click="deleteUser(user)" class="btn btn-danger btn-sm">
+                    🗑️ Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="users.length === 0" class="empty-state">
+      <p>No users found</p>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div x-show="showCreateModal" class="modal-backdrop" @click.self="showCreateModal = false">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold">Create New User</h3>
+        <button @click="showCreateModal = false" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+      <form @submit.prevent="createUser">
+        <div class="modal-body stack">
+          <div>
+            <label>Email</label>
+            <input type="email" x-model="newUser.email" required>
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="password" x-model="newUser.password" required minlength="8">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showCreateModal = false" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Create User
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div x-show="showResetModal" class="modal-backdrop" @click.self="showResetModal = false">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold">Reset Password</h3>
+        <button @click="showResetModal = false" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+      <form @submit.prevent="confirmResetPassword">
+        <div class="modal-body stack">
+          <p>Reset password for <strong x-text="selectedUser?.email"></strong>?</p>
+          <div>
+            <label>New Password</label>
+            <input type="password" x-model="resetPasswordData.newPassword" required minlength="8">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showResetModal = false" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Reset Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
