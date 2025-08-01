@@ -1,0 +1,195 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold">AI Chat</h2>
+    <p class="text-gray-600 mt-s">Chat with AI models</p>
+  </div>
+  
+  <!-- Last Chat Bubble (if exists and not in chat) -->
+  <div x-show="lastChat && !chatStarted && lastChat.messages && lastChat.messages.length > 0" 
+       @click="resumeLastChat()"
+       class="card hover-card cursor-pointer mb-m">
+    <div class="card-body">
+      <div class="flex items-center justify-between mb-s">
+        <h4 class="text-sm font-medium text-gray-700">Resume last chat</h4>
+        <span class="text-xs text-gray-500" x-text="lastChat?.timestamp ? new Date(lastChat.timestamp).toLocaleString() : ''"></span>
+      </div>
+      <div class="flex items-center gap-s text-xs text-gray-600">
+        <span x-text="lastChat?.model || ''"></span>
+        <span x-show="lastChat?.enableOnlineSearch" class="text-primary">🌐 Online</span>
+      </div>
+      <div class="mt-s text-sm text-gray-700 line-clamp-2" 
+           x-text="lastChat?.messages?.[lastChat.messages.length - 1]?.content || ''"></div>
+    </div>
+  </div>
+  
+  <!-- Model Selection (collapsible) -->
+  <div class="card" :class="!showModelSelector && chatStarted ? 'cursor-pointer' : ''"
+       @click="!showModelSelector && chatStarted ? toggleModelSelector() : null">
+    <div class="card-body">
+      <!-- Header with toggle -->
+      <div class="flex justify-between items-center mb-m">
+        <h3 class="text-lg font-semibold">
+          <span x-show="!chatStarted">Select Model</span>
+          <span x-show="chatStarted && showModelSelector">Change Model</span>
+          <span x-show="chatStarted && !showModelSelector">
+            Current: <span x-text="selectedModel?.name" class="text-primary"></span>
+            <span x-show="enableOnlineSearch" class="text-primary text-sm">🌐</span>
+          </span>
+        </h3>
+        <button x-show="chatStarted" 
+                @click.stop="toggleModelSelector()" 
+                class="btn btn-ghost btn-sm">
+          <span x-text="showModelSelector ? '▲' : '▼'"></span>
+        </button>
+      </div>
+      
+      <!-- Model selector content -->
+      <div x-show="showModelSelector" x-transition>
+        <!-- Model Search -->
+        <div class="mb-m">
+          <input type="text" 
+                 x-model="modelSearch" 
+                 @input="updateFilteredModels()"
+                 placeholder="Search models..." 
+                 class="form-input">
+        </div>
+        
+        <!-- Model Filters -->
+        <div class="mb-m">
+          <!-- Compact filter pills -->
+          <div class="flex flex-wrap gap-s">
+            <button @click="toggleFilter('pricing', 'free')"
+                    :class="isFilterActive('pricing', 'free') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                    class="text-xs">
+              🆓 Free
+            </button>
+            <button @click="toggleFilter('capabilities', 'web-search')"
+                    :class="isFilterActive('capabilities', 'web-search') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                    class="text-xs">
+              🌐 Web Search
+            </button>
+            <button @click="toggleFilter('capabilities', 'vision')"
+                    :class="isFilterActive('capabilities', 'vision') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                    class="text-xs">
+              👁️ Vision
+            </button>
+            <button @click="toggleFilter('context', 'large-context')"
+                    :class="isFilterActive('context', 'large-context') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                    class="text-xs">
+              📖 100K+
+            </button>
+          </div>
+        </div>
+        
+        <!-- Online Search Toggle -->
+        <div class="mb-m">
+          <label class="flex items-center gap-s">
+            <input type="checkbox" 
+                   x-model="enableOnlineSearch" 
+                   :disabled="!selectedModel || !supportsOnlineSearch(selectedModel)"
+                   class="form-checkbox">
+            <span class="text-sm" :class="!selectedModel || !supportsOnlineSearch(selectedModel) ? 'text-gray-400' : ''">
+              Enable online search 
+              <span x-show="selectedModel && supportsOnlineSearch(selectedModel)" class="text-xs text-primary">
+                (+$<span x-text="getWebSearchPricing(selectedModel)?.price.toFixed(3)"></span>/request)
+              </span>
+            </span>
+          </label>
+        </div>
+        
+        <!-- Model List -->
+        <div class="grid-3 gap-s overflow-y-auto mb-m" style="max-height: 400px;">
+          <template x-for="model in filteredModels" :key="model.id">
+            <div @click="selectModel(model)" 
+                 class="hover-card cursor-pointer p-s"
+                 :class="selectedModel?.id === model.id ? 'border-primary' : ''">
+              <h4 class="font-medium text-xs leading-tight mb-1" x-text="model.name"></h4>
+              
+              <!-- Badges -->
+              <div class="flex flex-wrap gap-s mb-s">
+                <template x-for="badge in getModelBadges(model).slice(0, 2)" :key="badge.label">
+                  <span :class="badge.class" class="badge text-xs" x-text="badge.label"></span>
+                </template>
+              </div>
+              
+              <p class="text-xs text-gray-600">
+                <span x-text="formatContext(model.context_length)"></span> • 
+                <span x-text="formatPrice(model.pricing)"></span>
+              </p>
+            </div>
+          </template>
+        </div>
+        
+        <!-- Start/Change Chat Button -->
+        <button @click="startOrChangeChat()" 
+                :disabled="!selectedModel"
+                class="btn btn-primary w-full">
+          <span x-show="!chatStarted">Start Chat</span>
+          <span x-show="chatStarted">Change Model</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Chat Interface -->
+  <div x-show="chatStarted" x-transition class="card flex-1 mt-m">
+    <div class="card-body flex flex-col h-full">
+      <div class="flex justify-between items-center mb-m">
+        <h3 class="text-lg font-semibold">Chat</h3>
+        <button @click="clearChat()" class="btn btn-ghost btn-sm">Clear History</button>
+      </div>
+      
+      <!-- Messages -->
+      <div class="flex-1 overflow-y-auto mb-m stack-s" style="max-height: 500px;">
+        <template x-for="(message, index) in messages" :key="index">
+          <div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+            <div class="inline-block max-w-3xl"
+                 :class="message.role === 'user' ? 'bg-primary text-white' : 'bg-gray-100'"
+                 class="rounded-lg p-3">
+              <p class="text-sm whitespace-pre-wrap" x-text="message.content"></p>
+              
+              <!-- Metadata for assistant messages -->
+              <div x-show="message.role === 'assistant' && message.metadata" 
+                   class="mt-s pt-s border-t" 
+                   :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
+                <div class="flex flex-wrap gap-s text-xs" 
+                     :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-600'">
+                  <span>🤖 <span x-text="message.metadata?.model"></span></span>
+                  <span x-show="message.metadata?.online">🌐 Online</span>
+                  <span>💰 $<span x-text="message.metadata?.cost?.toFixed(4) || '0'"></span></span>
+                  <span>🔤 <span x-text="message.metadata?.tokens || '0'"></span> tokens</span>
+                  <span>⏱️ <span x-text="message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleTimeString() : ''"></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        
+        <div x-show="isLoading" class="text-left">
+          <div class="inline-block bg-gray-100 rounded-lg p-3">
+            <div class="flex items-center gap-s">
+              <div class="spinner-inline"></div>
+              <span class="text-sm text-gray-600">AI is thinking...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Input -->
+      <form @submit.prevent="sendMessage()" class="flex gap-s">
+        <textarea x-model="newMessage"
+                  @keydown.enter.prevent="if (!$event.shiftKey) sendMessage()"
+                  placeholder="Type your message..."
+                  class="form-textarea flex-1"
+                  rows="3"
+                  :disabled="isLoading"></textarea>
+        <button type="submit" 
+                :disabled="!newMessage.trim() || isLoading" 
+                class="btn btn-primary">
+          Send
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

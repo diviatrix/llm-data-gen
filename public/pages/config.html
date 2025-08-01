@@ -1,0 +1,130 @@
+<div class="stack">
+  <!-- Header Section -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h2 class="text-2xl font-semibold">Configuration Manager</h2>
+      <p class="text-gray-600 mt-s">Create and manage data generation configurations</p>
+    </div>
+    <div class="flex gap-s">
+      <button @click="createNewConfig()" class="btn btn-primary">
+        ➕ Create New
+      </button>
+      <button @click="loadExample()" class="btn btn-secondary">
+        📁 Load Example
+      </button>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="isLoading" class="flex justify-center items-center py-l">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Configs Grid -->
+  <div x-show="!isLoading && configs.length > 0" class="grid-2">
+    <template x-for="config in configs" :key="config.name">
+      <div class="card hover-card cursor-pointer">
+        <div class="card-body">
+          <div class="flex items-center gap-s">
+            <div class="text-xl flex-shrink-0">⚙️</div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-medium text-sm break-words" x-text="config.name.replace('.json', '')"></h4>
+              <div class="text-xs text-gray-600">
+                <span x-text="(config.size / 1024).toFixed(1) + ' KB'"></span>
+                <span class="mx-s">•</span>
+                <span x-text="new Date(config.modified).toLocaleDateString()"></span>
+              </div>
+            </div>
+            <div class="flex items-center gap-s flex-shrink-0">
+              <button @click.stop="navigateToGenerate(config)" class="btn btn-primary btn-sm">
+                🚀 Generate
+              </button>
+              <button @click.stop="editConfig(config)" class="btn btn-ghost btn-sm" title="Edit">
+                ✏️
+              </button>
+              <button @click.stop="deleteConfig(config)" class="btn btn-ghost btn-sm text-error" title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+  
+  <!-- Empty State -->
+  <div x-show="!isLoading && configs.length === 0" class="card">
+    <div class="card-body text-center py-l">
+      <div class="text-3xl mb-m">📋</div>
+      <h3 class="text-xl font-medium mb-s">No Configurations Yet</h3>
+      <p class="text-gray-600 mb-m">Create your first configuration to start generating data</p>
+      <button @click="createNewConfig()" class="btn btn-primary">
+        Create Configuration
+      </button>
+    </div>
+  </div>
+  
+  <!-- Create Wizard Modal (Simplified) -->
+  <div x-show="showCreateWizard" @click.self="showCreateWizard = false" 
+       class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="card-title">Create Configuration</h3>
+        <button @click="showCreateWizard = false" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="stack-s">
+          <div>
+            <label class="form-label">Configuration Name</label>
+            <input type="text" x-model="editingConfig.name" 
+                   class="form-input" placeholder="my-config">
+          </div>
+          
+          <div>
+            <label class="form-label">Description</label>
+            <textarea x-model="editingConfig.content.meta.description" 
+                      class="form-input" rows="2" 
+                      placeholder="Describe what this configuration generates"></textarea>
+          </div>
+          
+          <div>
+            <label class="form-label">Initial Task</label>
+            <input type="text" x-model="editingConfig.content.generation.tasks[0].theme" 
+                   class="form-input" placeholder="e.g., Product Reviews">
+          </div>
+          
+          <p class="text-sm text-gray-600">
+            You can configure more details after creating the configuration.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button @click="showCreateWizard = false" class="btn btn-secondary">Cancel</button>
+        <button @click="saveConfig()" class="btn btn-primary">Create & Edit</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Examples Modal -->
+  <div x-show="showExampleModal" @click.away="showExampleModal = false" 
+       class="modal-backdrop">
+    <div class="modal max-w-3xl">
+      <div class="card-header">
+        <h3 class="card-title">Example Configurations</h3>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <template x-for="example in examples" :key="example.name">
+            <div @click="selectExample(example)" class="card hover-card cursor-pointer">
+              <div class="card-body">
+                <h4 class="font-medium mb-s" x-text="example.name"></h4>
+                <p class="text-sm text-gray-600" x-text="example.content.meta?.description || 'No description'"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+        <button @click="showExampleModal = false" class="btn btn-secondary mt-m">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

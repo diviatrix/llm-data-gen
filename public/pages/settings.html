@@ -1,0 +1,107 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold">Settings</h2>
+    <p class="text-gray-600 mt-s">Manage your account settings and API configuration</p>
+  </div>
+  
+  <!-- API Key Section -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="text-lg font-semibold">OpenRouter API Key</h3>
+    </div>
+    <div class="card-body">
+      <!-- Loading -->
+      <div x-show="isLoading" class="flex justify-center py-m">
+        <div class="spinner"></div>
+      </div>
+      
+      <!-- Content -->
+      <div x-show="!isLoading">
+        <!-- Has API Key -->
+        <div x-show="hasApiKey">
+          <div class="alert alert-success mb-m">
+            <p>✓ API key is configured</p>
+          </div>
+          
+          <p class="text-sm text-gray-600 mb-m">
+            Your OpenRouter API key is securely stored. You can generate data using AI models.
+          </p>
+          
+          <div class="flex gap-s">
+            <button @click="showApiKey = true" 
+                    x-show="!showApiKey"
+                    class="btn btn-secondary btn-sm">
+              Update API Key
+            </button>
+            <button @click="deleteApiKey()" 
+                    :disabled="isDeleting"
+                    class="btn btn-danger btn-sm">
+              <span x-show="!isDeleting">Delete API Key</span>
+              <span x-show="isDeleting">Deleting...</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- No API Key or Updating -->
+        <div x-show="!hasApiKey || showApiKey">
+          <div x-show="!hasApiKey" class="alert alert-warning mb-m">
+            <p>⚠️ No API key configured</p>
+          </div>
+          
+          <p class="text-sm text-gray-600 mb-m">
+            To use the LLM Data Generator, you need an OpenRouter API key. 
+            You can get one from <a href="https://openrouter.ai/keys" target="_blank" class="text-primary hover:underline">openrouter.ai/keys</a>
+          </p>
+          
+          <div class="space-y-m">
+            <div>
+              <label class="form-label">API Key</label>
+              <input type="password" 
+                     x-model="apiKey" 
+                     @keyup.enter="saveApiKey()"
+                     placeholder="sk-or-..." 
+                     class="form-input">
+              <p class="text-xs text-gray-500 mt-s">Your API key will be securely stored</p>
+            </div>
+            
+            <div class="flex gap-s">
+              <button @click="saveApiKey()" 
+                      :disabled="!apiKey || isSaving"
+                      class="btn btn-primary">
+                <span x-show="!isSaving">Save API Key</span>
+                <span x-show="isSaving">Saving...</span>
+              </button>
+              <button @click="showApiKey = false; apiKey = ''" 
+                      x-show="hasApiKey && showApiKey"
+                      class="btn btn-ghost">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Account Info Section -->
+  <div class="card" x-show="$root.user">
+    <div class="card-header">
+      <h3 class="text-lg font-semibold">Account Information</h3>
+    </div>
+    <div class="card-body">
+      <div class="space-y-s">
+        <div>
+          <span class="text-sm text-gray-600">Email:</span>
+          <span class="ml-s font-medium" x-text="$root.user?.email"></span>
+        </div>
+        <div x-show="$root.accountInfo">
+          <span class="text-sm text-gray-600">Usage:</span>
+          <span class="ml-s font-medium">
+            $<span x-text="$root.accountInfo?.usage"></span> / $<span x-text="$root.accountInfo?.limit"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

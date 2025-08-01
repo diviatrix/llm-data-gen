@@ -1,0 +1,94 @@
+<div class="stack">
+  <!-- Empty State when no file selected -->
+  <div x-show="!filePath" class="card">
+    <div class="card-body text-center py-l">
+      <div class="text-3xl mb-m">👁️</div>
+      <h3 class="text-xl font-medium mb-s">No File Selected</h3>
+      <p class="text-gray-600 mb-m">Select a file from the File Manager to view its contents.</p>
+      <a href="#/files" class="btn btn-primary">Go to File Manager</a>
+    </div>
+  </div>
+
+  <!-- File Viewer Mode -->
+  <div x-show="filePath">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-m">
+    <div>
+      <h2 class="text-2xl font-bold">Data Viewer</h2>
+      <p class="text-gray-600 mt-s" x-show="fileName">
+        Viewing: <span x-text="fileName" class="font-medium"></span>
+      </p>
+    </div>
+    <div class="flex gap-s">
+      <button @click="goBack()" class="btn btn-ghost">
+        ← Back
+      </button>
+      <button @click="editFile()" class="btn btn-secondary">
+        ✏️ Edit
+      </button>
+      <button @click="downloadFile()" class="btn btn-primary">
+        ⬇️ Download
+      </button>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="isLoading" class="flex justify-center items-center py-l">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Error State -->
+  <div x-show="error" class="alert alert-error">
+    <p x-text="error"></p>
+  </div>
+  
+  <!-- Content Viewer -->
+  <div x-show="!isLoading && !error && content !== null" class="card">
+    <div class="card-body">
+      <!-- JSON Viewer -->
+      <div x-show="fileType === 'json'">
+        <!-- JSON Controls -->
+        <div class="flex justify-between items-center mb-m">
+          <div class="flex gap-s">
+            <button @click="expandAll()" class="btn btn-ghost btn-sm">
+              ➕ Expand All
+            </button>
+            <button @click="collapseAll()" class="btn btn-ghost btn-sm">
+              ➖ Collapse All
+            </button>
+          </div>
+          <div class="flex items-center gap-s">
+            <label class="flex items-center gap-s">
+              <input type="checkbox" x-model="renderMarkdown" class="form-checkbox">
+              <span class="text-sm">Render Markdown</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- JSON Tree View -->
+        <div class="json-viewer">
+          <div x-html="renderJson(content)"></div>
+        </div>
+      </div>
+      
+      <!-- Text Viewer -->
+      <div x-show="fileType === 'text'">
+        <pre class="code-block overflow-auto max-h-[600px]" x-text="content"></pre>
+      </div>
+      
+      <!-- Markdown Viewer -->
+      <div x-show="fileType === 'markdown'" class="prose prose-sm max-w-none">
+        <div x-html="renderMarkdownContent(content)"></div>
+      </div>
+      
+      <!-- Other File Types -->
+      <div x-show="!['json', 'text', 'markdown'].includes(fileType)" class="text-center py-8">
+        <p class="text-gray-600">Preview not available for this file type.</p>
+        <button @click="downloadFile()" class="btn btn-primary mt-4">
+          Download File
+        </button>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>

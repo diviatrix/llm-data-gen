@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LLM Data Generator</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- Reset CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
+    
+    <!-- Design System -->
+    <link rel="stylesheet" href="/css/design-system.css?v=4">
+</head>
+<body class="bg-gradient-main h-screen text-gray-700">
+    <div class="h-screen flex items-center justify-center p-4" x-data="loginApp" x-init="init">
+        <div class="max-w-md w-full">
+            <!-- Logo & Title -->
+            <div class="text-center mb-6">
+                <div class="text-3xl mb-4">🤖</div>
+                <h1 class="text-2xl font-bold mb-2">Welcome Back!</h1>
+                <p class="text-base text-gray-600">Sign in to your LLM Data Generator account</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="card shadow-xl border-2">
+                <div class="card-body">
+                    <form @submit.prevent="login" class="stack-4">
+                        <!-- Email -->
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" 
+                                   x-model="form.email" 
+                                   class="form-input"
+                                   :class="{ 'form-input-error': errors.email }"
+                                   placeholder="you@example.com"
+                                   autocomplete="email"
+                                   required
+                                   autofocus>
+                            <p x-show="errors.email" class="form-error" x-text="errors.email"></p>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" 
+                                   x-model="form.password" 
+                                   class="form-input"
+                                   :class="{ 'form-input-error': errors.password }"
+                                   placeholder="••••••••"
+                                   autocomplete="current-password"
+                                   required>
+                            <p x-show="errors.password" class="form-error" x-text="errors.password"></p>
+                        </div>
+
+                        <!-- Error message -->
+                        <div x-show="error" class="alert alert-error">
+                            <span class="alert-icon">❌</span>
+                            <p x-text="error"></p>
+                        </div>
+
+                        <!-- Submit -->
+                        <button type="submit" 
+                                class="btn btn-primary w-full"
+                                :disabled="loading">
+                            <span x-show="!loading">Sign In</span>
+                            <span x-show="loading">Signing in...</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Local mode info -->
+            <div x-show="showLocalInfo" class="text-center mt-5">
+                <p class="text-sm text-gray-500">
+                    Running in local mode? 
+                    <a href="/" class="text-primary">Go to app →</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="fixed bottom-4 right-4 z-40 stack-2"></div>
+
+    <script type="module">
+        import { api } from '/js/api.js';
+        import { authStore } from '/js/stores/auth.js';
+        import { notify } from '/js/utils/notifications.js';
+        
+        // Register component
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('loginApp', () => ({
+            form: {
+                email: '',
+                password: ''
+            },
+            errors: {},
+            error: '',
+            loading: false,
+            showLocalInfo: false,
+
+            async init() {
+                // Check if running in local mode
+                try {
+                    const response = await api.get('/mode');
+                    if (!response.isCloud) {
+                        // Redirect to main app in local mode
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    this.showLocalInfo = true;
+                }
+
+                // Check if already authenticated
+                const isAuth = await authStore.checkAuth();
+                if (isAuth) {
+                    window.location.href = '/';
+                }
+            },
+
+            async login() {
+                this.loading = true;
+                this.error = '';
+                this.errors = {};
+
+                try {
+                    const result = await authStore.login(this.form.email, this.form.password);
+                    
+                    if (result.success) {
+                        notify.success('Login successful! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1000);
+                    } else {
+                        this.error = result.error || 'Invalid email or password';
+                    }
+                } catch (error) {
+                    this.error = 'An error occurred. Please try again.';
+                    console.error('Login error:', error);
+                } finally {
+                    this.loading = false;
+                }
+            }
+            }));
+        });
+    </script>
+    
+    <!-- Load Alpine after module -->
+    <script>
+        // Load Alpine after modules are loaded
+        window.addEventListener('load', () => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+            script.defer = true;
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>

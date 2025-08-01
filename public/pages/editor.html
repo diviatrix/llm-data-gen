@@ -1,0 +1,220 @@
+<div class="stack">
+  <!-- Empty State when no file selected -->
+  <div x-show="!filePath" class="card">
+    <div class="card-body text-center py-l">
+      <div class="text-3xl mb-m">✏️</div>
+      <h3 class="text-xl font-medium mb-s">No File Selected</h3>
+      <p class="text-gray-600 mb-m">Select a file from the File Manager to edit its contents.</p>
+      <a href="#/files" class="btn btn-primary">Go to File Manager</a>
+    </div>
+  </div>
+
+  <!-- Editor when file is selected -->
+  <div x-show="filePath">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-m">
+      <div>
+        <h2 class="text-2xl font-bold">Data Editor</h2>
+        <p class="text-gray-600 mt-s" x-show="fileName">
+          Editing: <span x-text="fileName" class="font-medium"></span>
+        </p>
+      </div>
+      <div class="flex gap-s">
+        <button @click="goBack()" class="btn btn-ghost">
+          ← Cancel
+        </button>
+        <button @click="saveFile()" class="btn btn-primary" :disabled="!hasChanges">
+          💾 Save
+        </button>
+      </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div x-show="isLoading" class="flex justify-center items-center py-l">
+      <div class="spinner"></div>
+    </div>
+    
+    <!-- Error State -->
+    <div x-show="error" class="alert alert-error">
+      <p x-text="error"></p>
+    </div>
+  
+  <!-- Editor -->
+  <div x-show="!isLoading && !error && content !== null && filePath" class="card">
+    <div class="card-body">
+      <!-- JSON Editor -->
+      <div x-show="fileType === 'json'">
+        <!-- JSON Editor Controls -->
+        <div class="flex justify-between items-center mb-m">
+          <div class="flex gap-s">
+            <button @click="formatJson()" class="btn btn-secondary btn-sm">
+              📐 Format
+            </button>
+            <button @click="validateJson()" class="btn btn-secondary btn-sm">
+              ✓ Validate
+            </button>
+            <button @click="switchToVisualEditor()" class="btn btn-secondary btn-sm" x-show="!visualMode">
+              🎨 Visual Editor
+            </button>
+            <button @click="switchToCodeEditor()" class="btn btn-secondary btn-sm" x-show="visualMode">
+              📝 Code Editor
+            </button>
+          </div>
+          <div x-show="jsonError" class="text-sm text-error">
+            <span x-text="jsonError"></span>
+          </div>
+        </div>
+        
+        <!-- Code Editor Mode -->
+        <div x-show="!visualMode">
+          <textarea 
+            x-model="editableContent"
+            @input="hasChanges = true; validateJson()"
+            class="form-input font-mono text-sm"
+            rows="20"
+            style="resize: vertical;"
+          ></textarea>
+        </div>
+        
+        <!-- Visual Editor Mode -->
+        <template x-if="visualMode && parsedJson">
+        <div class="space-y-4">
+          <div class="alert alert-info text-sm">
+            Visual editor for JSON configuration files
+          </div>
+          
+          <!-- Meta Section -->
+          <div x-show="parsedJson && parsedJson.meta" class="card">
+            <div class="card-header">
+              <h4 class="text-medium">Meta Information</h4>
+            </div>
+            <div class="card-body space-y-3">
+              <template x-if="parsedJson && parsedJson.meta">
+              <div class="space-y-3">
+                <div>
+                  <label class="form-label">Name</label>
+                  <input type="text" x-model="parsedJson.meta.name" @input="updateFromVisual()" class="form-input">
+                </div>
+                <div>
+                  <label class="form-label">Description</label>
+                  <textarea x-model="parsedJson.meta.description" @input="updateFromVisual()" class="form-input" rows="2"></textarea>
+                </div>
+                <div>
+                  <label class="form-label">Version</label>
+                  <input type="text" x-model="parsedJson.meta.version" @input="updateFromVisual()" class="form-input">
+                </div>
+              </div>
+              </template>
+            </div>
+          </div>
+          
+          <!-- API Section -->
+          <div x-show="parsedJson && parsedJson.api" class="card">
+            <div class="card-header">
+              <h4 class="text-medium">API Settings</h4>
+            </div>
+            <div class="card-body grid-2 gap-3">
+              <template x-if="parsedJson && parsedJson.api">
+              <div class="contents">
+                <div>
+                  <label class="form-label">Model</label>
+                  <input type="text" x-model="parsedJson.api.model" @input="updateFromVisual()" class="form-input">
+                </div>
+                <div>
+                  <label class="form-label">Temperature</label>
+                  <input type="number" x-model.number="parsedJson.api.temperature" @input="updateFromVisual()" 
+                         class="form-input" min="0" max="2" step="0.1">
+                </div>
+                <div>
+                  <label class="form-label">Max Tokens</label>
+                  <input type="number" x-model.number="parsedJson.api.maxTokens" @input="updateFromVisual()" 
+                         class="form-input" min="1">
+                </div>
+                <div>
+                  <label class="form-label">Batch Delay (ms)</label>
+                  <input type="number" x-model.number="parsedJson.api.batchDelay" @input="updateFromVisual()" 
+                         class="form-input" min="0">
+                </div>
+              </div>
+              </template>
+            </div>
+          </div>
+          
+          <!-- Generation Tasks -->
+          <div x-show="parsedJson && parsedJson.generation && parsedJson.generation.tasks" class="card">
+            <div class="card-header flex-between">
+              <h4 class="text-medium">Generation Tasks</h4>
+              <button @click="addTask()" class="btn btn-secondary btn-sm">+ Add Task</button>
+            </div>
+            <div class="card-body space-y-3">
+              <template x-if="parsedJson && parsedJson.generation && parsedJson.generation.tasks">
+              <template x-for="(task, index) in parsedJson.generation.tasks" :key="index">
+                <div class="flex gap-3 items-end">
+                  <div class="flex-1">
+                    <label class="form-label">Theme/Topic</label>
+                    <input type="text" x-model="task.theme" @input="updateFromVisual()" class="form-input">
+                  </div>
+                  <div class="w-32">
+                    <label class="form-label">Count</label>
+                    <input type="number" x-model.number="task.count" @input="updateFromVisual()" 
+                           class="form-input" min="1">
+                  </div>
+                  <button @click="removeTask(index)" class="btn btn-ghost btn-sm text-danger mb-1">🗑️</button>
+                </div>
+              </template>
+              </template>
+            </div>
+          </div>
+          
+          <!-- Raw JSON View -->
+          <div class="card">
+            <div class="card-header">
+              <h4 class="text-medium">Raw JSON</h4>
+            </div>
+            <div class="card-body">
+              <pre class="code-block text-xs overflow-auto max-h-64" x-text="JSON.stringify(parsedJson, null, 2)"></pre>
+            </div>
+          </div>
+        </div>
+        </template>
+      </div>
+      
+      <!-- Text Editor -->
+      <div x-show="fileType === 'text'">
+        <textarea 
+          x-model="editableContent"
+          @input="hasChanges = true"
+          class="form-input font-mono text-sm"
+          rows="20"
+          style="resize: vertical;"
+        ></textarea>
+      </div>
+      
+      <!-- Markdown Editor -->
+      <div x-show="fileType === 'markdown'">
+        <div class="grid-2 gap-4">
+          <!-- Editor -->
+          <div>
+            <h4 class="text-medium mb-2">Editor</h4>
+            <textarea 
+              x-model="editableContent"
+              @input="hasChanges = true"
+              class="form-input font-mono text-sm"
+              rows="20"
+              style="resize: vertical;"
+            ></textarea>
+          </div>
+          
+          <!-- Preview -->
+          <div>
+            <h4 class="text-medium mb-2">Preview</h4>
+            <div class="card">
+              <div class="card-body prose prose-sm max-w-none" x-html="renderMarkdownContent(editableContent)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>

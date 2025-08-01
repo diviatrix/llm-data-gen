@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+coverage/
+.vitest/
+test/fixtures/
+test/integration/fixtures/
+examples/
+*.min.js

@@ -1,0 +1,180 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold">Files Explorer</h2>
+    <p class="text-gray-600 mt-s">Browse your configurations and generated data</p>
+  </div>
+  
+  <!-- Breadcrumbs -->
+  <nav x-show="fileExplorer.currentPath" class="mb-m">
+    <ol class="flex items-center gap-s text-sm">
+      <template x-for="(crumb, index) in fileExplorer.breadcrumbs()" :key="crumb.path">
+        <li class="flex items-center">
+          <button @click="fileExplorer.loadFiles(crumb.path)" 
+                  class="text-primary hover:underline"
+                  :class="index === fileExplorer.breadcrumbs().length - 1 ? 'font-medium' : ''"
+                  x-text="crumb.name"></button>
+          <span x-show="index < fileExplorer.breadcrumbs().length - 1" class="mx-s text-gray-400">/</span>
+        </li>
+      </template>
+    </ol>
+  </nav>
+  
+  <!-- Toolbar -->
+  <div class="card mb-m">
+    <div class="card-body">
+      <div class="flex justify-between items-center flex-wrap gap-m">
+        <!-- Search -->
+        <div class="flex-1 max-w-md">
+          <input type="text" 
+                 x-model="fileExplorer.searchQuery" 
+                 placeholder="Search files..." 
+                 class="form-input">
+        </div>
+        
+        <!-- View Mode & Sort -->
+        <div class="flex items-center gap-m">
+          <!-- View Mode Toggle -->
+          <div class="flex gap-s">
+            <button @click="fileExplorer.viewMode = 'cards'" 
+                    :class="fileExplorer.viewMode === 'cards' ? 'btn-primary' : 'btn-ghost'"
+                    class="btn btn-sm">
+              <span>📇</span> Cards
+            </button>
+            <button @click="fileExplorer.viewMode = 'list'" 
+                    :class="fileExplorer.viewMode === 'list' ? 'btn-primary' : 'btn-ghost'"
+                    class="btn btn-sm">
+              <span>📋</span> List
+            </button>
+          </div>
+          
+          <!-- Sort Dropdown -->
+          <div class="relative" x-data="{ showSort: false }">
+            <button @click="showSort = !showSort" class="btn btn-secondary btn-sm">
+              Sort by <span x-text="fileExplorer.sortBy"></span>
+              <span x-text="fileExplorer.sortDirection === 'asc' ? '↑' : '↓'"></span>
+            </button>
+            <div x-show="showSort" 
+                 @click.away="showSort = false"
+                 class="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[150px]">
+              <button @click="fileExplorer.changeSort('name'); showSort = false" 
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Name</button>
+              <button @click="fileExplorer.changeSort('date'); showSort = false" 
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Date</button>
+              <button @click="fileExplorer.changeSort('size'); showSort = false" 
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Size</button>
+              <button @click="fileExplorer.changeSort('type'); showSort = false" 
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Type</button>
+            </div>
+          </div>
+          
+          <!-- Refresh -->
+          <button @click="fileExplorer.loadFiles(fileExplorer.currentPath)" 
+                  class="btn btn-ghost btn-sm">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div x-show="fileExplorer.isLoading" class="flex justify-center items-center py-l">
+    <div class="spinner"></div>
+  </div>
+  
+  <!-- Files Grid View -->
+  <div x-show="!fileExplorer.isLoading && fileExplorer.viewMode === 'cards'" 
+       class="grid-2">
+    <template x-for="file in fileExplorer.filteredFiles()" :key="file.name">
+      <div class="card hover-card cursor-pointer" 
+           @click="fileExplorer.viewFile(file)"
+           data-updated="true">
+        <div class="card-body">
+          <div class="flex items-center gap-s">
+            <div class="text-xl flex-shrink-0" x-text="fileExplorer.getFileIcon(file)"></div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-medium text-sm break-words" x-text="file.name"></h4>
+              <div class="text-xs text-gray-600">
+                <span x-show="!file.isDirectory">
+                  <span x-text="fileExplorer.formatFileSize(file.size)"></span>
+                  <span class="mx-s">•</span>
+                </span>
+                <span x-text="fileExplorer.formatDate(file.modified)"></span>
+              </div>
+            </div>
+            <div x-show="fileExplorer.showActions && !file.isDirectory" 
+                 class="flex items-center gap-s flex-shrink-0">
+              <button @click.stop="fileExplorer.editFile(file)" 
+                      class="btn btn-ghost btn-sm" title="Edit">
+                ✏️
+              </button>
+              <button @click.stop="fileExplorer.deleteFile(file)" 
+                      class="btn btn-ghost btn-sm text-error" title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+  
+  <!-- Files List View -->
+  <div x-show="!fileExplorer.isLoading && fileExplorer.viewMode === 'list'" 
+       class="card">
+    <table class="w-full">
+      <thead class="border-b">
+        <tr>
+          <th class="text-left p-m">Name</th>
+          <th class="text-left p-m">Size</th>
+          <th class="text-left p-m">Modified</th>
+          <th class="text-left p-m" x-show="fileExplorer.showActions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="file in fileExplorer.filteredFiles()" :key="file.name">
+          <tr class="border-b hover:bg-gray-50 cursor-pointer" 
+              @click="fileExplorer.viewFile(file)">
+            <td class="p-m">
+              <div class="flex items-center gap-s">
+                <span x-text="fileExplorer.getFileIcon(file)"></span>
+                <span x-text="file.name" class="break-all"></span>
+              </div>
+            </td>
+            <td class="p-m text-sm text-gray-600">
+              <span x-show="!file.isDirectory" x-text="fileExplorer.formatFileSize(file.size)"></span>
+              <span x-show="file.isDirectory">-</span>
+            </td>
+            <td class="p-3 text-sm text-gray-600" x-text="fileExplorer.formatDate(file.modified)"></td>
+            <td class="p-m" x-show="fileExplorer.showActions">
+              <div x-show="!file.isDirectory" class="flex gap-s">
+                <button @click.stop="fileExplorer.editFile(file)" 
+                        class="btn btn-ghost btn-sm" title="Edit">
+                  ✏️
+                </button>
+                <button @click.stop="fileExplorer.deleteFile(file)" 
+                        class="btn btn-ghost btn-sm text-error" title="Delete">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Empty State -->
+  <div x-show="!fileExplorer.isLoading && fileExplorer.filteredFiles().length === 0" 
+       class="card">
+    <div class="card-body text-center py-l">
+      <div class="text-3xl mb-m">📂</div>
+      <h3 class="text-xl font-medium mb-s">No Files Found</h3>
+      <p class="text-gray-600">
+        <span x-show="fileExplorer.searchQuery">No files match your search.</span>
+        <span x-show="!fileExplorer.searchQuery">This folder is empty.</span>
+      </p>
+    </div>
+  </div>
+</div>

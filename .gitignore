@@ -19,3 +19,7 @@ Thumbs.db
 CLAUDE.md
 # Project-specific
 output/
+db/
+user-data/
+/.claude
+/.tangent

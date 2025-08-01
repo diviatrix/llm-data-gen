@@ -1,0 +1,317 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold">Data Generator</h2>
+    <p class="text-gray-600 mt-s">Generate structured data using AI models</p>
+  </div>
+  
+  <!-- Progress Indicator -->
+  <div class="flex items-center justify-between mb-l">
+    <template x-for="(label, index) in ['Select Config', 'Review Config', 'Select Model', 'Confirm', 'Generate']" :key="index">
+      <div class="flex items-center">
+        <div class="flex items-center">
+          <div class="rounded-full flex items-center justify-center text-sm font-medium" style="width: 2rem; height: 2rem;"
+               :class="step > index + 1 ? 'bg-success text-white' : step === index + 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'"
+               x-text="index + 1"></div>
+          <span class="text-sm" style="margin-left: 0.5rem;" 
+                :class="step === index + 1 ? 'text-primary font-medium' : 'text-gray-500'"
+                x-text="label"></span>
+        </div>
+        <div x-show="index < 4" style="width: 4rem; height: 0.25rem; margin: 0 0.5rem;"
+             :class="step > index + 1 ? 'bg-success' : 'bg-gray-200'"></div>
+      </div>
+    </template>
+  </div>
+  
+  <!-- Step 1: Select Configuration -->
+  <div x-show="step === 1" class="card">
+    <div class="card-body">
+      <h3 class="text-lg font-semibold mb-m">Select Configuration</h3>
+      
+      <!-- Message when no config parameter -->
+      <div x-show="!hasConfigParam" class="text-center py-l">
+        <p class="text-gray-600 mb-m">Please select a configuration from the File Manager to generate data.</p>
+        <a href="#/files" class="btn btn-primary">Go to File Manager</a>
+      </div>
+      
+      <!-- Loading message if config parameter exists but still on step 1 -->
+      <div x-show="hasConfigParam" class="text-center py-l">
+        <p class="text-gray-600">Loading configuration...</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Step 2: Review Configuration -->
+  <div x-show="step === 2" class="card">
+    <div class="card-body">
+      <h3 class="text-lg font-semibold mb-m">Review Configuration</h3>
+      
+      <div x-show="configContent" class="stack-s">
+        <div>
+          <label class="form-label">Number of Items</label>
+          <input type="number" x-model.number="parameters.count" min="1" max="1000" class="form-input">
+        </div>
+        
+        <div class="grid-2">
+          <div>
+            <label class="form-label">Temperature</label>
+            <input type="number" x-model.number="parameters.temperature" min="0" max="2" step="0.1" class="form-input">
+          </div>
+          
+          <div>
+            <label class="form-label">Max Tokens</label>
+            <input type="number" x-model.number="parameters.maxTokens" min="50" max="4000" step="50" class="form-input">
+          </div>
+        </div>
+        
+        <div>
+          <label class="form-label">Output Format</label>
+          <input type="text" :value="configContent?.output?.format || 'json'" class="form-input" disabled>
+        </div>
+      </div>
+      
+      <div class="flex justify-between mt-l">
+        <button @click="prevStep()" class="btn btn-ghost">← Back</button>
+        <button @click="nextStep()" class="btn btn-primary">Next →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Step 3: Select Model -->
+  <div x-show="step === 3" class="card">
+    <div class="card-body">
+      <h3 class="text-lg font-semibold mb-m">Select AI Model</h3>
+      
+      <!-- Show config model if exists -->
+      <div x-show="configModel" class="mb-m">
+        <p class="text-sm text-gray-600 mb-s">
+          Configuration uses this model:
+          <span x-show="configModel && configModel.endsWith(':online')" class="ml-1">🌐</span>
+        </p>
+        <template x-if="configModel && models.find(m => m.id === (configModel || '').replace(':online', ''))">
+          <div class="card p-3" :class="selectedModel?.id === (configModel || '').replace(':online', '') ? 'border-primary' : ''">
+            <div class="flex justify-between">
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-1">
+                  <h4 class="font-medium text-sm leading-tight">
+                    <span x-text="models.find(m => m.id === (configModel || '').replace(':online', ''))?.name"></span>
+                    <span x-show="configModel && configModel.endsWith(':online')" class="ml-1">🌐</span>
+                  </h4>
+                  <span class="text-xs text-gray-500 ml-2" x-text="getProviderName(models.find(m => m.id === (configModel || '').replace(':online', '')))"></span>
+                </div>
+                
+                <!-- Badges -->
+                <div class="flex flex-wrap gap-1 mb-1">
+                  <template x-for="badge in getModelBadges(models.find(m => m.id === (configModel || '').replace(':online', '')))" :key="badge.label">
+                    <span :class="badge.class" class="badge text-xs py-0" x-text="badge.label"></span>
+                  </template>
+                </div>
+                
+                <!-- Compact Details -->
+                <div class="text-xs text-gray-600">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div x-show="models.find(m => m.id === (configModel || '').replace(':online', ''))?.max_completion_tokens" class="flex items-center gap-1">
+                      <span class="text-gray-500">Max:</span>
+                      <span x-text="models.find(m => m.id === (configModel || '').replace(':online', ''))?.max_completion_tokens?.toLocaleString() + ' tokens'"></span>
+                    </div>
+                    <div x-show="models.find(m => m.id === (configModel || '').replace(':online', ''))?.input_modalities?.length > 0 || models.find(m => m.id === (configModel || '').replace(':online', ''))?.output_modalities?.length > 0" class="text-gray-500">
+                      <span x-text="formatModalities(models.find(m => m.id === (configModel || '').replace(':online', ''))?.input_modalities, models.find(m => m.id === (configModel || '').replace(':online', ''))?.output_modalities)"></span>
+                    </div>
+                  </div>
+                  <div class="flex justify-between mt-1">
+                    <span class="text-gray-500">$<span x-text="((models.find(m => m.id === (configModel || '').replace(':online', ''))?.pricing?.prompt || 0) * 1000).toFixed(3)"></span>/1K in</span>
+                    <span class="text-gray-500">$<span x-text="((models.find(m => m.id === (configModel || '').replace(':online', ''))?.pricing?.completion || 0) * 1000).toFixed(3)"></span>/1K out</span>
+                  </div>
+                  <div x-show="models.find(m => m.id === (configModel || '').replace(':online', ''))?.supports_web_search" class="mt-1">
+                    <template x-if="getWebSearchPricing(models.find(m => m.id === (configModel || '').replace(':online', '')))">
+                      <span class="text-xs text-blue-600">
+                        <span x-text="getWebSearchPricing(models.find(m => m.id === (configModel || '').replace(':online', ''))).label"></span>: 
+                        $<span x-text="getWebSearchPricing(models.find(m => m.id === (configModel || '').replace(':online', ''))).price.toFixed(2)"></span>/1K requests
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <div class="ml-3 flex flex-col gap-2">
+                <button x-show="!selectedModel || selectedModel.id !== (configModel || '').replace(':online', '')" 
+                        @click="selectedModel = models.find(m => m.id === (configModel || '').replace(':online', '')); if(selectedModel) nextStep()" 
+                        class="btn btn-primary btn-sm">
+                  Use this model
+                </button>
+                <button x-show="selectedModel && selectedModel.id === (configModel || '').replace(':online', '')" 
+                        @click="nextStep()" 
+                        class="btn btn-success btn-sm">
+                  Continue →
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div class="mt-3 text-sm text-gray-600">Or select a different model below:</div>
+      </div>
+      
+      <!-- Model Filters -->
+      <div class="mb-4">
+        <!-- Active filter count and clear button -->
+        <div class="flex justify-between items-center mb-3">
+          <h4 class="text-sm font-medium text-gray-700">
+            Filters
+            <span x-show="getActiveFilterCount() > 0" class="ml-2">
+              (<span x-text="getActiveFilterCount()"></span> active)
+            </span>
+          </h4>
+          <button x-show="getActiveFilterCount() > 0" 
+                  @click="clearAllFilters()" 
+                  class="btn btn-ghost btn-sm">
+            Clear all
+          </button>
+        </div>
+        
+        <!-- Filter groups -->
+        <div class="space-y-3">
+          <template x-for="(group, groupKey) in filterGroups" :key="groupKey">
+            <div x-show="config.showFilters">
+              <div class="text-xs font-medium text-gray-600 mb-2" x-text="group.label"></div>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="filter in group.filters" :key="filter.value">
+                  <button @click="toggleFilter(groupKey, filter.value)"
+                          :class="isFilterActive(groupKey, filter.value) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    <span x-text="filter.icon"></span>
+                    <span x-text="filter.label"></span>
+                    <span class="opacity-60">(<span x-text="filter.count"></span>)</span>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+      
+      <!-- Model count -->
+      <div class="flex justify-between items-center mb-3">
+        <p class="text-sm text-gray-600">
+          Showing <span x-text="filteredModels.length" class="font-medium"></span> 
+          of <span x-text="models.length" class="font-medium"></span> models
+        </p>
+      </div>
+      
+      <!-- Model List -->
+      <div class="grid-2 gap-3 max-h-[600px] overflow-y-auto">
+        <template x-for="model in filteredModels" :key="model.id">
+          <div @click="selectModel(model)" 
+               class="hover-card cursor-pointer p-3"
+               :class="selectedModel?.id === model.id ? 'border-primary' : ''">
+            <div class="flex justify-between items-start mb-1">
+              <h4 class="font-medium text-sm leading-tight" x-text="model.name"></h4>
+              <span class="text-xs text-gray-500 ml-2" x-text="getProviderName(model)"></span>
+            </div>
+            
+            <!-- Badges -->
+            <div class="flex flex-wrap gap-1 mb-1">
+              <template x-for="badge in getModelBadges(model)" :key="badge.label">
+                <span :class="badge.class" class="badge text-xs py-0" x-text="badge.label"></span>
+              </template>
+            </div>
+            
+            <!-- Compact Details -->
+            <div class="text-xs text-gray-600">
+              <div class="flex items-center gap-2 flex-wrap">
+                <div x-show="model.max_completion_tokens" class="flex items-center gap-1">
+                  <span class="text-gray-500">Max:</span>
+                  <span x-text="model.max_completion_tokens?.toLocaleString() + ' tokens'"></span>
+                </div>
+                <div x-show="model.input_modalities?.length > 0 || model.output_modalities?.length > 0" class="text-gray-500">
+                  <span x-text="formatModalities(model.input_modalities, model.output_modalities)"></span>
+                </div>
+              </div>
+              <div class="flex justify-between mt-1">
+                <span class="text-gray-500">$<span x-text="((model.pricing?.prompt || 0) * 1000).toFixed(3)"></span>/1K in</span>
+                <span class="text-gray-500">$<span x-text="((model.pricing?.completion || 0) * 1000).toFixed(3)"></span>/1K out</span>
+              </div>
+              <div x-show="model.supports_web_search" class="mt-1">
+                <template x-if="getWebSearchPricing(model)">
+                  <span class="text-xs text-blue-600">
+                    <span x-text="getWebSearchPricing(model).label"></span>: 
+                    $<span x-text="getWebSearchPricing(model).price.toFixed(2)"></span>/1K requests
+                  </span>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      
+      <div class="flex justify-between mt-l">
+        <button @click="prevStep()" class="btn btn-ghost">← Back</button>
+        <div x-show="!configModel || selectedModel?.id !== configModel">
+          <button @click="nextStep()" :disabled="!selectedModel" class="btn btn-primary">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Step 4: Confirm -->
+  <div x-show="step === 4" class="card">
+    <div class="card-body">
+      <h3 class="text-lg font-semibold mb-4">Confirm Generation</h3>
+      
+      <div class="stack-3">
+        <div class="alert alert-info">
+          <p class="font-medium mb-2">Generation Summary:</p>
+          <ul class="text-sm ml-4 list-disc">
+            <li>Configuration: <span x-text="selectedConfig?.name" class="font-medium"></span></li>
+            <li>Model: <span x-text="selectedModel?.name" class="font-medium"></span></li>
+            <li>Items to generate: <span x-text="parameters.count" class="font-medium"></span></li>
+            <li>Temperature: <span x-text="parameters.temperature" class="font-medium"></span></li>
+            <li>Max tokens: <span x-text="parameters.maxTokens" class="font-medium"></span></li>
+          </ul>
+        </div>
+        
+        <div x-show="getEstimatedCost()" class="alert alert-warning">
+          <p class="font-medium mb-2">Estimated Cost:</p>
+          <ul class="text-sm ml-4 list-disc">
+            <li>Input tokens: $<span x-text="getEstimatedCost()?.prompt"></span></li>
+            <li>Output tokens: $<span x-text="getEstimatedCost()?.completion"></span></li>
+            <li>Total: $<span x-text="getEstimatedCost()?.total" class="font-medium"></span></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="flex justify-between mt-l">
+        <button @click="prevStep()" class="btn btn-ghost">← Back</button>
+        <button @click="startGeneration()" class="btn btn-primary">
+          ✨ Start Generation
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Step 5: Generating -->
+  <div x-show="step === 5" class="card">
+    <div class="card-body">
+      <h3 class="text-lg font-semibold mb-4">Generating Data</h3>
+      
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-2">
+          <span>Progress</span>
+          <span><span x-text="progress.current"></span> / <span x-text="progress.total"></span> items</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" :style="`width: ${progress.percentage}%`"></div>
+        </div>
+      </div>
+      
+      <div x-show="progress.currentItem" class="text-sm text-gray-600">
+        Currently generating: <span x-text="progress.currentItem" class="font-medium"></span>
+      </div>
+      
+      <div x-show="!isGenerating && progress.percentage === 100" class="mt-4">
+        <div class="alert alert-success">
+          <p>Generation completed successfully!</p>
+        </div>
+        <a href="#/results" class="btn btn-primary mt-4">View Results →</a>
+      </div>
+    </div>
+  </div>
+</div>

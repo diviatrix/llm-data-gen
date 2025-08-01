@@ -89,6 +89,26 @@ Standard JSON Schema with `x-llm-generate` extensions:
 - `range`: [min, max] for numbers
 - `description`: Field description
 
+#### Field Types
+
+Each field in the schema can have a `type` property that restricts the data type:
+- `"string"` - text values
+- `"number"` - numeric values (integer or float)
+- `"integer"` - whole numbers only
+- `"boolean"` - true/false values
+- `"object"` - nested objects
+- `"array"` - lists of items
+- `"null"` - null value
+
+To allow any type of data, simply omit the `type` field:
+```json
+"newslist": {
+  "x-llm-generate": {
+    "prompt": "Generate news items in any format"
+  }
+}
+```
+
 ### prompts
 - `system` (string): System prompt
 - `userPrompt` (string): For text format, supports variables
@@ -133,11 +153,12 @@ Standard JSON Schema with `x-llm-generate` extensions:
 
 ## Web Search Models
 
-To enable web search, add `:online` suffix:
+All OpenRouter models support web search functionality. To enable it, add `:online` suffix to any model ID:
 - `anthropic/claude-sonnet-4:online`
-- `anthropic/claude-4-opus-20250522:online`
+- `google/gemini-2.5-flash-lite:online`
+- `openai/gpt-4o-mini:online`
 
-Note: Not all models support web search.
+Web search is powered by Exa and costs $4 per 1000 results (~$0.02 per request with default settings).
 
 ## Validation
 

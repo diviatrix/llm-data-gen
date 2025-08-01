@@ -77,16 +77,37 @@ For alternative installation methods (from source, development setup, troublesho
 
 ## Quick Start
 
+### Interactive Mode (Default)
 ```bash
-# Generate data with interactive wizard
+# Start interactive wizard
 llmdatagen
 ```
 
-This will:
-1. Display your account information
-2. Let you select a model from live list
-3. Guide you through configuration setup
-4. Start generating data
+This will show a menu with options to:
+- 🚀 Generate data
+- ⚙️ Create/edit configuration
+- 🌐 Open web interface
+- 📊 Test API connection
+- 📂 Open data folder
+
+### Web Interface
+```bash
+# Start web UI
+llmdatagen web
+
+# Or use alias
+llmdatagen ui
+```
+
+The web interface runs on `http://localhost:3000` and includes:
+- **Local Mode (localhost)**: Full features + admin panel for user management  
+- **Cloud Mode**: Multi-tenant with authentication (users created via admin panel)
+
+### Command Line
+```bash
+# Generate with specific config
+llmdatagen generate --config myconfig.json
+```
 
 **Note**: The tool stores configurations and outputs in your Documents folder:
 - Configurations: `~/Documents/llmdatagen/configs/`
@@ -109,6 +130,30 @@ The generator supports two output formats:
 - ✅ No schema constraints
 - ✅ Template variables in prompts
 - ✅ Perfect for content, documentation, scripts
+
+## Web Interface
+
+Run the web UI for visual configuration and result viewing:
+
+```bash
+# Start the web server (default port 3000)
+npm run web
+
+# Start on custom port
+PORT=8080 npm run web
+
+# The server runs headless - open http://localhost:3000 in your browser
+```
+
+The web interface provides:
+- 📁 Drag-and-drop configuration upload
+- ✏️ Visual JSON editor with syntax validation
+- 🎯 One-click data generation
+- 📊 Result visualization
+- 💰 Real-time account balance display
+- 💬 Interactive chat with LLM models
+- 👥 User management (admin panel - localhost only)
+- 🔐 Multi-tenant support with isolated user data
 
 ## Documentation
 

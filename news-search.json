@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "name": "Test data",
+    "version": "1.0",
+    "description": "IT and Gaming news data generation"
+  },
+  "api": {
+    "provider": "openrouter",
+    "temperature": 0.7,
+    "maxTokens": 4000
+  },
+  "output": {
+    "type": "array",
+    "outputPath": "./news/",
+    "fileNameTemplate": "{theme}_{index}.js"
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "Summary": {
+        "type": "string",
+        "x-llm-generate": {
+          "description": "Summary of the last week in IT and Gaming news, today is {date}, this is summarize of your whole search "
+        }
+      },
+      "News List": {
+        "type": "string",
+        "x-llm-generate": {
+          "description": "список всех найденных новостей за последнюю неделю, сейчас {date}, в списке новости  проанализированы,  отффильтрованы от  воды, проверены на факты , добавлены цифроы естли есть, и все это сгруппировано по топикам. Новости искать нужно на английском, и на различных английских площадках, но переводить на русский"
+        }
+      },
+      "links": {
+        "type": "string",
+        "x-llm-generate": {
+          "description": "ссылки на найденные статьи с датами списком, чтобы я мог завалидировать. "
+        }
+      }
+    },
+    "required": [
+      "Summary",
+      "News List",
+      "links"
+    ]
+  },
+  "prompts": {
+    "system": "You are one of the best news searchers in the world, you can find newest articles in various search systems, compare them, fill the weekly report day by day with information"
+  },
+  "generation": {
+    "tasks": [
+      {
+        "count": 10
+      }
+    ]
+  }
+}

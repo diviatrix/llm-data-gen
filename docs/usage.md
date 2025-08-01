@@ -12,6 +12,79 @@ On first install, the tool automatically:
 1. Creates these directories
 2. Copies example configurations for you to use and modify
 
+## Web Interface
+
+Start the web UI for visual configuration and generation:
+
+```bash
+# Start web server (default port 3000)
+npm run web
+
+# Start on custom port
+PORT=8080 npm run web
+
+# Windows Command Prompt
+set PORT=8080 && npm run web
+
+# The server runs headless - manually open http://localhost:3000
+```
+
+The web interface provides:
+- Drag-and-drop configuration upload
+- Visual JSON editor
+- Real-time validation
+- One-click generation
+- Result visualization
+
+You can also start the web interface from the interactive menu by selecting "🌐 Open web interface".
+
+### Authentication
+
+The web interface automatically detects where it's accessed from:
+
+**Local access (localhost:3000)**:
+- No login needed
+- Can create users via "Users" button
+- Full admin access
+
+**External access (your-domain.com)**:
+- Login required
+- Use email/password created by admin
+- Each user has separate data
+
+#### How to use cloud mode:
+
+1. **Admin setup** (on localhost):
+   ```bash
+   npm run web
+   # Open http://localhost:3000
+   # Click "Users" → "Add User"
+   # Create user with email/password
+   ```
+
+2. **User access** (from internet):
+   ```bash
+   # Deploy server to your host
+   # Users go to: http://your-domain.com
+   # Auto-redirected to login page
+   # Enter email/password → access granted
+   ```
+
+That's it. The system handles the rest automatically.
+
+#### Testing cloud mode locally:
+
+```bash
+# Windows
+set FORCE_CLOUD_MODE=true && npm run web
+
+# Linux/Mac
+FORCE_CLOUD_MODE=true npm run web
+
+# Then open http://localhost:3000
+# You'll see login page like external users
+```
+
 ## Command Line Options
 
 ### Generate Command (default)
