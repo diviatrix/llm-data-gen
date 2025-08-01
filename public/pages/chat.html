@@ -8,9 +8,9 @@
   <!-- Last Chat Bubble (if exists and not in chat) -->
   <div x-show="lastChat && !chatStarted && lastChat.messages && lastChat.messages.length > 0" 
        @click="resumeLastChat()"
-       class="card hover-card cursor-pointer mb-m">
+       class="card-interactive mb-m">
     <div class="card-body">
-      <div class="flex items-center justify-between mb-s">
+      <div class="action-row mb-s">
         <h4 class="text-sm font-medium text-gray-700">Resume last chat</h4>
         <span class="text-xs text-gray-500" x-text="lastChat?.timestamp ? new Date(lastChat.timestamp).toLocaleString() : ''"></span>
       </div>
@@ -99,10 +99,10 @@
         </div>
         
         <!-- Model List -->
-        <div class="grid-3 gap-s overflow-y-auto mb-m" style="max-height: 400px;">
+        <div class="grid-3 gap-s model-grid mb-m">
           <template x-for="model in filteredModels" :key="model.id">
             <div @click="selectModel(model)" 
-                 class="hover-card cursor-pointer p-s"
+                 class="card-interactive p-s"
                  :class="selectedModel?.id === model.id ? 'border-primary' : ''">
               <h4 class="font-medium text-xs leading-tight mb-1" x-text="model.name"></h4>
               
@@ -141,7 +141,7 @@
       </div>
       
       <!-- Messages -->
-      <div class="flex-1 overflow-y-auto mb-m stack-s" style="max-height: 500px;">
+      <div class="flex-1 chat-messages mb-m stack-s">
         <template x-for="(message, index) in messages" :key="index">
           <div :class="message.role === 'user' ? 'text-right' : 'text-left'">
             <div class="inline-block max-w-3xl"
@@ -170,7 +170,7 @@
           <div class="inline-block bg-gray-100 rounded-lg p-3">
             <div class="flex items-center gap-s">
               <div class="spinner-inline"></div>
-              <span class="text-sm text-gray-600">AI is thinking...</span>
+              <span class="meta-text">AI is thinking...</span>
             </div>
           </div>
         </div>

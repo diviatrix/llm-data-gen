@@ -36,7 +36,7 @@
   
   <!-- Actions -->
   <div class="flex justify-between items-center mb-m">
-    <div class="text-sm text-gray-600">
+    <div class="meta-text">
       <span x-text="currentFiles.length"></span> files
     </div>
     <div class="flex gap-s">
@@ -61,7 +61,7 @@
   <!-- Files Grid -->
   <div x-show="!isLoading && currentFiles.length > 0" class="grid-2">
     <template x-for="file in currentFiles" :key="file.name">
-      <div class="card hover-card" 
+      <div class="card-interactive" 
            :class="file.isDirectory ? 'cursor-pointer' : ''"
            @click="file.isDirectory && navigateToFolder(file)">
         <div class="card-body">
@@ -160,7 +160,7 @@
   
   <!-- Empty State -->
   <div x-show="!isLoading && currentFiles.length === 0" class="card">
-    <div class="card-body text-center py-l">
+    <div class="card-body empty-state">
       <div class="text-3xl mb-m">
         <span x-text="activeTab === 'configs' ? '⚙️' : '📊'"></span>
       </div>

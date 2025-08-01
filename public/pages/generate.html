@@ -6,19 +6,19 @@
   </div>
   
   <!-- Progress Indicator -->
-  <div class="flex items-center justify-between mb-l">
+  <div class="action-row mb-l">
     <template x-for="(label, index) in ['Select Config', 'Review Config', 'Select Model', 'Confirm', 'Generate']" :key="index">
       <div class="flex items-center">
         <div class="flex items-center">
-          <div class="rounded-full flex items-center justify-center text-sm font-medium" style="width: 2rem; height: 2rem;"
-               :class="step > index + 1 ? 'bg-success text-white' : step === index + 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'"
+          <div class="progress-indicator"
+               :class="step > index + 1 ? 'progress-indicator-completed' : step === index + 1 ? 'progress-indicator-active' : 'progress-indicator-pending'"
                x-text="index + 1"></div>
-          <span class="text-sm" style="margin-left: 0.5rem;" 
+          <span class="text-sm ml-s" 
                 :class="step === index + 1 ? 'text-primary font-medium' : 'text-gray-500'"
                 x-text="label"></span>
         </div>
-        <div x-show="index < 4" style="width: 4rem; height: 0.25rem; margin: 0 0.5rem;"
-             :class="step > index + 1 ? 'bg-success' : 'bg-gray-200'"></div>
+        <div x-show="index < 4" class="progress-connector"
+             :class="step > index + 1 ? 'progress-connector-completed' : ''"></div>
       </div>
     </template>
   </div>
@@ -29,13 +29,13 @@
       <h3 class="text-lg font-semibold mb-m">Select Configuration</h3>
       
       <!-- Message when no config parameter -->
-      <div x-show="!hasConfigParam" class="text-center py-l">
+      <div x-show="!hasConfigParam" class="empty-state">
         <p class="text-gray-600 mb-m">Please select a configuration from the File Manager to generate data.</p>
         <a href="#/files" class="btn btn-primary">Go to File Manager</a>
       </div>
       
       <!-- Loading message if config parameter exists but still on step 1 -->
-      <div x-show="hasConfigParam" class="text-center py-l">
+      <div x-show="hasConfigParam" class="empty-state">
         <p class="text-gray-600">Loading configuration...</p>
       </div>
     </div>
@@ -84,7 +84,7 @@
       
       <!-- Show config model if exists -->
       <div x-show="configModel" class="mb-m">
-        <p class="text-sm text-gray-600 mb-s">
+        <p class="meta-text mb-s">
           Configuration uses this model:
           <span x-show="configModel && configModel.endsWith(':online')" class="ml-1">🌐</span>
         </p>
@@ -140,14 +140,14 @@
                 </button>
                 <button x-show="selectedModel && selectedModel.id === (configModel || '').replace(':online', '')" 
                         @click="nextStep()" 
-                        class="btn btn-success btn-sm">
+                        class="btn btn-primary btn-sm">
                   Continue →
                 </button>
               </div>
             </div>
           </div>
         </template>
-        <div class="mt-3 text-sm text-gray-600">Or select a different model below:</div>
+        <div class="mt-3 meta-text">Or select a different model below:</div>
       </div>
       
       <!-- Model Filters -->
@@ -190,7 +190,7 @@
       
       <!-- Model count -->
       <div class="flex justify-between items-center mb-3">
-        <p class="text-sm text-gray-600">
+        <p class="meta-text">
           Showing <span x-text="filteredModels.length" class="font-medium"></span> 
           of <span x-text="models.length" class="font-medium"></span> models
         </p>
@@ -200,7 +200,7 @@
       <div class="grid-2 gap-3 max-h-[600px] overflow-y-auto">
         <template x-for="model in filteredModels" :key="model.id">
           <div @click="selectModel(model)" 
-               class="hover-card cursor-pointer p-3"
+               class="card-interactive p-3"
                :class="selectedModel?.id === model.id ? 'border-primary' : ''">
             <div class="flex justify-between items-start mb-1">
               <h4 class="font-medium text-sm leading-tight" x-text="model.name"></h4>
@@ -302,7 +302,7 @@
         </div>
       </div>
       
-      <div x-show="progress.currentItem" class="text-sm text-gray-600">
+      <div x-show="progress.currentItem" class="meta-text">
         Currently generating: <span x-text="progress.currentItem" class="font-medium"></span>
       </div>
       

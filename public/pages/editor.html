@@ -1,7 +1,7 @@
 <div class="stack">
   <!-- Empty State when no file selected -->
   <div x-show="!filePath" class="card">
-    <div class="card-body text-center py-l">
+    <div class="card-body empty-state">
       <div class="text-3xl mb-m">✏️</div>
       <h3 class="text-xl font-medium mb-s">No File Selected</h3>
       <p class="text-gray-600 mb-m">Select a file from the File Manager to edit its contents.</p>
@@ -72,7 +72,6 @@
             @input="hasChanges = true; validateJson()"
             class="form-input font-mono text-sm"
             rows="20"
-            style="resize: vertical;"
           ></textarea>
         </div>
         
@@ -201,8 +200,7 @@
               @input="hasChanges = true"
               class="form-input font-mono text-sm"
               rows="20"
-              style="resize: vertical;"
-            ></textarea>
+              ></textarea>
           </div>
           
           <!-- Preview -->

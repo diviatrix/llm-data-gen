@@ -10,7 +10,7 @@ export function viewerPage() {
     fileType: 'text',
     isLoading: false,
     error: null,
-    renderMarkdown: false,
+    renderMarkdown: false, // Disabled by default
     expandedNodes: new Set(),
 
     // Initialize

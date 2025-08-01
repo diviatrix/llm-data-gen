@@ -23,7 +23,7 @@
   <!-- Configs Grid -->
   <div x-show="!isLoading && configs.length > 0" class="grid-2">
     <template x-for="config in configs" :key="config.name">
-      <div class="card hover-card cursor-pointer">
+      <div class="card-interactive">
         <div class="card-body">
           <div class="flex items-center gap-s">
             <div class="text-xl flex-shrink-0">⚙️</div>
@@ -54,7 +54,7 @@
   
   <!-- Empty State -->
   <div x-show="!isLoading && configs.length === 0" class="card">
-    <div class="card-body text-center py-l">
+    <div class="card-body empty-state">
       <div class="text-3xl mb-m">📋</div>
       <h3 class="text-xl font-medium mb-s">No Configurations Yet</h3>
       <p class="text-gray-600 mb-m">Create your first configuration to start generating data</p>
@@ -93,7 +93,7 @@
                    class="form-input" placeholder="e.g., Product Reviews">
           </div>
           
-          <p class="text-sm text-gray-600">
+          <p class="meta-text">
             You can configure more details after creating the configuration.
           </p>
         </div>
@@ -115,10 +115,10 @@
       <div class="card-body">
         <div class="grid-2">
           <template x-for="example in examples" :key="example.name">
-            <div @click="selectExample(example)" class="card hover-card cursor-pointer">
+            <div @click="selectExample(example)" class="card-interactive">
               <div class="card-body">
                 <h4 class="font-medium mb-s" x-text="example.name"></h4>
-                <p class="text-sm text-gray-600" x-text="example.content.meta?.description || 'No description'"></p>
+                <p class="meta-text" x-text="example.content.meta?.description || 'No description'"></p>
               </div>
             </div>
           </template>

@@ -1,11 +1,13 @@
 <div class="grid-dashboard">
     <template x-for="card in dashboardCards" :key="card.id">
-        <div class="dashboard-card" @click="navigateToCard(card.target)">
-            <div class="dashboard-card-header">
-                <span class="dashboard-card-icon" x-text="card.icon"></span>
-                <h3 class="dashboard-card-title" x-text="card.title"></h3>
+        <div class="card-interactive" @click="navigateToCard(card.target)">
+            <div class="card-header">
+                <span class="card-icon" x-text="card.icon"></span>
+                <h3 class="card-title" x-text="card.title"></h3>
             </div>
-            <p class="dashboard-card-description" x-text="card.description"></p>
+            <div class="card-body">
+                <p x-text="card.description"></p>
+            </div>
         </div>
     </template>
 </div>
@@ -59,13 +61,21 @@
 <div class="section-spacing card card-body" x-show="isAdmin" x-data="adminPanel">
     <h3 class="text-large text-medium text-primary mb-4">🔧 Admin Tools</h3>
     <div class="grid-2 gap-4">
-        <div class="admin-card admin-card-info">
-            <h4 class="text-medium text-info-dark mb-2">System Status</h4>
-            <p class="text-small text-secondary-dark">All systems operational</p>
+        <div class="card card-sectioned">
+            <div class="card-header">
+                <h4 class="text-medium text-info-dark">System Status</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-small text-secondary-dark">All systems operational</p>
+            </div>
         </div>
-        <div class="admin-card admin-card-success">
-            <h4 class="text-medium text-success-dark mb-2">Active Users</h4>
-            <p class="text-small text-secondary-dark" x-text="`${users.length} registered users`"></p>
+        <div class="card card-sectioned">
+            <div class="card-header">
+                <h4 class="text-medium text-success-dark">Active Users</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-small text-secondary-dark" x-text="`${users.length} registered users`"></p>
+            </div>
         </div>
     </div>
     <div class="mt-4 flex cluster-2">

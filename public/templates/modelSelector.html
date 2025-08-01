@@ -16,35 +16,35 @@
       <!-- Filter Buttons -->
       <div class="filter-buttons" x-show="showFilters">
         <button 
-          class="btn btn-small"
+          class="btn btn-sm"
           :class="modelFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'all'"
         >
           All
         </button>
         <button 
-          class="btn btn-small"
+          class="btn btn-sm"
           :class="modelFilter === 'free' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'free'"
         >
           Free
         </button>
         <button 
-          class="btn btn-small"
+          class="btn btn-sm"
           :class="modelFilter === 'fast' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'fast'"
         >
           Fast
         </button>
         <button 
-          class="btn btn-small"
+          class="btn btn-sm"
           :class="modelFilter === 'multimodal' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'multimodal'"
         >
           Multimodal
         </button>
         <button 
-          class="btn btn-small"
+          class="btn btn-sm"
           :class="modelFilter === 'large-context' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'large-context'"
         >
@@ -63,7 +63,7 @@
     <div class="models-grid" x-show="!isLoading">
       <template x-for="model in filteredModels" :key="model.id">
         <div 
-          class="model-card hover-card"
+          class="card-interactive"
           :class="selectedModel?.id === model.id ? 'selected' : ''"
           @click="selectModel(model)"
         >
@@ -143,7 +143,7 @@
   padding: 0.25rem;
 }
 
-.model-card {
+.card-interactive {
   padding: 1rem;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -151,7 +151,7 @@
   border: 2px solid transparent;
 }
 
-.model-card.selected {
+.card-interactive.selected {
   border-color: var(--primary);
   background-color: var(--primary-light);
 }

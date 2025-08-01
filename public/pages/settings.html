@@ -24,7 +24,7 @@
             <p>✓ API key is configured</p>
           </div>
           
-          <p class="text-sm text-gray-600 mb-m">
+          <p class="meta-text mb-m">
             Your OpenRouter API key is securely stored. You can generate data using AI models.
           </p>
           
@@ -49,7 +49,7 @@
             <p>⚠️ No API key configured</p>
           </div>
           
-          <p class="text-sm text-gray-600 mb-m">
+          <p class="meta-text mb-m">
             To use the LLM Data Generator, you need an OpenRouter API key. 
             You can get one from <a href="https://openrouter.ai/keys" target="_blank" class="text-primary hover:underline">openrouter.ai/keys</a>
           </p>
@@ -92,11 +92,11 @@
     <div class="card-body">
       <div class="space-y-s">
         <div>
-          <span class="text-sm text-gray-600">Email:</span>
+          <span class="meta-text">Email:</span>
           <span class="ml-s font-medium" x-text="$root.user?.email"></span>
         </div>
         <div x-show="$root.accountInfo">
-          <span class="text-sm text-gray-600">Usage:</span>
+          <span class="meta-text">Usage:</span>
           <span class="ml-s font-medium">
             $<span x-text="$root.accountInfo?.usage"></span> / $<span x-text="$root.accountInfo?.limit"></span>
           </span>
