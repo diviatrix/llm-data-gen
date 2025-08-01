@@ -1,0 +1,83 @@
+<div class="stack">
+  <!-- Header -->
+  <div class="mb-m">
+    <div class="action-row">
+      <div>
+        <h2 class="text-2xl font-semibold">Generation Queue</h2>
+        <p class="text-gray-600 mt-s">Monitor and manage ongoing data generation tasks</p>
+      </div>
+      <a href="#/files" class="btn btn-secondary">View Results</a>
+    </div>
+  </div>
+
+
+  <!-- No active generations message -->
+  <div x-show="activeGenerations.length === 0" class="empty-state">
+    <p class="text-gray-600">No active generation tasks</p>
+    <a href="#/generate" class="btn btn-primary mt-m">Start New Generation</a>
+  </div>
+
+  <!-- Active generations list -->
+  <div x-show="activeGenerations.length > 0" class="stack-m">
+    <template x-for="(generation, index) in activeGenerations" :key="generation.id">
+      <div class="card">
+        <div class="card-body">
+          <!-- Header with config name and status -->
+          <div class="action-row mb-m">
+            <div>
+              <h3 class="text-lg font-semibold" x-text="generation.configName"></h3>
+              <p class="meta-text">Started <span x-text="formatTime(generation.startTime)"></span></p>
+            </div>
+            <span class="badge" 
+                  :class="generation.status === 'completed' ? 'badge-success' : generation.status === 'failed' ? 'badge-secondary' : 'badge-primary'">
+              <span x-text="generation.status"></span>
+            </span>
+          </div>
+
+          <!-- Logs -->
+          <div class="mb-m">
+            <h4 class="text-sm font-medium text-gray-700 mb-s">Activity Log</h4>
+            <div class="bg-gray-50 rounded p-m max-h-64 overflow-y-auto font-mono text-xs" 
+                 x-ref="logContainer" 
+                 x-effect="$refs.logContainer && ($refs.logContainer.scrollTop = $refs.logContainer.scrollHeight)">
+              <template x-if="generation.logs && generation.logs.length > 0">
+                <div class="stack-s">
+                  <template x-for="log in generation.logs" :key="log.time + log.message">
+                    <div class="flex gap-s text-xs">
+                      <span class="text-gray-500 whitespace-nowrap" x-text="log.time"></span>
+                      <span :class="{
+                        'text-green-600': log.level === 'success',
+                        'text-blue-600': log.level === 'info' || log.level === 'section',
+                        'text-gray-600': log.level === 'debug' || log.level === 'log',
+                        'text-yellow-600': log.level === 'warn',
+                        'text-red-600': log.level === 'error',
+                        'text-gray-700': !log.level
+                      }" x-text="log.message"></span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+              <template x-if="!generation.logs || generation.logs.length === 0">
+                <div class="text-gray-500">Waiting for logs...</div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Model and cost info -->
+          <div class="grid-2 gap-m text-sm">
+            <div>
+              <div class="meta-text">Model</div>
+              <div class="font-medium" x-text="generation.model"></div>
+            </div>
+            <div>
+              <div class="meta-text">Estimated Cost</div>
+              <div class="font-medium">$<span x-text="generation.estimatedCost"></span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </template>
+  </div>
+
+</div>

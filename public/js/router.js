@@ -4,6 +4,7 @@ class Router {
     this.routes = {
       '/': 'dashboard',
       '/generate': 'generate',
+      '/queue': 'queue',
       '/config': 'config',
       '/results': 'results',
       '/files': 'files',
@@ -59,6 +60,7 @@ class Router {
     const pageComponents = {
       '/': 'dashboardPage',
       '/generate': 'generatePage',
+      '/queue': 'queuePage',
       '/config': 'configPage',
       '/results': 'resultsPage',
       '/files': 'fileManagerPage',
@@ -101,6 +103,7 @@ class Router {
   async loadTemplate(route, wrapper) {
     const templateMap = {
       '/generate': 'generate.html',
+      '/queue': 'queue.html',
       '/config': 'config.html',
       '/results': 'results.html',
       '/files': 'files.html',

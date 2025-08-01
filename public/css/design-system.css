@@ -473,6 +473,10 @@ label {
 .text-gray-600 { color: var(--gray-600); }
 .text-gray-700 { color: var(--gray-700); }
 .text-white { color: white; }
+.text-green-600 { color: #16a34a; }
+.text-blue-600 { color: #2563eb; }
+.text-yellow-600 { color: #ca8a04; }
+.text-red-600 { color: #dc2626; }
 
 .bg-white { background: white; }
 .bg-gray-50 { background: var(--gray-50); }
@@ -633,3 +637,45 @@ label {
   list-style-type: disc;
   padding-left: 1.5rem;
 }
+
+/* Toggle Switch */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Tailwind peer classes for toggle */
+.peer:checked ~ .peer-checked\:bg-primary {
+  background-color: var(--primary);
+}
+
+.peer:checked ~ .peer-checked\:after\:translate-x-full:after {
+  transform: translateX(100%);
+}
+
+.peer:focus ~ .peer-focus\:outline-none {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.peer ~ div:after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background-color: white;
+  border-radius: 9999px;
+  height: 1.25rem;
+  width: 1.25rem;
+  transition: all 150ms;
+}
+
+.w-11 { width: 2.75rem; }
+.h-6 { height: 1.5rem; }

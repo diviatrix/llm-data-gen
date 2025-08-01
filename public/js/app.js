@@ -15,6 +15,7 @@ window.Alpine.data = window.Alpine.data || function () {};
 
 // Import other pages
 import { configPage } from './pages/config.js';
+import { queuePage } from './pages/queue.js';
 import { resultsPage } from './pages/results.js';
 import { chatPage } from './pages/chat.js';
 import { viewerPage } from './pages/viewer.js';
@@ -26,6 +27,7 @@ import { adminPage } from './pages/admin.js';
 // Export page components to global scope
 window.generatePage = generatePage;
 window.configPage = configPage;
+window.queuePage = queuePage;
 window.resultsPage = resultsPage;
 window.chatPage = chatPage;
 window.viewerPage = viewerPage;
@@ -52,6 +54,7 @@ document.addEventListener('alpine:init', () => {
     navigation: [
       { path: '/', label: 'Dashboard', icon: '🏠' },
       { path: '/generate', label: 'Generate Data', icon: '🚀' },
+      { path: '/queue', label: 'Queue', icon: '📊' },
       { path: '/files', label: 'File Manager', icon: '📁' },
       { path: '/viewer', label: 'Data Viewer', icon: '👁️' },
       { path: '/editor', label: 'Data Editor', icon: '✏️' },

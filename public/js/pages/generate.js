@@ -8,7 +8,7 @@ export function generatePage() {
   const modelSelector = createModelSelector({
     showFilters: true,
     showSearch: false,
-    showOnlineToggle: true,
+    showOnlineToggle: false, // We handle it separately in the template
     defaultFilter: 'all'
   });
 
@@ -16,7 +16,7 @@ export function generatePage() {
     // State
     ...modelSelector,
     config: { showFilters: true }, // Add config for template
-    step: 1, // 1: select config, 2: review config, 3: select model, 4: confirm, 5: generating
+    step: 1, // 1: select config, 2: select model, 3: confirm
     configs: [],
     selectedConfig: null,
     configContent: null,
@@ -29,12 +29,6 @@ export function generatePage() {
       prompt: ''
     },
     isGenerating: false,
-    progress: {
-      current: 0,
-      total: 0,
-      percentage: 0,
-      currentItem: null
-    },
 
     // Initialize
     async init() {
@@ -191,39 +185,79 @@ export function generatePage() {
         return;
       }
 
-      this.isGenerating = true;
-      this.step = 4; // Generating step
-      this.progress = {
-        current: 0,
-        total: this.parameters.count,
-        percentage: 0,
-        currentItem: null
+      // Prepare configuration with model settings
+      const modelId = this.selectedModel ? this.selectedModel.id + (this.enableOnlineSearch ? ':online' : '') : null;
+      console.log('Starting generation with model:', modelId, 'Online search enabled:', this.enableOnlineSearch);
+      
+      const config = {
+        ...this.configContent,
+        meta: {
+          ...this.configContent.meta,
+          name: this.selectedConfig.name
+        },
+        api: {
+          ...this.configContent.api,
+          model: modelId,
+          temperature: this.parameters.temperature,
+          maxTokens: this.parameters.maxTokens
+        },
+        output: {
+          ...this.configContent.output,
+          count: this.parameters.count
+        }
       };
+      
+      console.log('Full config being sent:', JSON.stringify(config, null, 2));
 
+      // Create generation object
+      const generation = {
+        id: Date.now().toString(),
+        configName: this.selectedConfig.name,
+        config: config,
+        model: this.selectedModel.name,
+        estimatedCost: this.getEstimatedCost()?.total,
+        startTime: Date.now(),
+        status: 'active',
+        logs: []
+      };
+      
+      // Save to localStorage
+      const stored = localStorage.getItem('generations');
+      let data = { active: [], completed: [] };
+      if (stored) {
+        try {
+          data = JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse stored generations:', e);
+        }
+      }
+      
+      data.active.push(generation);
+      localStorage.setItem('generations', JSON.stringify(data));
+      
+      // Start the generation stream immediately
+      this.isGenerating = true;
+      this.startGenerationStream(generation);
+      
+      // Navigate to queue after a short delay
+      setTimeout(() => {
+        window.location.hash = '#/queue';
+      }, 1000);
+    },
+    
+    // Start generation stream and update localStorage with progress
+    async startGenerationStream(generation) {
       try {
-        // Prepare configuration with model settings
-        const config = {
-          ...this.configContent,
-          api: {
-            ...this.configContent.api,
-            model: this.finalModelId,
-            temperature: this.parameters.temperature,
-            maxTokens: this.parameters.maxTokens
-          },
-          output: {
-            ...this.configContent.output,
-            count: this.parameters.count
-          }
-        };
-
-        // Use fetch with SSE for streaming updates (POST request)
         const response = await fetch('/api/generate-stream', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ config })
+          body: JSON.stringify({ 
+            config: generation.config,
+            estimatedCost: generation.estimatedCost
+          })
         });
 
         if (!response.ok) {
@@ -234,7 +268,7 @@ export function generatePage() {
         const decoder = new TextDecoder();
         let buffer = '';
 
-        // eslint-disable-next-line no-constant-condition
+        // Process stream
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -247,30 +281,91 @@ export function generatePage() {
             if (line.startsWith('data: ')) {
               const data = JSON.parse(line.slice(6));
 
-              if (data.type === 'progress') {
-                this.progress = data.progress;
-              } else if (data.type === 'complete') {
-                this.isGenerating = false;
-                notify.success('Generation completed successfully!');
-                // Navigate to results
-                setTimeout(() => window.location.hash = '#/results', 2000);
-              } else if (data.type === 'error') {
-                this.isGenerating = false;
-                notify.error(data.error);
+              // Update generation in localStorage
+              const stored = localStorage.getItem('generations');
+              if (stored) {
+                const genData = JSON.parse(stored);
+                const gen = genData.active.find(g => g.id === generation.id);
+                
+                if (gen) {
+                  if (data.type === 'log') {
+                    // Add backend log entry
+                    const logEntry = {
+                      time: new Date(data.timestamp).toLocaleTimeString(),
+                      message: data.message,
+                      level: data.level
+                    };
+                    gen.logs.push(logEntry);
+                  } else if (data.type === 'progress') {
+                    // Add progress log entry
+                    const logEntry = {
+                      time: new Date().toLocaleTimeString(),
+                      message: `Generating item ${data.progress.current}/${data.progress.total}: ${data.progress.currentItem || 'Processing...'}`,
+                      level: 'info'
+                    };
+                    gen.logs.push(logEntry);
+                  } else if (data.type === 'complete') {
+                    gen.status = 'completed';
+                    gen.endTime = Date.now();
+                    gen.stats = data.stats;
+                    gen.logs.push({
+                      time: new Date().toLocaleTimeString(),
+                      message: `✅ Generation completed! Generated ${data.stats?.totalGenerated || 0} items`
+                    });
+                    // Remove from active after 5 seconds
+                    setTimeout(() => {
+                      const stored = localStorage.getItem('generations');
+                      if (stored) {
+                        const d = JSON.parse(stored);
+                        d.active = d.active.filter(g => g.id !== generation.id);
+                        localStorage.setItem('generations', JSON.stringify(d));
+                      }
+                    }, 5000);
+                    notify.success('Generation completed successfully!');
+                  } else if (data.type === 'error') {
+                    gen.status = 'failed';
+                    gen.error = data.error;
+                    gen.logs.push({
+                      time: new Date().toLocaleTimeString(),
+                      message: `❌ Error: ${data.error}`
+                    });
+                    notify.error('Generation failed: ' + data.error);
+                  } else if (data.type === 'start') {
+                    gen.logs.push({
+                      time: new Date().toLocaleTimeString(),
+                      message: '🚀 Generation started'
+                    });
+                  }
+                  
+                  localStorage.setItem('generations', JSON.stringify(genData));
+                }
               }
             }
           }
         }
-
       } catch (error) {
-        this.isGenerating = false;
-        notify.error('Failed to start generation: ' + error.message);
+        console.error('Stream error:', error);
+        notify.error('Generation failed: ' + error.message);
+        
+        // Update status in localStorage
+        const stored = localStorage.getItem('generations');
+        if (stored) {
+          const data = JSON.parse(stored);
+          const gen = data.active.find(g => g.id === generation.id);
+          if (gen) {
+            gen.status = 'failed';
+            gen.error = error.message;
+            localStorage.setItem('generations', JSON.stringify(data));
+          }
+        }
       }
     },
 
     // Override selectModel to move to next step
     selectModel(model) {
       modelSelector.selectModel.call(this, model);
+      // Don't auto-enable online search when selecting a model
+      // Only enable it if it was specified in config or user toggles it
       this.step = 3; // Go to Confirm step
     },
 

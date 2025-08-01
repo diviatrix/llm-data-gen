@@ -83,19 +83,28 @@
         </div>
         
         <!-- Online Search Toggle -->
-        <div class="mb-m">
-          <label class="flex items-center gap-s">
-            <input type="checkbox" 
-                   x-model="enableOnlineSearch" 
-                   :disabled="!selectedModel || !supportsOnlineSearch(selectedModel)"
-                   class="form-checkbox">
-            <span class="text-sm" :class="!selectedModel || !supportsOnlineSearch(selectedModel) ? 'text-gray-400' : ''">
-              Enable online search 
-              <span x-show="selectedModel && supportsOnlineSearch(selectedModel)" class="text-xs text-primary">
-                (+$<span x-text="getWebSearchPricing(selectedModel)?.price.toFixed(3)"></span>/request)
-              </span>
-            </span>
-          </label>
+        <div x-show="selectedModel && supportsOnlineSearch(selectedModel)" class="mb-m">
+          <div class="card p-m bg-gray-50">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-m">
+                <span class="text-2xl">🌐</span>
+                <div>
+                  <h4 class="font-medium">Enable Web Search</h4>
+                  <p class="text-xs text-gray-600">Search the web for up-to-date information</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" x-model="enableOnlineSearch" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+            <div x-show="enableOnlineSearch && getWebSearchPricing(selectedModel)" class="mt-m pt-m border-t border-gray-200">
+              <p class="text-sm text-gray-600">
+                <span class="font-medium">Additional cost:</span> 
+                $<span x-text="getWebSearchPricing(selectedModel)?.price.toFixed(2)"></span> per 1K searches
+              </p>
+            </div>
+          </div>
         </div>
         
         <!-- Model List -->

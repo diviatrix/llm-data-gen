@@ -534,7 +534,7 @@ app.post('/api/generate', async (req, res) => {
 app.post('/api/generate-stream', async (req, res) => {
   try {
     // Get config from request body
-    const { config } = req.body;
+    const { config, estimatedCost } = req.body;
 
     // Set SSE headers
     res.writeHead(200, {
@@ -559,9 +559,54 @@ app.post('/api/generate-stream', async (req, res) => {
       }
     }
 
+    // Create a custom logger that sends logs through SSE
+    const originalConsole = {
+      log: console.log,
+      info: console.info,
+      debug: console.debug,
+      warn: console.warn,
+      error: console.error,
+      success: console.success,
+      section: console.section
+    };
+    
+    // Override console methods to capture logs
+    const captureLog = (level, args) => {
+      // Call original console method
+      if (originalConsole[level]) {
+        originalConsole[level].apply(console, args);
+      }
+      
+      // Send log through SSE
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+      ).join(' ');
+      
+      res.write(`data: ${JSON.stringify({
+        type: 'log',
+        level: level,
+        message: message,
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+    };
+    
+    // Temporarily override console methods
+    const consoleOverrides = {
+      log: (...args) => captureLog('log', args),
+      info: (...args) => captureLog('info', args),
+      debug: (...args) => captureLog('debug', args),
+      warn: (...args) => captureLog('warn', args),
+      error: (...args) => captureLog('error', args),
+      success: (...args) => captureLog('success', args),
+      section: (...args) => captureLog('section', args)
+    };
+    
+    Object.assign(console, consoleOverrides);
+
     // Create generator with progress callback
     const generator = new DataGenerator(config, {
       req,
+      estimatedCost,
       onProgress: (progress) => {
         // Send progress updates
         res.write(`data: ${JSON.stringify({
@@ -599,7 +644,12 @@ app.post('/api/generate-stream', async (req, res) => {
     }
 
     res.end();
+    
+    // Restore original console methods
+    Object.assign(console, originalConsole);
   } catch (error) {
+    // Restore original console methods
+    Object.assign(console, originalConsole);
     console.error('Generate stream error:', error);
     res.status(500).end();
   }
