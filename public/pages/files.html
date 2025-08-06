@@ -63,6 +63,7 @@
     <template x-for="file in currentFiles" :key="file.name">
       <div class="card-interactive" 
            :class="file.isDirectory ? 'cursor-pointer' : ''"
+           :data-filename="file.name"
            @click="file.isDirectory && navigateToFolder(file)">
         <div class="card-body">
           <div class="flex items-center gap-s">

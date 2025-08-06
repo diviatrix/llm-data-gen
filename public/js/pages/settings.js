@@ -11,7 +11,7 @@ export function settingsPage() {
     isLoading: false,
     isSaving: false,
     isDeleting: false,
-    
+
     // System API Key state (for admin)
     hasSystemApiKey: false,
     systemApiKey: '',
@@ -20,24 +20,25 @@ export function settingsPage() {
     isSavingSystemKey: false,
     isDeletingSystemKey: false,
 
+    // Password change state
+    showPasswordForm: false,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    isChangingPassword: false,
+
     // Initialize
     async init() {
       await this.checkApiKey();
-      // Check system API key if admin in local mode
-      if (this.$root?.isAdmin && !this.$root?.isCloud) {
+      // Check system API key if admin
+      if (this.$root?.isAdmin) {
         await this.checkSystemApiKey();
       }
     },
 
     // Check if user has API key
     async checkApiKey() {
-      // Skip for admin in local mode - they don't have user auth
-      if (this.$root?.isAdmin && !this.$root?.isCloud) {
-        this.isLoading = false;
-        this.hasApiKey = false; // Admin uses system key, not personal
-        return;
-      }
-      
+
       try {
         this.isLoading = true;
         const response = await api.get('/user/api-key');
@@ -165,6 +166,64 @@ export function settingsPage() {
         notify.error('Failed to delete system API key: ' + error.message);
       } finally {
         this.isDeletingSystemKey = false;
+      }
+    },
+
+    // Password change methods
+    canChangePassword() {
+      return this.currentPassword && 
+             this.newPassword && 
+             this.newPassword.length >= 4 &&
+             this.newPassword === this.confirmPassword;
+    },
+
+    focusNewPassword() {
+      this.$nextTick(() => {
+        this.$refs.newPasswordInput?.focus();
+      });
+    },
+
+    focusConfirmPassword() {
+      this.$nextTick(() => {
+        this.$refs.confirmPasswordInput?.focus();
+      });
+    },
+
+    cancelPasswordChange() {
+      this.showPasswordForm = false;
+      this.currentPassword = '';
+      this.newPassword = '';
+      this.confirmPassword = '';
+    },
+
+    async changePassword() {
+      if (!this.canChangePassword()) {
+        return;
+      }
+
+      try {
+        this.isChangingPassword = true;
+        
+        const response = await api.post('/auth/change-password', {
+          email: this.$root.user.email,
+          currentPassword: this.currentPassword,
+          newPassword: this.newPassword
+        });
+
+        if (response.success) {
+          notify.success('Password changed successfully');
+          this.cancelPasswordChange();
+        } else {
+          throw new Error(response.error || 'Failed to change password');
+        }
+      } catch (error) {
+        if (error.message.includes('Invalid credentials')) {
+          notify.error('Current password is incorrect');
+        } else {
+          notify.error('Failed to change password: ' + error.message);
+        }
+      } finally {
+        this.isChangingPassword = false;
       }
     }
   };

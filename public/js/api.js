@@ -1,12 +1,13 @@
-// API Client
 class APIClient {
   constructor() {
     this.baseURL = '/api';
     this.token = localStorage.getItem('token');
-    this.isCloud = null; // Will be set by checkMode
   }
 
   async request(method, path, data) {
+    // Always check localStorage for current token
+    this.token = localStorage.getItem('token');
+    
     const options = {
       method,
       headers: {
@@ -22,33 +23,36 @@ class APIClient {
       options.body = JSON.stringify(data);
     }
 
-    try {
-      const response = await fetch(this.baseURL + path, options);
+    const response = await fetch(path.startsWith('/api') ? path : this.baseURL + path, options);
+    
+    // Check if response is JSON or text based on content-type
+    const contentType = response.headers.get('content-type');
+    let result;
+    
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      // For non-JSON responses, get text and wrap in success object
+      const text = await response.text();
+      result = { success: response.ok, content: text };
+    }
 
-      if (response.status === 401) {
-        // Only redirect to login in cloud mode
-        // Skip redirect for /mode endpoint to avoid infinite loop
-        if (this.isCloud !== false && path !== '/mode') {
-          localStorage.removeItem('token');
-          window.location.href = '/login.html';
-          return;
-        }
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Create error with response data
-        const error = new Error(result.error || 'Request failed');
-        error.response = { data: result };
-        throw error;
-      }
-
-      return result;
-    } catch (error) {
-      console.error('API Error:', error);
+    if (!response.ok) {
+      // Log errors with details for debugging
+      console.error(`API Error [${response.status}] ${method} ${path}:`, {
+        status: response.status,
+        error: result.error || result.content,
+        response: result,
+        token: this.token ? 'present' : 'missing'
+      });
+      
+      const error = new Error(result.error || result.content || 'Request failed');
+      error.status = response.status;
+      error.response = result;
       throw error;
     }
+
+    return result;
   }
 
   get(path) {

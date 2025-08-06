@@ -71,9 +71,14 @@
         </div>
       </div>
       
-      <!-- Text Viewer -->
-      <div x-show="fileType === 'text'">
-        <pre class="code-block overflow-auto max-h-[600px]" x-text="content"></pre>
+      <!-- Code Viewer with Syntax Highlighting -->
+      <div x-show="['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text'].includes(fileType)">
+        <div class="mb-s">
+          <span class="text-sm text-gray-500">Language: </span>
+          <span class="text-sm font-medium" x-text="getSyntaxLanguage()"></span>
+        </div>
+        <pre class="code-block overflow-auto max-h-[600px] bg-gray-50 p-m rounded border" 
+             :class="`language-${getSyntaxLanguage()}`"><code x-text="content"></code></pre>
       </div>
       
       <!-- Markdown Viewer -->
@@ -81,8 +86,8 @@
         <div x-html="renderMarkdownContent(content)"></div>
       </div>
       
-      <!-- Other File Types -->
-      <div x-show="!['json', 'text', 'markdown'].includes(fileType)" class="text-center py-8">
+      <!-- Unknown File Types -->
+      <div x-show="!['json', 'javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text', 'markdown'].includes(fileType)" class="text-center py-8">
         <p class="text-gray-600">Preview not available for this file type.</p>
         <button @click="downloadFile()" class="btn btn-primary mt-4">
           Download File

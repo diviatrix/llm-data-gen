@@ -161,12 +161,28 @@ Response:
     {
       "id": "openai/gpt-4",
       "name": "GPT-4",
+      "description": "GPT-4 by OpenAI",
       "context_length": 8192,
       "pricing": {
         "prompt": 0.00003,
-        "completion": 0.00006
+        "completion": 0.00006,
+        "request": 0,
+        "image": 0
       },
-      "top_provider": "OpenAI",
+      "top_provider": {
+        "context_length": 8192,
+        "max_completion_tokens": null,
+        "is_moderated": false
+      },
+      "per_request_limits": null,
+      "created": 1712361441,
+      "architectures": {
+        "moe": false,
+        "instruct": false
+      },
+      "max_completion_tokens": null,
+      "supported_modalities": ["text"],
+      "input_modalities": ["text"],
       "supports_web_search": true,
       "has_native_web_search": false,
       "web_search_pricing": {
@@ -241,12 +257,15 @@ Response:
 #### Generate Data with Streaming (Server-Sent Events)
 `POST /api/generate-stream`
 
+Generates data with real-time streaming of progress and console output.
+
 Request:
 ```json
 {
   "config": {
     /* same as POST /api/generate request body */
-  }
+  },
+  "estimatedCost": 0.05  // Optional, pre-calculated cost estimate
 }
 ```
 
@@ -255,7 +274,7 @@ Response: Server-Sent Events stream
 Event types:
 ```javascript
 // Start event
-data: {"type": "start"}
+data: {"type": "start", "message": "Starting generation..."}
 
 // Progress event
 data: {
@@ -266,6 +285,12 @@ data: {
     "percentage": 30,
     "currentItem": "products"
   }
+}
+
+// Console output event
+data: {
+  "type": "console",
+  "output": "Generating item 3/10..."
 }
 
 // Complete event
@@ -309,6 +334,15 @@ Response:
 
 Form data:
 - `result`: JSON file
+
+Response:
+```json
+{
+  "success": true,
+  "results": [ /* parsed results */ ],
+  "filename": "results.json"
+}
+```
 
 #### Get Example Configurations
 `GET /api/examples`
@@ -355,18 +389,6 @@ Response:
   "success": true,
   "filename": "my-config.json",
   "content": { /* config content */ }
-}
-```
-
-#### Get Configuration File
-`GET /api/config-file/:filename`
-
-Response:
-```json
-{
-  "success": true,
-  "filename": "my-config.json",
-  "content": { /* config object */ }
 }
 ```
 
@@ -448,6 +470,19 @@ For JSON files, returns:
 
 For non-JSON files, downloads the file directly.
 
+#### Delete Result File
+`DELETE /api/result-file/*`
+
+Deletes a file from the output directory.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "File deleted successfully"
+}
+```
+
 ### Chat
 
 #### Send Chat Message
@@ -512,14 +547,49 @@ All endpoints return errors in the following format:
 {
   "success": false,
   "error": "Error message",
-  "code": "ERROR_CODE" // optional
+  "code": "ERROR_CODE", // optional
+  "isTemporary": true, // for 503 errors
+  "isAuthError": true, // for 401 errors
+  "needsApiKey": true  // when API key is missing
 }
 ```
 
 Common HTTP status codes:
 - `400` - Bad Request (invalid input)
-- `401` - Unauthorized (missing/invalid auth)
+- `401` - Unauthorized (missing/invalid auth) - includes `isAuthError: true`
 - `403` - Forbidden (insufficient permissions)
 - `404` - Not Found
 - `500` - Internal Server Error
-- `503` - Service Unavailable (temporary issue)
+- `503` - Service Unavailable (temporary issue) - includes `isTemporary: true`
+
+### Special Error Handling
+
+#### Chat Endpoint Errors
+The `/api/chat` endpoint includes additional error flags:
+- `needsApiKey: true` - When API key is not configured
+- `isAuthError: true` - For authentication-related errors (401)
+- `isTemporary: true` - For temporary service issues (503)
+
+## Security & Limits
+
+### File Upload Limits
+- Maximum file size: 10MB (configurable via `express.json()` middleware)
+- Supported file types: JSON for configuration and result uploads
+
+### API Key Validation
+- OpenRouter API keys must start with "sk-"
+- Keys are stored securely in user-specific directories
+- Invalid keys return appropriate error messages
+
+### Path Security
+- Directory traversal protection on all file operations
+- Files are restricted to user-specific directories in multi-tenant mode
+- Absolute paths are resolved and validated before access
+
+## Non-API Routes
+
+### Web Interface
+- `GET /` - Main dashboard (serves `public/index.html`)
+- `GET /chat` - Chat interface (serves `public/chat.html`)
+
+These routes serve the web UI and are not part of the REST API.

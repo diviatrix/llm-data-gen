@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfigManager } from '../../../lib/configManager.js';
-import { UserPaths } from '../../../lib/userPaths.js';
+import { UserStorage } from '../../../lib/userStorage.js';
 import { readJsonFile, writeJsonFile } from '../../../lib/utils/fileIO.js';
 import { ConfigError, ValidationError } from '../../../lib/utils/errors.js';
 import path from 'path';
 
-vi.mock('../../../lib/userPaths.js');
+vi.mock('../../../lib/userStorage.js', () => ({
+  UserStorage: {
+    getUserConfigsDir: vi.fn(() => path.sep + path.join('test', 'user', 'configs')),
+    getUserOutputDir: vi.fn(() => path.sep + path.join('test', 'user', 'output'))
+  }
+}));
 vi.mock('../../../lib/utils/fileIO.js');
 
 describe('ConfigManager', () => {
@@ -68,12 +73,13 @@ describe('ConfigManager', () => {
         schema: { type: 'object' },
         output: { format: 'json' }
       };
-      vi.mocked(UserPaths.findConfigFile).mockResolvedValue('/user/configs/default.json');
       vi.mocked(readJsonFile).mockResolvedValue(mockConfig);
 
       const result = await configManager.loadDefaultConfig();
 
-      expect(UserPaths.findConfigFile).toHaveBeenCalledWith('default.json');
+      expect(readJsonFile).toHaveBeenCalledWith(
+        path.join(path.sep + path.join('test', 'user', 'configs'), 'default.json')
+      );
       expect(result).toEqual(mockConfig);
     });
 
@@ -82,8 +88,9 @@ describe('ConfigManager', () => {
         schema: { type: 'object' },
         output: { format: 'json' }
       };
-      vi.mocked(UserPaths.findConfigFile).mockRejectedValue(new Error('Not found'));
-      vi.mocked(readJsonFile).mockResolvedValue(mockConfig);
+      vi.mocked(readJsonFile)
+        .mockRejectedValueOnce(new Error('Not found'))
+        .mockResolvedValueOnce(mockConfig);
 
       const result = await configManager.loadDefaultConfig();
 
@@ -92,7 +99,6 @@ describe('ConfigManager', () => {
     });
 
     it('should return minimal config if all defaults fail', async () => {
-      vi.mocked(UserPaths.findConfigFile).mockRejectedValue(new Error('Not found'));
       vi.mocked(readJsonFile).mockRejectedValue(new Error('Not found'));
 
       const result = await configManager.loadDefaultConfig();

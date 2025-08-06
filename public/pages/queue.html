@@ -3,81 +3,201 @@
   <div class="mb-m">
     <div class="action-row">
       <div>
-        <h2 class="text-2xl font-semibold">Generation Queue</h2>
-        <p class="text-gray-600 mt-s">Monitor and manage ongoing data generation tasks</p>
+        <h2 class="text-2xl font-semibold">Generation History</h2>
+        <p class="text-gray-600 mt-s">View completed data generation tasks</p>
       </div>
-      <a href="#/files" class="btn btn-secondary">View Results</a>
+      <a href="#/generate" class="btn btn-primary">New Generation</a>
     </div>
   </div>
 
-
-  <!-- No active generations message -->
-  <div x-show="activeGenerations.length === 0" class="empty-state">
-    <p class="text-gray-600">No active generation tasks</p>
-    <a href="#/generate" class="btn btn-primary mt-m">Start New Generation</a>
+  <!-- Tabs -->
+  <div class="flex gap-s mb-m">
+    <button @click="activeTab = 'active'" 
+            :class="activeTab === 'active' ? 'btn btn-primary' : 'btn btn-ghost'"
+            class="btn-sm">
+      Active <span x-show="activeGenerations.length > 0" class="ml-1">(<span x-text="activeGenerations.length"></span>)</span>
+    </button>
+    <button @click="activeTab = 'completed'" 
+            :class="activeTab === 'completed' ? 'btn btn-primary' : 'btn btn-ghost'"
+            class="btn-sm">
+      Completed <span x-show="completedGenerations.length > 0" class="ml-1">(<span x-text="completedGenerations.length"></span>)</span>
+    </button>
   </div>
 
-  <!-- Active generations list -->
-  <div x-show="activeGenerations.length > 0" class="stack-m">
-    <template x-for="(generation, index) in activeGenerations" :key="generation.id">
-      <div class="card">
-        <div class="card-body">
-          <!-- Header with config name and status -->
-          <div class="action-row mb-m">
-            <div>
-              <h3 class="text-lg font-semibold" x-text="generation.configName"></h3>
-              <p class="meta-text">Started <span x-text="formatTime(generation.startTime)"></span></p>
-            </div>
-            <span class="badge" 
-                  :class="generation.status === 'completed' ? 'badge-success' : generation.status === 'failed' ? 'badge-secondary' : 'badge-primary'">
-              <span x-text="generation.status"></span>
-            </span>
-          </div>
+  <!-- Active Tab -->
+  <div x-show="activeTab === 'active'">
+    <!-- No active generations message -->
+    <div x-show="activeGenerations.length === 0" class="empty-state">
+      <p class="text-gray-600">No active generation tasks</p>
+      <a href="#/generate" class="btn btn-primary mt-m">Start New Generation</a>
+    </div>
 
-          <!-- Logs -->
-          <div class="mb-m">
-            <h4 class="text-sm font-medium text-gray-700 mb-s">Activity Log</h4>
-            <div class="bg-gray-50 rounded p-m max-h-64 overflow-y-auto font-mono text-xs" 
-                 x-ref="logContainer" 
-                 x-effect="$refs.logContainer && ($refs.logContainer.scrollTop = $refs.logContainer.scrollHeight)">
-              <template x-if="generation.logs && generation.logs.length > 0">
-                <div class="stack-s">
-                  <template x-for="log in generation.logs" :key="log.time + log.message">
-                    <div class="flex gap-s text-xs">
-                      <span class="text-gray-500 whitespace-nowrap" x-text="log.time"></span>
-                      <span :class="{
-                        'text-green-600': log.level === 'success',
-                        'text-blue-600': log.level === 'info' || log.level === 'section',
-                        'text-gray-600': log.level === 'debug' || log.level === 'log',
-                        'text-yellow-600': log.level === 'warn',
-                        'text-red-600': log.level === 'error',
-                        'text-gray-700': !log.level
-                      }" x-text="log.message"></span>
-                    </div>
-                  </template>
-                </div>
-              </template>
-              <template x-if="!generation.logs || generation.logs.length === 0">
-                <div class="text-gray-500">Waiting for logs...</div>
-              </template>
+    <!-- Active generations list -->
+    <div x-show="activeGenerations.length > 0" class="stack-m">
+      <template x-for="(generation, index) in activeGenerations" :key="generation.id">
+        <div class="card">
+          <div class="card-body">
+            <!-- Header with config name and status -->
+            <div class="action-row mb-m">
+              <div>
+                <h3 class="text-lg font-semibold" x-text="generation.configName"></h3>
+                <p class="meta-text">Started <span x-text="formatTime(generation.startTime)"></span></p>
+              </div>
+              <span class="badge badge-primary">Running</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="mb-m">
+              <div class="flex justify-between text-sm mb-s">
+                <span>Progress</span>
+                <span><span x-text="generation.progress || 0"></span>%</span>
+              </div>
+              <div class="bg-gray-200 rounded-full h-2">
+                <div class="bg-primary rounded-full h-2 transition-all" 
+                     :style="`width: ${generation.progress || 0}%`"></div>
+              </div>
+            </div>
+
+            <!-- Logs -->
+            <div class="mb-m">
+              <h4 class="text-sm font-medium text-gray-700 mb-s">Activity Log</h4>
+              <div class="bg-gray-50 rounded p-m max-h-64 overflow-y-auto font-mono text-xs">
+                <template x-if="generation.logs && generation.logs.length > 0">
+                  <div class="stack-s">
+                    <template x-for="log in generation.logs" :key="log.time + log.message">
+                      <div class="text-xs" x-text="log.message"></div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end">
+              <button @click="cancelGeneration(generation.id)" 
+                      class="btn btn-secondary btn-sm">
+                ❌ Cancel
+              </button>
             </div>
           </div>
-
-          <!-- Model and cost info -->
-          <div class="grid-2 gap-m text-sm">
-            <div>
-              <div class="meta-text">Model</div>
-              <div class="font-medium" x-text="generation.model"></div>
-            </div>
-            <div>
-              <div class="meta-text">Estimated Cost</div>
-              <div class="font-medium">$<span x-text="generation.estimatedCost"></span></div>
-            </div>
-          </div>
-
         </div>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 
+  <!-- Completed Tab -->
+  <div x-show="activeTab === 'completed'">
+    <!-- No completed generations message -->
+    <div x-show="completedGenerations.length === 0" class="empty-state">
+      <p class="text-gray-600">No completed generations yet</p>
+      <a href="#/generate" class="btn btn-primary mt-m">Start Your First Generation</a>
+    </div>
+
+    <!-- Completed generations list -->
+    <div x-show="completedGenerations.length > 0" class="stack-m">
+      <template x-for="generation in completedGenerations" :key="generation.id">
+        <div class="card hover-card">
+          <div class="card-body">
+            <!-- Header -->
+            <div class="action-row mb-m">
+              <div>
+                <h3 class="text-lg font-semibold" x-text="generation.config_name || 'Unnamed Generation'"></h3>
+                <div class="flex items-center gap-m text-sm text-gray-600 mt-s">
+                  <span>🤖 <span x-text="generation.model"></span></span>
+                  <span>•</span>
+                  <span x-text="formatDate(generation.completed_at || generation.started_at)"></span>
+                </div>
+              </div>
+              <span class="badge" 
+                    :class="generation.status === 'completed' ? 'badge-success' : 
+                           generation.status === 'completed_with_errors' ? 'badge-warning' : 
+                           'badge-secondary'">
+                <span x-text="formatStatus(generation.status)"></span>
+              </span>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid-4 gap-m mb-m">
+              <div>
+                <div class="text-xs text-gray-500">Items Generated</div>
+                <div class="font-semibold text-lg">
+                  <span x-text="generation.items_generated || 0"></span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Total Cost</div>
+                <div class="font-semibold text-lg">
+                  $<span x-text="(generation.total_cost || 0).toFixed(4)"></span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Tokens Used</div>
+                <div class="font-semibold text-lg">
+                  <span x-text="(generation.total_tokens || 0).toLocaleString()"></span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Duration</div>
+                <div class="font-semibold text-lg">
+                  <span x-text="generation.metadata?.duration || '0'"></span>s
+                </div>
+              </div>
+            </div>
+
+            <!-- Token breakdown -->
+            <div x-show="generation.prompt_tokens || generation.completion_tokens" 
+                 class="text-xs text-gray-600 mb-m">
+              <span x-show="generation.prompt_tokens">
+                📝 <span x-text="(generation.prompt_tokens || 0).toLocaleString()"></span> prompt tokens
+              </span>
+              <span x-show="generation.prompt_tokens && generation.completion_tokens" class="mx-1">•</span>
+              <span x-show="generation.completion_tokens">
+                ✨ <span x-text="(generation.completion_tokens || 0).toLocaleString()"></span> completion tokens
+              </span>
+            </div>
+
+            <!-- Errors -->
+            <div x-show="generation.errors && generation.errors.length > 0" 
+                 class="alert alert-warning mb-m">
+              <div class="font-medium mb-s">⚠️ Generation completed with errors:</div>
+              <ul class="list-disc list-inside text-sm">
+                <template x-for="error in generation.errors.slice(0, 3)" :key="error">
+                  <li x-text="error"></li>
+                </template>
+              </ul>
+              <div x-show="generation.errors.length > 3" class="text-sm mt-s">
+                ... and <span x-text="generation.errors.length - 3"></span> more
+              </div>
+            </div>
+
+            <!-- Output Files -->
+            <div x-show="generation.outputFiles && generation.outputFiles.length > 0" class="mb-m">
+              <div class="text-sm font-medium text-gray-700 mb-s">Output Files:</div>
+              <div class="flex flex-wrap gap-s">
+                <template x-for="file in generation.outputFiles" :key="file">
+                  <a @click.prevent="navigateToFile(file)" 
+                     href="#" 
+                     class="badge badge-secondary hover:bg-gray-200 cursor-pointer">
+                    📄 <span x-text="file"></span>
+                  </a>
+                </template>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end gap-s">
+              <button @click="deleteGeneration(generation.id)" 
+                      class="btn btn-ghost btn-sm text-red-600 hover:bg-red-50">
+                🗑️ Delete
+              </button>
+              <a href="#/files" class="btn btn-ghost btn-sm">View Files</a>
+              <button @click="rerunGeneration(generation)" class="btn btn-primary btn-sm">
+                🔄 Run Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
 </div>

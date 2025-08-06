@@ -48,6 +48,7 @@
           <tr class="border-b">
             <th class="text-left p-m">ID</th>
             <th class="text-left p-m">Email</th>
+            <th class="text-left p-m">Role</th>
             <th class="text-left p-m">Status</th>
             <th class="text-left p-m">Created</th>
             <th class="text-left p-m">Actions</th>
@@ -59,12 +60,18 @@
               <td class="p-m font-mono text-sm" x-text="user.id"></td>
               <td class="p-m" x-text="user.email"></td>
               <td class="p-m">
+                <span class="badge badge-primary" x-text="user.role_name || 'user'"></span>
+              </td>
+              <td class="p-m">
                 <span class="badge" :class="user.is_active ? 'badge-success' : 'badge-secondary'"
                       x-text="user.is_active ? 'Active' : 'Inactive'"></span>
               </td>
               <td class="p-m meta-text" x-text="formatDate(user.created_at)"></td>
               <td class="p-m">
                 <div class="flex gap-s">
+                  <button @click="showChangeRole(user)" class="btn btn-ghost btn-sm">
+                    👤 Change Role
+                  </button>
                   <button @click="toggleUserStatus(user)" 
                           class="btn btn-ghost btn-sm"
                           :class="user.is_active ? 'text-warning' : 'text-success'">
@@ -141,6 +148,40 @@
           </button>
           <button type="submit" class="btn btn-primary">
             Reset Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Role Modal -->
+  <div x-show="showRoleModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold">Change User Role</h3>
+        <button @click="showRoleModal = false" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+      <form @submit.prevent="changeUserRole">
+        <div class="modal-body stack">
+          <div>
+            <label>User</label>
+            <input type="text" :value="selectedUser?.email" readonly class="form-input bg-gray-100">
+          </div>
+          <div>
+            <label>Role</label>
+            <select x-model="roleChangeData.roleId" class="form-input" required>
+              <template x-for="role in roles" :key="role.id">
+                <option :value="role.id" x-text="role.name"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showRoleModal = false" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Update Role
           </button>
         </div>
       </form>

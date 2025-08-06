@@ -9,9 +9,7 @@
   <div class="card">
     <div class="card-header">
       <h3 class="text-lg font-semibold">
-        <span x-show="$root.isCloud">Personal API Key</span>
-        <span x-show="!$root.isCloud && !$root.isAdmin">Personal API Key</span>
-        <span x-show="!$root.isCloud && $root.isAdmin">Admin Personal API Key</span>
+        <span>Personal API Key</span>
       </h3>
     </div>
     <div class="card-body">
@@ -66,7 +64,7 @@
                      @keyup.enter="saveApiKey()"
                      placeholder="sk-or-..." 
                      class="form-input">
-              <p class="text-xs text-gray-500 mt-s" x-text="$root.isCloud ? 'Your API key will be securely stored' : 'This API key will be used system-wide for all users'"></p>
+              <p class="text-xs text-gray-500 mt-s">Your API key will be securely stored</p>
             </div>
             
             <div class="flex gap-s">
@@ -89,7 +87,7 @@
   </div>
   
   <!-- System API Key Section (Admin only) -->
-  <div class="card" x-show="$root.isAdmin && !$root.isCloud">
+  <div class="card" x-show="$root.isAdmin">
     <div class="card-header">
       <h3 class="text-lg font-semibold">System API Key <span class="text-sm font-normal text-gray-600">(Admin Only)</span></h3>
     </div>
@@ -176,6 +174,74 @@
           <span class="ml-s font-medium">
             $<span x-text="$root.accountInfo?.usage"></span> / $<span x-text="$root.accountInfo?.limit"></span>
           </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Section -->
+  <div class="card" x-show="$root.user">
+    <div class="card-header">
+      <h3 class="text-lg font-semibold">Change Password</h3>
+    </div>
+    <div class="card-body">
+      <div x-show="!showPasswordForm">
+        <p class="meta-text mb-m">
+          Update your account password. For security, you'll need to enter your current password.
+        </p>
+        <button @click="showPasswordForm = true" class="btn btn-secondary">
+          Change Password
+        </button>
+      </div>
+      
+      <div x-show="showPasswordForm" class="space-y-m">
+        <div>
+          <label class="form-label">Current Password</label>
+          <input type="password" 
+                 x-model="currentPassword" 
+                 @keyup.enter="focusNewPassword()"
+                 placeholder="Enter current password" 
+                 class="form-input">
+        </div>
+        
+        <div>
+          <label class="form-label">New Password</label>
+          <input type="password" 
+                 x-model="newPassword"
+                 x-ref="newPasswordInput"
+                 @keyup.enter="focusConfirmPassword()"
+                 placeholder="Enter new password (min 4 characters)" 
+                 class="form-input">
+          <p class="text-xs text-gray-500 mt-s" x-show="newPassword && newPassword.length < 4">
+            Password must be at least 4 characters long
+          </p>
+        </div>
+        
+        <div>
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" 
+                 x-model="confirmPassword"
+                 x-ref="confirmPasswordInput"
+                 @keyup.enter="changePassword()"
+                 placeholder="Confirm new password" 
+                 class="form-input">
+          <p class="text-xs text-red-500 mt-s" x-show="confirmPassword && newPassword !== confirmPassword">
+            Passwords do not match
+          </p>
+        </div>
+        
+        <div class="flex gap-s">
+          <button @click="changePassword()" 
+                  :disabled="!canChangePassword() || isChangingPassword"
+                  class="btn btn-primary">
+            <span x-show="!isChangingPassword">Change Password</span>
+            <span x-show="isChangingPassword">Changing...</span>
+          </button>
+          <button @click="cancelPasswordChange()" 
+                  :disabled="isChangingPassword"
+                  class="btn btn-ghost">
+            Cancel
+          </button>
         </div>
       </div>
     </div>

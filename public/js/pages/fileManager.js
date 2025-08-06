@@ -17,18 +17,51 @@ export function fileManagerPage() {
     // Initialize
     async init() {
       const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-      this.activeTab = params.get('tab') || 'configs';
-      const path = params.get('path') || '';
-
-      if (this.activeTab === 'configs') {
-        this.configPath = path;
-        this.currentPath = this.configPath;
-      } else {
-        this.resultPath = path;
+      
+      // Check if navigating from queue with specific parameters
+      const tab = params.get('tab');
+      const path = params.get('path');
+      const file = params.get('file');
+      
+      if (tab === 'results') {
+        // Navigate to results tab with specific directory
+        this.activeTab = 'results';
+        this.resultPath = path || '';
         this.currentPath = this.resultPath;
+        
+        // Store the file to highlight after loading
+        this.highlightFile = file;
+      } else {
+        // Normal navigation
+        this.activeTab = params.get('tab') || 'configs';
+        const path = params.get('path') || '';
+
+        if (this.activeTab === 'configs') {
+          this.configPath = path;
+          this.currentPath = this.configPath;
+        } else {
+          this.resultPath = path;
+          this.currentPath = this.resultPath;
+        }
       }
 
       await this.loadFiles();
+      
+      // Highlight and scroll to file if specified
+      if (this.highlightFile) {
+        this.$nextTick(() => {
+          const fileElement = document.querySelector(`[data-filename="${this.highlightFile}"]`);
+          if (fileElement) {
+            fileElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+            fileElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+              fileElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+            }, 3000);
+          }
+        });
+      }
     },
 
     // Load files based on active tab

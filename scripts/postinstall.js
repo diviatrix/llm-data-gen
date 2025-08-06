@@ -1,23 +1,20 @@
 #!/usr/bin/env node
-import { UserPaths } from '../lib/userPaths.js';
+import { UserStorage } from '../lib/userStorage.js';
 import chalk from 'chalk';
 
 async function postInstall() {
   console.log(chalk.blue('\n🚀 Setting up LLM Data Generator...'));
 
   try {
-    // Create user directories
-    await UserPaths.ensureUserDirs();
-    console.log(chalk.green('✓ Created user directories in Documents/llmdatagen'));
+    // Ensure base directory exists
+    await UserStorage.ensureBaseDir();
+    
+    // Create user directories for CLI/local mode (user-0)
+    await UserStorage.ensureUserStructure(0);
+    console.log(chalk.green('✓ Created user directories in user-data/user-0'));
 
-    // Copy system configs
-    const copied = await UserPaths.copySystemConfigs();
-    if (copied) {
-      console.log(chalk.green('✓ Copied example configurations'));
-    }
-
-    console.log(chalk.cyan(`\n📁 Your configurations are stored in: ${UserPaths.getUserConfigsDir()}`));
-    console.log(chalk.cyan(`📁 Generated files will be saved to: ${UserPaths.getUserOutputDir()}`));
+    console.log(chalk.cyan(`\n📁 Your configurations are stored in: ${UserStorage.getUserConfigsDir(0)}`));
+    console.log(chalk.cyan(`📁 Generated files will be saved to: ${UserStorage.getUserOutputDir(0)}`));
     console.log(chalk.green('\n✨ Setup complete! Run "llmdatagen" to start generating data.\n'));
   } catch (error) {
     console.error(chalk.red('\n❌ Setup failed:'), error.message);

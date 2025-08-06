@@ -4,6 +4,7 @@ import { notify } from '../utils/notifications.js';
 export function adminPage() {
   return {
     users: [],
+    roles: [],
     stats: {
       total: 0,
       active: 0,
@@ -12,6 +13,7 @@ export function adminPage() {
     isLoading: false,
     showCreateModal: false,
     showResetModal: false,
+    showRoleModal: false,
     selectedUser: null,
     newUser: {
       email: '',
@@ -20,9 +22,27 @@ export function adminPage() {
     resetPasswordData: {
       newPassword: ''
     },
+    roleChangeData: {
+      userId: null,
+      roleId: null
+    },
 
     async init() {
-      await this.loadUsers();
+      await Promise.all([
+        this.loadUsers(),
+        this.loadRoles()
+      ]);
+    },
+
+    async loadRoles() {
+      try {
+        const response = await api.get('/roles');
+        if (response.success) {
+          this.roles = response.roles;
+        }
+      } catch (error) {
+        notify.error('Failed to load roles');
+      }
     },
 
     async loadUsers() {
@@ -118,6 +138,29 @@ export function adminPage() {
     formatDate(dateString) {
       if (!dateString) return 'N/A';
       return new Date(dateString).toLocaleDateString();
+    },
+
+    showChangeRole(user) {
+      this.selectedUser = user;
+      this.roleChangeData.userId = user.id;
+      this.roleChangeData.roleId = user.role_id;
+      this.showRoleModal = true;
+    },
+
+    async changeUserRole() {
+      try {
+        const response = await api.put(`/admin/users/${this.roleChangeData.userId}/role`, {
+          roleId: parseInt(this.roleChangeData.roleId)
+        });
+
+        if (response.success) {
+          notify.success('User role updated');
+          this.showRoleModal = false;
+          await this.loadUsers();
+        }
+      } catch (error) {
+        notify.error('Failed to update user role');
+      }
     }
   };
 }

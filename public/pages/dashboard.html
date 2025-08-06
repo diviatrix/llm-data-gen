@@ -13,7 +13,7 @@
 </div>
 
 <!-- API Configuration -->
-<div class="section-spacing card card-body" x-show="!isAdmin && isCloud" x-data="apiKeyConfig">
+<div class="section-spacing card card-body" x-show="!hasApiKey" x-data="apiKeyConfig">
     <h3 class="card-title mb-4">🔑 API Configuration</h3>
     <div x-show="!hasApiKey" class="form-group">
         <div class="alert alert-warning">

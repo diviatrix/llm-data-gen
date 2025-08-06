@@ -44,11 +44,14 @@ document.addEventListener('alpine:init', () => {
     loading: true,
     currentRoute: '/',
     isAuthenticated: false,
-    isAdmin: false,
-    isCloud: false,
     user: null,
     accountInfo: null,
     hasApiKey: false,
+
+    // Computed properties
+    get isAdmin() {
+      return this.user?.role === 'admin';
+    },
 
     // Navigation items
     navigation: [
@@ -64,67 +67,32 @@ document.addEventListener('alpine:init', () => {
 
     // Initialize app
     async init() {
-      try {
-        // Check mode (local vs cloud)
-        await this.checkMode();
-
-        // Initialize auth
-        if (this.isCloud) {
-          const isAuth = await authStore.checkAuth();
-          if (!isAuth) {
-            window.location.href = '/login.html';
-            return;
-          }
-        } else {
-          // Local mode - set as authenticated admin
-          this.isAuthenticated = true;
-          this.isAdmin = true;
-          authStore.isAuthenticated = true;
-          authStore.isAdmin = true;
+      // Check for token
+      const isAuth = authStore.init();
+      
+      if (!isAuth) {
+        // No token - redirect to login
+        if (!window.location.pathname.includes('login')) {
+          window.location.href = '/login.html';
         }
-
-        // Set auth state
-        this.isAuthenticated = authStore.isAuthenticated;
-        this.user = authStore.user;
-
-        // Load account info
-        await this.loadAccountInfo();
-
-        // Check API key
-        await this.checkApiKey();
-
-        // Initialize router
-        router.init((route) => {
-          this.currentRoute = route;
-        });
-
-        // Hide loading
-        this.loading = false;
-
-      } catch (error) {
-        console.error('App initialization error:', error);
-        notify.error('Failed to initialize app');
-        this.loading = false;
+        return;
       }
-    },
 
-    // Check if running in cloud or local mode
-    async checkMode() {
-      try {
-        const response = await api.get('/mode');
-        this.isCloud = response.isCloud;
-        this.isAdmin = response.isAdmin;
-        authStore.isAdmin = response.isAdmin;
-        authStore.isCloud = response.isCloud;
-        // Set cloud mode in API client to handle auth properly
-        api.isCloud = response.isCloud;
-      } catch (error) {
-        console.error('Mode check failed:', error);
-        // Assume local mode if check fails
-        this.isCloud = false;
-        this.isAdmin = true;
-        api.isCloud = false;
-      }
+      // We have a token - set state and continue
+      this.isAuthenticated = true;
+      this.user = authStore.user;
+
+      // Load additional data (don't block on these)
+      this.loadAccountInfo();
+      this.checkApiKey();
+
+      // Initialize router
+      router.init((route) => {
+        this.currentRoute = route;
+      });
+
+      // Hide loading
+      this.loading = false;
     },
 
     // Load account info
@@ -133,31 +101,20 @@ document.addEventListener('alpine:init', () => {
         const response = await api.get('/account');
         if (response.success) {
           this.accountInfo = response.account;
-          // If we got account info, it means API key is configured
           this.hasApiKey = true;
         }
       } catch (error) {
-        if (error.response?.data?.needsApiKey) {
-          this.hasApiKey = false;
-        } else {
-          console.error('Failed to load account info:', error);
-        }
+        console.log('Account info error:', error.message);
       }
     },
 
     // Check if user has API key
     async checkApiKey() {
-      // Skip personal API key check for admin in local mode
-      if (!this.isCloud && this.isAdmin) {
-        // Admin in local mode doesn't need personal key, uses system key
-        return;
-      }
-      
       try {
         const response = await api.get('/user/api-key');
         this.hasApiKey = response.hasKey;
       } catch (error) {
-        console.error('Failed to check API key:', error);
+        console.log('API key check error:', error.message);
       }
     },
 
@@ -168,18 +125,8 @@ document.addEventListener('alpine:init', () => {
 
     // Logout
     async logout() {
-      try {
-        await authStore.logout();
-        if (this.isCloud) {
-          window.location.href = '/login.html';
-        } else {
-          notify.success('Logged out successfully');
-          this.isAuthenticated = false;
-          this.user = null;
-        }
-      } catch (error) {
-        notify.error('Logout failed');
-      }
+      authStore.logout();
+      window.location.href = '/login.html';
     }
   }));
 });

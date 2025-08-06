@@ -8,12 +8,16 @@ import { ConfigManager } from './lib/configManager.js';
 import { DataGenerator } from './lib/generator.js';
 import { readJsonFile } from './lib/utils/fileIO.js';
 import { createApiClient } from './lib/sessionManager.js';
-import { CloudUserPaths } from './lib/userManager.js';
-import { authManager } from './lib/auth.js';
+import { UserStorage } from './lib/userStorage.js';
+import { authManager as authManagerPromise } from './lib/auth.js';
+import { UserManager } from './lib/userManager.js';
 import fs from 'fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize authManager
+let authManager;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,68 +33,13 @@ app.use(express.json({ limit: '10mb' }));
 // Trust proxy to get real client IP
 app.set('trust proxy', true);
 
-// Helper function to check if IP is private
-function isPrivateIP(ip) {
-  const parts = ip.split('.').map(Number);
-  return (
-    (parts[0] === 10) || // 10.0.0.0/8
-    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) || // 172.16.0.0/12
-    (parts[0] === 192 && parts[1] === 168) || // 192.168.0.0/16
-    (parts[0] === 127) // 127.0.0.0/8 (loopback)
-  );
-}
-
-// Middleware to detect localhost vs cloud mode
-app.use((req, res, next) => {
-  const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1' || req.hostname === '::1';
-
-  // Get client IP
-  const clientIP = req.ip || req.connection.remoteAddress || '';
-  const cleanIP = clientIP.replace(/^::ffff:/, ''); // Remove IPv6 prefix if present
-
-  // Check for local network mode
-  const isLocalNetwork = process.env.LOCAL_NETWORK_MODE === 'true' &&
-    (isLocalhost || isPrivateIP(req.hostname) || isPrivateIP(cleanIP));
-
-  // Debug logging
-  if (process.env.LOCAL_NETWORK_MODE === 'true') {
-    console.log(`[Auth] Request from: hostname=${req.hostname}, ip=${cleanIP}, isLocalNetwork=${isLocalNetwork}`);
-  }
-
-  // Allow forcing cloud mode for testing
-  if (process.env.FORCE_CLOUD_MODE === 'true') {
-    req.isAdmin = false;
-    req.isCloud = true;
-  } else {
-    // Only localhost is admin (no password required)
-    req.isAdmin = isLocalhost;
-    // Everything else is cloud mode (requires authentication)
-    req.isCloud = !isLocalhost;
-  }
-
-  next();
-});
-
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mode detection endpoint (before auth middleware)
-app.get('/api/mode', (req, res) => {
-  res.json({
-    isCloud: req.isCloud,
-    isAdmin: req.isAdmin
-  });
-});
-
-// Auth middleware for cloud mode
+// Auth middleware - always required except for auth endpoints
 async function requireAuth(req, res, next) {
   // Skip auth for auth endpoints
   if (req.originalUrl.startsWith('/api/auth/')) {
-    return next();
-  }
-
-  // Skip auth for localhost/admin
-  if (req.isAdmin) {
     return next();
   }
 
@@ -103,7 +52,9 @@ async function requireAuth(req, res, next) {
   }
 
   try {
+    console.log('Validating token:', token);
     const session = await authManager.validateSession(token);
+    console.log('Session validation result:', session);
     if (!session) {
       return res.status(401).json({ success: false, error: 'Invalid or expired session' });
     }
@@ -131,12 +82,12 @@ async function requireAuth(req, res, next) {
   }
 }
 
-// Apply auth middleware to all API routes in cloud mode
+// Apply auth middleware to all API routes
 app.use('/api/*', requireAuth);
 
-// Helper function to get user-specific paths
-function getReqUserPaths(req) {
-  return CloudUserPaths.getPathsForRequest(req);
+// Helper function to get user ID from request
+function getUserId(req) {
+  return req.user?.userId || 0;
 }
 
 const configManager = new ConfigManager();
@@ -157,6 +108,31 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ success: true, ...result });
   } catch (error) {
     res.status(401).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and password are required'
+      });
+    }
+
+    const result = await authManager.createUser(email, password);
+    res.json({ 
+      success: true, 
+      message: 'User registered successfully',
+      userId: result.userId 
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
       error: error.message
     });
@@ -249,9 +225,14 @@ app.post('/api/auth/change-password', async (req, res) => {
   }
 });
 
-// Admin endpoints (localhost only)
+// Helper to check if user has admin role
+function isAdmin(req) {
+  return req.user?.role === 'admin';
+}
+
+// Admin endpoints
 app.get('/api/admin/users', async (req, res) => {
-  if (!req.isAdmin) {
+  if (!isAdmin(req)) {
     return res.status(403).json({ success: false, error: 'Admin access only' });
   }
 
@@ -264,7 +245,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 app.post('/api/admin/users', async (req, res) => {
-  if (!req.isAdmin) {
+  if (!isAdmin(req)) {
     return res.status(403).json({ success: false, error: 'Admin access only' });
   }
 
@@ -281,8 +262,7 @@ app.post('/api/admin/users', async (req, res) => {
     const result = await authManager.createUser(email, password);
 
     // Initialize user directories
-    await CloudUserPaths.ensureUserDirs(result.userId);
-    await CloudUserPaths.copyDefaultConfigs(result.userId);
+    await UserStorage.ensureUserStructure(result.userId);
 
     res.json({ success: true, ...result });
   } catch (error) {
@@ -291,7 +271,7 @@ app.post('/api/admin/users', async (req, res) => {
 });
 
 app.put('/api/admin/users/:id/toggle', async (req, res) => {
-  if (!req.isAdmin) {
+  if (!isAdmin(req)) {
     return res.status(403).json({ success: false, error: 'Admin access only' });
   }
 
@@ -305,7 +285,7 @@ app.put('/api/admin/users/:id/toggle', async (req, res) => {
 });
 
 app.delete('/api/admin/users/:id', async (req, res) => {
-  if (!req.isAdmin) {
+  if (!isAdmin(req)) {
     return res.status(403).json({ success: false, error: 'Admin access only' });
   }
 
@@ -313,7 +293,8 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     const userId = parseInt(req.params.id);
 
     // Clean up user data
-    await CloudUserPaths.cleanupUserData(userId);
+    // TODO: Implement user data cleanup
+    // await UserStorage.cleanupUserData(userId);
 
     // Delete user from database
     await authManager.deleteUser(userId);
@@ -325,7 +306,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 });
 
 app.post('/api/admin/users/:id/reset-password', async (req, res) => {
-  if (!req.isAdmin) {
+  if (!isAdmin(req)) {
     return res.status(403).json({ success: false, error: 'Admin access only' });
   }
 
@@ -347,6 +328,40 @@ app.post('/api/admin/users/:id/reset-password', async (req, res) => {
   }
 });
 
+// Role management endpoints
+app.get('/api/roles', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ success: false, error: 'Admin access only' });
+  }
+
+  try {
+    const roles = await authManager.getRoles();
+    res.json({ success: true, roles });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/admin/users/:id/role', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ success: false, error: 'Admin access only' });
+  }
+
+  try {
+    const userId = parseInt(req.params.id);
+    const { roleId } = req.body;
+
+    if (!roleId) {
+      return res.status(400).json({ success: false, error: 'Role ID required' });
+    }
+
+    await authManager.updateUserRole(userId, roleId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });
@@ -356,7 +371,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/account', async (req, res) => {
   try {
     // For cloud users, require API key
-    if (req.isCloud && req.user && !req.userHasApiKey) {
+    if (req.user && !req.userHasApiKey) {
       return res.status(400).json({
         success: false,
         error: 'API key required',
@@ -499,7 +514,7 @@ app.post('/api/generate', async (req, res) => {
     }
 
     // For cloud users, check if they have an API key
-    if (req.isCloud && req.user) {
+    if (req.user) {
       if (!req.userHasApiKey) {
         return res.status(400).json({
           success: false,
@@ -530,11 +545,32 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+// Store active generation controllers
+const activeGenerations = new Map();
+
 // Generate data with streaming progress (Server-Sent Events)
 app.post('/api/generate-stream', async (req, res) => {
+  // Store original console methods
+  const originalConsole = {
+    log: console.log,
+    info: console.info,
+    debug: console.debug,
+    warn: console.warn,
+    error: console.error,
+    success: console.success,
+    section: console.section
+  };
+
+  const generationId = req.body.generationId || require('crypto').randomUUID();
+  const abortController = new AbortController();
+  
   try {
     // Get config from request body
     const { config, estimatedCost } = req.body;
+    const userId = getUserId(req);
+    
+    // Store controller for cancellation
+    activeGenerations.set(generationId, { abortController, userId });
 
     // Set SSE headers
     res.writeHead(200, {
@@ -544,11 +580,24 @@ app.post('/api/generate-stream', async (req, res) => {
       'Access-Control-Allow-Origin': '*'
     });
 
-    // Send initial event
-    res.write(`data: ${JSON.stringify({ type: 'start' })}\n\n`);
+    // Send initial event with generation ID
+    res.write(`data: ${JSON.stringify({ type: 'start', generationId })}\n\n`);
+    
+    // Create active generation in database
+    const auth = await authManagerPromise;
+    const logs = [];
+    await auth.createActiveGeneration({
+      id: generationId,
+      userId,
+      configName: config.meta?.name || 'Unnamed',
+      model: config.api?.model,
+      estimatedCost,
+      progressTotal: config.generation?.tasks?.reduce((sum, task) => sum + (task.count || 1), 0) || 0,
+      logs
+    });
 
     // For cloud users, check if they have an API key
-    if (req.isCloud && req.user) {
+    if (req.user) {
       if (!req.userHasApiKey) {
         res.write(`data: ${JSON.stringify({
           type: 'error',
@@ -559,55 +608,92 @@ app.post('/api/generate-stream', async (req, res) => {
       }
     }
 
-    // Create a custom logger that sends logs through SSE
-    const originalConsole = {
-      log: console.log,
-      info: console.info,
-      debug: console.debug,
-      warn: console.warn,
-      error: console.error,
-      success: console.success,
-      section: console.section
-    };
-    
+    // Create a custom logger that sends logs through SSE and saves to DB
+
     // Override console methods to capture logs
-    const captureLog = (level, args) => {
+    const captureLog = async (level, args) => {
       // Call original console method
       if (originalConsole[level]) {
         originalConsole[level].apply(console, args);
       }
-      
+
       // Send log through SSE
-      const message = args.map(arg => 
+      const message = args.map(arg =>
         typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
       ).join(' ');
-      
+
+      const logEntry = {
+        time: new Date().toISOString(),
+        level,
+        message
+      };
+
+      // Add to logs array
+      logs.push(logEntry);
+
+      // Update database with new logs
+      try {
+        await auth.updateActiveGeneration(generationId, { logs });
+      } catch (error) {
+        console.error('Failed to update logs:', error);
+      }
+
       res.write(`data: ${JSON.stringify({
         type: 'log',
         level: level,
         message: message,
-        timestamp: new Date().toISOString()
+        timestamp: logEntry.time
       })}\n\n`);
     };
-    
+
     // Temporarily override console methods
     const consoleOverrides = {
-      log: (...args) => captureLog('log', args),
-      info: (...args) => captureLog('info', args),
-      debug: (...args) => captureLog('debug', args),
-      warn: (...args) => captureLog('warn', args),
-      error: (...args) => captureLog('error', args),
-      success: (...args) => captureLog('success', args),
-      section: (...args) => captureLog('section', args)
+      log: (...args) => { captureLog('log', args).catch(console.error); },
+      info: (...args) => { captureLog('info', args).catch(console.error); },
+      debug: (...args) => { captureLog('debug', args).catch(console.error); },
+      warn: (...args) => { captureLog('warn', args).catch(console.error); },
+      error: (...args) => { captureLog('error', args).catch(console.error); },
+      success: (...args) => { captureLog('success', args).catch(console.error); },
+      section: (...args) => { captureLog('section', args).catch(console.error); }
     };
-    
+
     Object.assign(console, consoleOverrides);
 
-    // Create generator with progress callback
+    // Add initial log entry
+    const initialLog = {
+      time: new Date().toISOString(),
+      level: 'info',
+      message: '🚀 Generation started'
+    };
+    logs.push(initialLog);
+    await auth.updateActiveGeneration(generationId, { logs });
+
+    // Create generator with progress callback and abort signal
     const generator = new DataGenerator(config, {
       req,
       estimatedCost,
-      onProgress: (progress) => {
+      abortSignal: abortController.signal,
+      onProgress: async (progress) => {
+        // Check if cancelled
+        if (abortController.signal.aborted) {
+          throw new Error('Generation cancelled by user');
+        }
+        
+        // Add progress log
+        const progressLog = {
+          time: new Date().toISOString(),
+          level: 'info',
+          message: `Generating item ${progress.current}/${progress.total}: ${progress.currentItem || 'Processing...'}`
+        };
+        logs.push(progressLog);
+        
+        // Update database
+        await auth.updateActiveGeneration(generationId, {
+          progressCurrent: progress.current,
+          progressTotal: progress.total,
+          logs
+        });
+        
         // Send progress updates
         res.write(`data: ${JSON.stringify({
           type: 'progress',
@@ -624,6 +710,15 @@ app.post('/api/generate-stream', async (req, res) => {
     try {
       const results = await generator.generateAll();
 
+      // Add completion log
+      const completionLog = {
+        time: new Date().toISOString(),
+        level: 'success',
+        message: `✅ Generation completed! Generated ${generator.generatedCount} items`
+      };
+      logs.push(completionLog);
+      await auth.updateActiveGeneration(generationId, { logs });
+
       // Send completion event
       res.write(`data: ${JSON.stringify({
         type: 'complete',
@@ -635,6 +730,15 @@ app.post('/api/generate-stream', async (req, res) => {
         }
       })}\n\n`);
     } catch (error) {
+      // Add error log
+      const errorLog = {
+        time: new Date().toISOString(),
+        level: 'error',
+        message: `❌ Error: ${error.message}`
+      };
+      logs.push(errorLog);
+      await auth.updateActiveGeneration(generationId, { logs, status: 'failed' });
+
       // Send error event
       res.write(`data: ${JSON.stringify({
         type: 'error',
@@ -644,13 +748,23 @@ app.post('/api/generate-stream', async (req, res) => {
     }
 
     res.end();
-    
+
     // Restore original console methods
     Object.assign(console, originalConsole);
+    
+    // Clean up
+    await auth.deleteActiveGeneration(generationId);
+    activeGenerations.delete(generationId);
   } catch (error) {
     // Restore original console methods
     Object.assign(console, originalConsole);
     console.error('Generate stream error:', error);
+    
+    // Clean up on error
+    const auth = await authManagerPromise;
+    await auth.deleteActiveGeneration(generationId);
+    activeGenerations.delete(generationId);
+    
     res.status(500).end();
   }
 });
@@ -701,6 +815,104 @@ app.post('/api/upload-result', upload.single('result'), async (req, res) => {
   }
 });
 
+// Generation history / Queue
+app.get('/api/queue', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const auth = await authManagerPromise;
+    
+    // Get both active and completed generations
+    const [active, completed] = await Promise.all([
+      auth.getActiveGenerations(userId),
+      auth.getGenerationHistory(userId, 50)
+    ]);
+    
+    res.json({
+      success: true,
+      active,
+      completed
+    });
+  } catch (error) {
+    console.error('Failed to get generation history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load generation history'
+    });
+  }
+});
+
+// Cancel active generation
+app.post('/api/generations/:id/cancel', async (req, res) => {
+  try {
+    const generationId = req.params.id;
+    const userId = getUserId(req);
+    
+    // Find and abort the generation
+    const generation = activeGenerations.get(generationId);
+    if (!generation) {
+      return res.status(404).json({
+        success: false,
+        error: 'Generation not found or already completed'
+      });
+    }
+    
+    // Check user owns this generation
+    if (generation.userId !== userId && req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+    
+    // Abort the generation
+    generation.abortController.abort();
+    
+    // Update database
+    const auth = await authManagerPromise;
+    await auth.updateActiveGeneration(generationId, { status: 'cancelled' });
+    
+    // Clean up
+    setTimeout(async () => {
+      await auth.deleteActiveGeneration(generationId);
+      activeGenerations.delete(generationId);
+    }, 1000);
+    
+    res.json({
+      success: true,
+      message: 'Generation cancelled'
+    });
+  } catch (error) {
+    console.error('Failed to cancel generation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to cancel generation'
+    });
+  }
+});
+
+// Delete generation from history
+app.delete('/api/queue/:id', requireAuth, async (req, res) => {
+  try {
+    const generationId = parseInt(req.params.id);
+    const userId = req.user.userId;
+    
+    // Delete the generation history entry
+    const auth = await authManagerPromise;
+    await auth.deleteGenerationHistory(userId, generationId);
+    
+    res.json({
+      success: true,
+      message: 'Generation deleted from history'
+    });
+  } catch (error) {
+    console.error('Failed to delete generation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete generation'
+    });
+  }
+});
+
 // Get example configurations
 app.get('/api/examples', async (req, res) => {
   try {
@@ -731,8 +943,8 @@ app.get('/api/examples', async (req, res) => {
 app.get('/api/output-files', async (req, res) => {
   try {
     const { subpath = '' } = req.query;
-    const paths = getReqUserPaths(req);
-    const baseDir = paths.getUserOutputDir();
+    const userId = getUserId(req);
+    const baseDir = UserStorage.getUserOutputDir(userId);
     const targetDir = subpath ? path.join(baseDir, subpath) : baseDir;
 
     // Security check - prevent directory traversal
@@ -802,8 +1014,8 @@ app.get('/api/result-files', async (req, res) => {
 app.get('/api/result-file/*', async (req, res) => {
   try {
     const filename = req.params[0];
-    const paths = getReqUserPaths(req);
-    const baseDir = paths.getUserOutputDir();
+    const userId = getUserId(req);
+    const baseDir = UserStorage.getUserOutputDir(userId);
     const filePath = path.join(baseDir, filename);
 
     // Security check - prevent directory traversal
@@ -833,8 +1045,24 @@ app.get('/api/result-file/*', async (req, res) => {
         content: content
       });
     } else {
-      // For non-JSON files, send as download
-      res.download(filePath);
+      // For non-JSON files, read as text and send with proper content-type
+      const content = await fs.readFile(filePath, 'utf-8');
+      
+      // Set appropriate content-type based on file extension
+      const ext = path.extname(filename).toLowerCase();
+      let contentType = 'text/plain';
+      switch (ext) {
+        case '.csv': contentType = 'text/csv'; break;
+        case '.html': contentType = 'text/html'; break;
+        case '.css': contentType = 'text/css'; break;
+        case '.js': contentType = 'text/javascript'; break;
+        case '.xml': contentType = 'text/xml'; break;
+        case '.sql': contentType = 'text/plain'; break;
+        case '.md': contentType = 'text/markdown'; break;
+      }
+      
+      res.set('Content-Type', contentType);
+      res.send(content);
     }
   } catch (error) {
     res.status(404).json({
@@ -848,8 +1076,8 @@ app.get('/api/result-file/*', async (req, res) => {
 app.delete('/api/result-file/*', async (req, res) => {
   try {
     const filename = req.params[0];
-    const paths = getReqUserPaths(req);
-    const baseDir = paths.getUserOutputDir();
+    const userId = getUserId(req);
+    const baseDir = UserStorage.getUserOutputDir(userId);
     const filePath = path.join(baseDir, filename);
 
     // Security check - prevent directory traversal
@@ -889,8 +1117,8 @@ app.delete('/api/result-file/*', async (req, res) => {
 app.get('/api/config-file/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
-    const paths = getReqUserPaths(req);
-    const configsDir = paths.getUserConfigsDir();
+    const userId = getUserId(req);
+    const configsDir = UserStorage.getUserConfigsDir(userId);
     const filePath = path.join(configsDir, filename);
 
     // Security check
@@ -929,8 +1157,8 @@ app.get('/api/config-file/:filename', async (req, res) => {
 app.get('/api/config-files', async (req, res) => {
   try {
     const { subpath = '' } = req.query;
-    const paths = getReqUserPaths(req);
-    const baseDir = paths.getUserConfigsDir();
+    const userId = getUserId(req);
+    const baseDir = UserStorage.getUserConfigsDir(userId);
     const targetDir = subpath ? path.join(baseDir, subpath) : baseDir;
 
     // Security check - prevent directory traversal
@@ -1011,8 +1239,8 @@ app.post('/api/config-files', async (req, res) => {
       });
     }
 
-    const paths = getReqUserPaths(req);
-    const configsDir = paths.getUserConfigsDir();
+    const userId = getUserId(req);
+    const configsDir = UserStorage.getUserConfigsDir(userId);
     const filePath = path.join(configsDir, sanitizedFilename);
 
     // Ensure directory exists
@@ -1048,8 +1276,8 @@ app.post('/api/config-files', async (req, res) => {
 app.delete('/api/config-file/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
-    const paths = getReqUserPaths(req);
-    const configsDir = paths.getUserConfigsDir();
+    const userId = getUserId(req);
+    const configsDir = UserStorage.getUserConfigsDir(userId);
     const filePath = path.join(configsDir, filename);
 
     // Security check
@@ -1097,14 +1325,14 @@ app.post('/api/output-files', async (req, res) => {
       });
     }
 
-    const paths = getReqUserPaths(req);
-    const outputsDir = paths.getUserOutputsDir();
+    const userId = getUserId(req);
+    const outputsDir = UserStorage.getUserOutputDir(userId);
 
     // Determine full path
     let fullPath;
     if (filePath && filePath.includes('/')) {
       // If path is provided, use it
-      fullPath = path.join(paths.getUserDir(), filePath);
+      fullPath = path.join(UserStorage.getUserBaseDir(userId), filePath);
     } else {
       // Otherwise save to outputs directory
       fullPath = path.join(outputsDir, filename);
@@ -1112,7 +1340,7 @@ app.post('/api/output-files', async (req, res) => {
 
     // Security check
     const resolvedPath = path.resolve(fullPath);
-    const resolvedBase = path.resolve(paths.getUserDir());
+    const resolvedBase = path.resolve(UserStorage.getUserBaseDir(userId));
     if (!resolvedPath.startsWith(resolvedBase)) {
       return res.status(400).json({
         success: false,
@@ -1133,7 +1361,7 @@ app.post('/api/output-files', async (req, res) => {
     res.json({
       success: true,
       filename: filename,
-      path: path.relative(paths.getUserDir(), fullPath),
+      path: path.relative(UserStorage.getUserBaseDir(userId), fullPath),
       message: 'File saved successfully'
     });
   } catch (error) {
@@ -1243,29 +1471,70 @@ app.get('/chat', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
 
-// Start server
-const HOST = process.env.LOCAL_NETWORK_MODE === 'true' ? '0.0.0.0' : 'localhost';
-app.listen(PORT, HOST, async () => {
-  // Ensure localhost user directories exist
-  await CloudUserPaths.ensureUserDirs('localhost');
-  await CloudUserPaths.copyDefaultConfigs('localhost');
-
-  console.log(`🚀 LLM Data Generator Web UI running at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-  if (process.env.LOCAL_NETWORK_MODE === 'true') {
-    // Get local IP address
-    const interfaces = os.networkInterfaces();
-    const addresses = [];
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          addresses.push(iface.address);
-        }
+// Initialize server
+async function startServer() {
+  try {
+    // Initialize authManager before starting server
+    authManager = await authManagerPromise;
+    console.log('✅ Authentication system initialized');
+    
+    // Cleanup stale generations periodically
+    setInterval(async () => {
+      try {
+        await authManager.cleanupStaleGenerations();
+      } catch (error) {
+        console.error('Failed to cleanup stale generations:', error);
       }
+    }, 60000); // Every minute
+
+    // Ensure base directory exists
+    await UserStorage.ensureBaseDir();
+
+    // Initialize default admin user if no users exist
+    try {
+      const users = await authManager.getAllUsers();
+      if (users.length === 0) {
+        console.log('📋 No users found. Creating default admin user...');
+        const adminUser = await authManager.createUser('admin@admin.com', 'admin123');
+        // Make the first user an admin
+        await authManager.updateUserRole(adminUser.userId, 1);
+        console.log('✅ Default admin user created:');
+        console.log('   Email: admin@admin.com');
+        console.log('   Password: admin123');
+        console.log('   ⚠️  Please change the password after first login!');
+      }
+    } catch (error) {
+      console.error('❌ Error checking/creating admin user:', error.message);
     }
-    console.log('🌐 Also accessible from local network at:');
-    addresses.forEach(addr => {
-      console.log(`   http://${addr}:${PORT}`);
+
+    // Start server
+    const HOST = process.env.LOCAL_NETWORK_MODE === 'true' ? '0.0.0.0' : 'localhost';
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 LLM Data Generator Web UI running at http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+      if (process.env.LOCAL_NETWORK_MODE === 'true') {
+        // Get local IP address
+        const interfaces = os.networkInterfaces();
+        const addresses = [];
+        for (const name of Object.keys(interfaces)) {
+          for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+              addresses.push(iface.address);
+            }
+          }
+        }
+        console.log('🌐 Also accessible from local network at:');
+        addresses.forEach(addr => {
+          console.log(`   http://${addr}:${PORT}`);
+        });
+      }
+      console.log(`📁 Static files served from: ${path.join(__dirname, 'public')}`);
     });
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
   }
-  console.log(`📁 Static files served from: ${path.join(__dirname, 'public')}`);
-});
+}
+
+// Start the server
+startServer();

@@ -22,6 +22,7 @@ export function createModelSelector(options = {}) {
     enableOnlineSearch: false,
     isLoading: false,
     showDetailedFilters: false,
+    initialized: false, // Prevent multiple init calls
 
     // Active filters (multiple selection)
     activeFilters: {
@@ -72,7 +73,14 @@ export function createModelSelector(options = {}) {
 
     // Initialize
     async init() {
-      await this.loadModels();
+      console.log('ModelSelector init called, initialized:', this.initialized);
+      // Prevent multiple init calls
+      if (this.initialized) return;
+      this.initialized = true;
+      
+      console.log('Calling loadModels...');
+      await this.loadModels.call(this);
+      console.log('After loadModels - models:', this.models?.length);
 
       // Pre-select model if provided
       if (config.selectedModelId) {
@@ -91,8 +99,10 @@ export function createModelSelector(options = {}) {
         const response = await api.get('/models');
         if (response.success) {
           this.models = response.models;
+          console.log('Loaded models:', this.models.length);
           this.updateFilterCounts();
           this.updateFilteredModels();
+          console.log('Filtered models:', this.filteredModels.length);
         }
       } catch (error) {
         notify.error('Failed to load models');
@@ -187,7 +197,7 @@ export function createModelSelector(options = {}) {
       if (config.showFilters && hasActiveFilters) {
         filtered = filtered.filter(model => {
           // Check each filter group - model must match at least one filter in each active group
-          for (const [_groupKey, activeValues] of Object.entries(this.activeFilters)) {
+          for (const [, activeValues] of Object.entries(this.activeFilters)) {
             if (activeValues.length === 0) continue;
 
             const matchesGroup = activeValues.some(filterValue => {

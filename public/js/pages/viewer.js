@@ -31,8 +31,10 @@ export function viewerPage() {
         this.isLoading = true;
         this.error = null;
 
-        // Determine file type from extension
+        // Determine file type from extension FIRST
         const ext = this.fileName.split('.').pop().toLowerCase();
+        console.log('File extension:', ext);
+        
         switch (ext) {
         case 'json':
           this.fileType = 'json';
@@ -41,23 +43,44 @@ export function viewerPage() {
         case 'markdown':
           this.fileType = 'markdown';
           break;
+        case 'js':
+        case 'ts':
+        case 'jsx':
+        case 'tsx':
+          this.fileType = 'javascript';
+          break;
+        case 'py':
+          this.fileType = 'python';
+          break;
+        case 'sql':
+          this.fileType = 'sql';
+          break;
+        case 'css':
+          this.fileType = 'css';
+          break;
+        case 'html':
+          this.fileType = 'html';
+          break;
+        case 'xml':
+          this.fileType = 'xml';
+          break;
+        case 'csv':
+          this.fileType = 'csv';
+          break;
         case 'txt':
         case 'log':
-        case 'csv':
-        case 'xml':
-        case 'html':
-          this.fileType = 'text';
-          break;
         default:
-          this.fileType = 'unknown';
+          this.fileType = 'text';
         }
+
+        console.log('Determined file type:', this.fileType);
 
         // Determine which endpoint to use based on the path or type parameter
         let response;
         const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-        const fileType = params.get('type');
+        const pathType = params.get('type');
 
-        if (fileType === 'configs') {
+        if (pathType === 'configs') {
           // For config files
           response = await api.get(`/config-file/${encodeURIComponent(this.filePath)}`);
         } else {
@@ -66,11 +89,37 @@ export function viewerPage() {
         }
 
         if (response.success) {
-          this.content = response.content;
+          console.log('File loaded successfully, content type:', typeof response.content);
+          
+          // Handle content based on file type
+          if (this.fileType === 'json') {
+            try {
+              // Try to parse as JSON only for .json files
+              this.content = typeof response.content === 'string' 
+                ? JSON.parse(response.content) 
+                : response.content;
+            } catch (jsonError) {
+              // If JSON parsing fails, treat as text
+              this.fileType = 'text';
+              this.content = response.content;
+              this.error = 'File contains invalid JSON, displaying as text';
+            }
+          } else {
+            // For all non-JSON files, keep as raw text
+            this.content = response.content;
+          }
+          
+          // Apply syntax highlighting after content is loaded
+          this.$nextTick(() => {
+            if (window.Prism && ['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv'].includes(this.fileType)) {
+              Prism.highlightAll();
+            }
+          });
         } else {
           throw new Error(response.error || 'Failed to load file');
         }
       } catch (error) {
+        console.error('Load file error:', error);
         this.error = error.message || 'Failed to load file';
         notify.error(this.error);
       } finally {
@@ -216,6 +265,35 @@ export function viewerPage() {
       html = html.replace(/\n/g, '<br>');
 
       return html;
+    },
+
+    // Get syntax highlighting language
+    getSyntaxLanguage() {
+      switch (this.fileType) {
+        case 'javascript': return 'javascript';
+        case 'python': return 'python';
+        case 'sql': return 'sql';
+        case 'css': return 'css';
+        case 'html': return 'html';
+        case 'xml': return 'xml';
+        case 'json': return 'json';
+        case 'csv': return 'csv';
+        default: return 'text';
+      }
+    },
+
+    // Format content for display
+    formatContent() {
+      if (!this.content) return '';
+      
+      if (this.fileType === 'json') {
+        return this.renderJson(this.content);
+      } else if (this.fileType === 'markdown') {
+        return this.renderMarkdownContent(this.content);
+      } else {
+        // For code files, return as preformatted text with language hint
+        return this.escapeHtml(this.content);
+      }
     },
 
     // Escape HTML
