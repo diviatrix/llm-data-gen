@@ -1,5 +1,5 @@
 <div class="stack">
-  <!-- Header Section -->
+  
   <div class="flex justify-between items-center">
     <div>
       <h2 class="text-2xl font-semibold">Configuration Manager</h2>
@@ -15,12 +15,12 @@
     </div>
   </div>
   
-  <!-- Loading State -->
+  
   <div x-show="isLoading" class="flex justify-center items-center py-l">
     <div class="spinner"></div>
   </div>
   
-  <!-- Configs Grid -->
+  
   <div x-show="!isLoading && configs.length > 0" class="grid-2">
     <template x-for="config in configs" :key="config.name">
       <div class="card-interactive">
@@ -52,7 +52,7 @@
     </template>
   </div>
   
-  <!-- Empty State -->
+  
   <div x-show="!isLoading && configs.length === 0" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">📋</div>
@@ -64,7 +64,7 @@
     </div>
   </div>
   
-  <!-- Create Wizard Modal (Simplified) -->
+  
   <div x-show="showCreateWizard" @click.self="showCreateWizard = false" 
        class="modal-backdrop">
     <div class="modal">
@@ -105,7 +105,7 @@
     </div>
   </div>
   
-  <!-- Examples Modal -->
+  
   <div x-show="showExampleModal" @click.away="showExampleModal = false" 
        class="modal-backdrop">
     <div class="modal max-w-3xl">

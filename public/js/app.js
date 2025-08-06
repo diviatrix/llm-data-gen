@@ -142,7 +142,6 @@ document.addEventListener('alpine:init', () => {
       { path: '/settings', label: 'Settings', icon: '🔧' }
     ],
 
-
     async init() {
       const isAuth = authStore.init();
 

@@ -1,11 +1,8 @@
 <div class="stack" x-cloak>
-  <!-- Header -->
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">AI Chat</h2>
     <p class="text-gray-600 mt-s">Chat with AI models</p>
   </div>
-  
-  <!-- Last Chat Bubble (if exists and not in chat) -->
   <div x-show="lastChat && !chatStarted && lastChat.messages && lastChat.messages.length > 0" 
        @click="resumeLastChat()"
        class="card-interactive mb-m cursor-pointer">
@@ -15,7 +12,7 @@
         <span class="text-xs text-gray-500" x-text="lastChat?.timestamp ? new Date(lastChat.timestamp).toLocaleString() : ''"></span>
       </div>
       <div class="max-h-[50vh] overflow-y-auto">
-        <template x-for="(message, idx) in lastChat.messages.slice(-2)" :key="idx">
+        <template x-for="(message, idx) in (lastChat?.messages || []).slice(-2)" :key="idx">
           <div class="mb-s" :class="message.role === 'user' ? 'text-right' : 'text-left'">
             <div class="inline-block max-w-3xl"
                  :class="message.role === 'user' ? 'bg-primary text-white' : 'bg-gray-100'"
@@ -40,16 +37,12 @@
       </div>
     </div>
   </div>
-  
-  <!-- Chat Interface (moved above model selection) -->
   <div x-show="chatStarted" x-transition class="card flex-1 mb-m">
     <div class="card-body flex flex-col h-full">
       <div class="flex justify-between items-center mb-m">
         <h3 class="text-lg font-semibold">Chat</h3>
         <button @click="clearChat()" class="btn btn-ghost btn-sm">Clear History</button>
       </div>
-      
-      <!-- Messages -->
       <div class="flex-1 chat-messages mb-m stack-s">
         <template x-for="(message, index) in messages" :key="index">
           <div :class="message.role === 'user' ? 'text-right' : 'text-left'">
@@ -62,8 +55,6 @@
               <p x-show="isRawFormat(index) || message.role === 'user'" 
                  class="text-sm whitespace-pre-wrap" 
                  x-text="message.content"></p>
-              
-              <!-- Show attached files for user messages -->
               <div x-show="message.role === 'user' && message.attachments && message.attachments.length > 0" 
                    class="mt-s pt-s border-t" 
                    :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
@@ -75,8 +66,6 @@
                   </template>
                 </div>
               </div>
-              
-              <!-- Metadata for assistant messages -->
               <div x-show="message.role === 'assistant' && message.metadata" 
                    class="mt-s pt-s border-t" 
                    :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
@@ -106,8 +95,6 @@
           </div>
         </div>
       </div>
-      
-      <!-- Attached Files Display -->
       <div x-show="attachedFiles && attachedFiles.length > 0" class="mb-s">
         <div class="flex flex-wrap gap-s">
           <template x-for="(file, index) in (attachedFiles || [])" :key="index">
@@ -120,8 +107,6 @@
           </template>
         </div>
       </div>
-      
-      <!-- Input -->
       <form @submit.prevent="sendMessage()" class="chat-input-area">
         <div class="flex gap-s">
           <textarea x-model="newMessage"
@@ -147,12 +132,9 @@
       </form>
     </div>
   </div>
-  
-  <!-- Model Selection (collapsible) -->
   <div class="card" :class="!showModelSelector && chatStarted ? 'cursor-pointer' : ''"
        @click="!showModelSelector && chatStarted ? toggleModelSelector() : null">
     <div class="card-body">
-      <!-- Header with toggle -->
       <div class="flex justify-between items-center mb-m">
         <h3 class="text-lg font-semibold">
           <template x-if="!chatStarted">
@@ -174,106 +156,243 @@
           <span x-text="showModelSelector ? '▲' : '▼'"></span>
         </button>
       </div>
-      
-      <!-- Model selector content -->
-      <div x-show="showModelSelector" x-transition>
-        <!-- Model Search -->
-        <div class="mb-m">
-          <input type="text" 
-                 x-model="modelSearch" 
-                 @input="updateFilteredModels()"
-                 placeholder="Search models..." 
-                 class="form-input">
-        </div>
-        
-        <!-- Model Filters -->
-        <div class="mb-m">
-          <!-- Compact filter pills -->
-          <div class="flex flex-wrap gap-s">
-            <button @click="toggleFilter('pricing', 'free')"
-                    :class="isFilterActive('pricing', 'free') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
-                    class="text-xs">
-              🆓 Free
-            </button>
-            <button @click="toggleFilter('capabilities', 'web-search')"
-                    :class="isFilterActive('capabilities', 'web-search') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
-                    class="text-xs">
-              🌐 Web Search
-            </button>
-            <button @click="toggleFilter('capabilities', 'vision')"
-                    :class="isFilterActive('capabilities', 'vision') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
-                    class="text-xs">
-              👁️ Vision
-            </button>
-            <button @click="toggleFilter('context', 'large-context')"
-                    :class="isFilterActive('context', 'large-context') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
-                    class="text-xs">
-              📖 100K+
-            </button>
+      <div x-show="showModelSelector" x-transition class="model-selector">
+        <div class="mb-4">
+          <div class="search-box mb-3">
+            <input 
+              type="text" 
+              class="form-input" 
+              placeholder="Search models..."
+              x-model="modelSearch"
+            >
           </div>
-        </div>
-        
-        <!-- Online Search Toggle -->
-        <div x-show="selectedModel && supportsOnlineSearch(selectedModel)" class="mb-m">
-          <div class="card p-m bg-gray-50">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-m">
-                <span class="text-2xl">🌐</span>
-                <div>
-                  <h4 class="font-medium">Enable Web Search</h4>
-                  <p class="text-xs text-gray-600">Search the web for up-to-date information</p>
+          <div class="mb-3">
+            <div class="text-sm text-gray-600 mb-2">Quick Filters:</div>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('all')"
+              >
+                🌐 All Models
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'free' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('free')"
+              >
+                🆓 Free
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'cheap' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('cheap')"
+              >
+                💰 Cheap (<$0.001)
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'fast' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('fast')"
+              >
+                ⚡ Fast
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'smart' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('smart')"
+              >
+                🧠 Smart (GPT-4/Claude)
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'multimodal' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('multimodal')"
+              >
+                🖼️ Multimodal
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'large-context' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('large-context')"
+              >
+                📚 100K+ Context
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'coding' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('coding')"
+              >
+                💻 Coding
+              </button>
+              <div class="inline-block ml-3">
+                <label class="toggle-label">
+                  <div class="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      x-model="enableOnlineSearch"
+                    >
+                    <span class="toggle-slider"></span>
+                  </div>
+                  <span>🔍 Online Search</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="mt-3 space-y-3">
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Provider:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('provider', 'openai')"
+                          :class="isFilterActive('provider', 'openai') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    OpenAI
+                  </button>
+                  <button @click="toggleFilter('provider', 'anthropic')"
+                          :class="isFilterActive('provider', 'anthropic') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Anthropic
+                  </button>
+                  <button @click="toggleFilter('provider', 'google')"
+                          :class="isFilterActive('provider', 'google') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Google
+                  </button>
+                  <button @click="toggleFilter('provider', 'meta')"
+                          :class="isFilterActive('provider', 'meta') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Meta
+                  </button>
+                  <button @click="toggleFilter('provider', 'mistral')"
+                          :class="isFilterActive('provider', 'mistral') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Mistral
+                  </button>
+                  <button @click="toggleFilter('provider', 'perplexity')"
+                          :class="isFilterActive('provider', 'perplexity') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Perplexity
+                  </button>
                 </div>
               </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" x-model="enableOnlineSearch" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-              </label>
-            </div>
-            <div x-show="enableOnlineSearch && getWebSearchPricing(selectedModel)" class="mt-m pt-m border-t border-gray-200">
-              <p class="text-sm text-gray-600">
-                <span class="font-medium">Additional cost:</span> 
-                $<span x-text="getWebSearchPricing(selectedModel)?.price.toFixed(2)"></span> per 1K searches
-              </p>
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Capabilities:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('capabilities', 'function-calling')"
+                          :class="isFilterActive('capabilities', 'function-calling') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    🔧 Function Calling
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'json-mode')"
+                          :class="isFilterActive('capabilities', 'json-mode') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    📋 JSON Mode
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'web-search')"
+                          :class="isFilterActive('capabilities', 'web-search') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    🔍 Web Search
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'vision')"
+                          :class="isFilterActive('capabilities', 'vision') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    👁️ Vision
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Context Size:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('context', '4k')"
+                          :class="isFilterActive('context', '4k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    4K
+                  </button>
+                  <button @click="toggleFilter('context', '8k')"
+                          :class="isFilterActive('context', '8k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    8K
+                  </button>
+                  <button @click="toggleFilter('context', '16k')"
+                          :class="isFilterActive('context', '16k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    16K
+                  </button>
+                  <button @click="toggleFilter('context', '32k')"
+                          :class="isFilterActive('context', '32k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    32K
+                  </button>
+                  <button @click="toggleFilter('context', '128k+')"
+                          :class="isFilterActive('context', '128k+') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    128K+
+                  </button>
+                </div>
+              </div>
+              <div x-show="hasActiveFilters()" class="pt-2">
+                <button @click="clearAllFilters()" class="btn btn-ghost btn-sm">
+                  ❌ Clear All Filters
+                </button>
+              </div>
             </div>
           </div>
+          <div class="mt-4">
+            <button @click="chatStarted = true; showModelSelector = false; startOrChangeChat()" 
+                    :disabled="!selectedModel"
+                    x-show="!chatStarted || showModelSelector"
+                    class="btn btn-primary w-full">
+              <span x-show="!chatStarted">Start Chat</span>
+              <span x-show="chatStarted">Apply Model Change</span>
+            </button>
+          </div>
         </div>
-        
-        <!-- Model List -->
-        <div class="grid-3 gap-s model-grid mb-m">
+        <div class="text-center py-8" x-show="isLoading">
+          <div class="spinner"></div>
+          <p class="text-muted mt-2">Loading models...</p>
+        </div>
+        <div class="models-grid" x-show="!isLoading">
           <template x-for="model in filteredModels" :key="model.id">
-            <div @click="selectModel(model)" 
-                 class="card-interactive p-s"
-                 :class="selectedModel?.id === model.id ? 'border-primary' : ''">
-              <h4 class="font-medium text-xs leading-tight mb-1" x-text="model.name"></h4>
-              
-              <!-- Badges -->
-              <div class="flex flex-wrap gap-s mb-s">
-                <template x-for="badge in getModelBadges(model).slice(0, 2)" :key="badge.label">
-                  <span :class="badge.class" class="badge text-xs" x-text="badge.label"></span>
-                </template>
+            <div 
+              class="card-interactive"
+              :class="selectedModel?.id === model.id ? 'selected' : ''"
+              @click="selectModel(model)"
+            >
+              <div class="model-header">
+                <h4 class="model-name" x-text="model.name"></h4>
+                <span class="model-provider text-muted" x-text="getProviderName(model)"></span>
               </div>
-              
-              <p class="text-xs text-gray-600">
-                <span x-text="formatContext(model.context_length)"></span> • 
-                <span x-text="formatPrice(model.pricing)"></span>
-              </p>
+              <div class="model-info">
+                <div class="info-row">
+                  <span class="label">Context:</span>
+                  <span class="value" x-text="formatContext(model.context_length)"></span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Price:</span>
+                  <span class="value" x-text="formatPrice(model.pricing)"></span>
+                </div>
+              </div>
+              <div class="model-tags">
+                <span class="tag tag-blue" x-show="!model.pricing || (model.pricing.prompt === 0 && model.pricing.completion === 0)">
+                  Free
+                </span>
+                <span class="tag tag-green" x-show="model.input_modalities?.includes('image') || model.input_modalities?.includes('audio')">
+                  Multimodal
+                </span>
+                <span class="tag tag-purple" x-show="model.context_length >= 100000">
+                  Large Context
+                </span>
+              </div>
             </div>
           </template>
         </div>
-        
-        <!-- Start/Change Chat Button -->
-        <button @click="chatStarted = true; showModelSelector = false; startOrChangeChat()" 
-                :disabled="!selectedModel"
-                x-show="!chatStarted || showModelSelector"
-                class="btn btn-primary w-full">
-          <span x-show="!chatStarted">Start Chat</span>
-          <span x-show="chatStarted">Apply Model Change</span>
-        </button>
+        <div class="text-center py-8" x-show="!isLoading && filteredModels.length === 0">
+          <p class="text-muted">No models found matching your criteria</p>
+        </div>
       </div>
     </div>
   </div>
-  
-  <!-- File Picker Modal -->
   <div x-show="showFilePicker" 
        @click.away="showFilePicker = false"
        x-transition
@@ -287,7 +406,6 @@
       </div>
       
       <div class="flex-1 overflow-y-auto p-m">
-        <!-- File Categories -->
         <div class="mb-m">
           <div class="flex gap-s">
             <button @click="filePickerTab = 'uploads'; loadFilesForTab()"
@@ -304,8 +422,6 @@
             </button>
           </div>
         </div>
-        
-        <!-- Upload New File (only in uploads tab) -->
         <div x-show="filePickerTab === 'uploads'" class="mb-m">
           <div class="card p-m bg-gray-50">
             <div class="mb-s">
@@ -323,8 +439,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- File List -->
         <div class="stack-s">
           <div x-show="isLoadingFiles" class="text-center py-4">
             <div class="spinner-inline"></div>

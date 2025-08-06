@@ -1,29 +1,32 @@
 // Chat Page Component
 import { api } from '../api.js';
 import { notify } from '../utils/notifications.js';
+import { createModelSelector } from '../components/modelSelector.js';
 
 export function chatPage() {
-  // Don't use modelSelector, it's broken
-  // Just implement what we need directly
+  // Create model selector instance
+  const modelSelector = createModelSelector({
+    showFilters: true,
+    showSearch: true,
+    showOnlineToggle: true,
+    defaultFilter: 'all',
+    onSelect: (model, modelId) => {
+      console.log('Model selected:', model.name, modelId);
+    }
+  });
 
   return {
-    // Model selection properties
-    models: [],
-    filteredModels: [],
-    selectedModel: null,
-    modelSearch: '',
-    modelFilters: {},
-    enableOnlineSearch: false,
-    showOnlineToggle: true,
+    // Spread model selector properties and methods
+    ...modelSelector,
+    // Chat-specific properties
     messages: [],
     newMessage: '',
-    isLoading: false,
     chatStarted: false,
     showModelSelector: true,
     lastChat: null,
     messageFormats: {},
 
-    // File attachment properties - MUST be defined immediately
+    // File attachment properties
     showFilePicker: false,
     filePickerTab: 'uploads',
     availableFiles: [],
@@ -34,86 +37,12 @@ export function chatPage() {
     storageInfo: null,
 
     async init() {
-      // Load models ONCE
-      await this.loadModels();
+      // Initialize model selector
+      await modelSelector.init.call(this);
 
-      // Load other data
+      // Load other chat-specific data
       this.loadLastChat();
       await this.loadStorageInfo();
-    },
-
-    async loadModels() {
-      try {
-        const response = await api.get('/models');
-        if (response.success && response.models) {
-          this.models = response.models;
-          this.filteredModels = response.models;
-        }
-      } catch (error) {
-        console.error('Failed to load models:', error);
-        notify.error('Failed to load models');
-      }
-    },
-
-    selectModel(model) {
-      this.selectedModel = model;
-    },
-
-    finalModelId() {
-      if (!this.selectedModel) return null;
-      return this.enableOnlineSearch && this.selectedModel.id.includes('perplexity')
-        ? `${this.selectedModel.id}:online`
-        : this.selectedModel.id;
-    },
-
-    // Model selector methods needed by template
-    updateFilteredModels() {
-      // Simple search filter
-      if (this.modelSearch) {
-        const search = this.modelSearch.toLowerCase();
-        this.filteredModels = this.models.filter(m =>
-          m.name.toLowerCase().includes(search) ||
-          m.id.toLowerCase().includes(search)
-        );
-      } else {
-        this.filteredModels = this.models;
-      }
-    },
-
-    formatPrice(pricing) {
-      if (!pricing) return 'N/A';
-      if (pricing.prompt === 0 && pricing.completion === 0) return 'Free';
-      return `$${pricing.prompt}/$${pricing.completion}`;
-    },
-
-    formatContext(length) {
-      if (!length) return 'N/A';
-      if (length >= 1000000) return `${Math.round(length/1000000)}M`;
-      if (length >= 1000) return `${Math.round(length/1000)}K`;
-      return length.toString();
-    },
-
-    getModelBadges(model) {
-      const badges = [];
-      if (model.pricing?.prompt === 0) badges.push({ label: 'Free', class: 'badge-success' });
-      if (model.context_length >= 100000) badges.push({ label: '100K+', class: 'badge-info' });
-      return badges;
-    },
-
-    supportsOnlineSearch(model) {
-      return model?.id?.includes('perplexity');
-    },
-
-    toggleFilter() {
-      // Stub for template
-    },
-
-    isFilterActive() {
-      return false;
-    },
-
-    getWebSearchPricing() {
-      return null;
     },
 
     // Load user storage info
@@ -254,8 +183,8 @@ export function chatPage() {
     renderMarkdown(content) {
       if (typeof marked === 'undefined') return content;
       const html = marked.parse(content);
-      if (typeof DOMPurify !== 'undefined') {
-        return DOMPurify.sanitize(html);
+      if (typeof window.DOMPurify !== 'undefined') {
+        return window.DOMPurify.sanitize(html);
       }
       return html;
     },
@@ -277,7 +206,7 @@ export function chatPage() {
       try {
         const chatData = {
           model: this.selectedModel?.name,
-          modelId: this.finalModelId(),
+          modelId: modelSelector.finalModelId.call(this),
           messages: this.messages,
           timestamp: new Date().toISOString(),
           enableOnlineSearch: this.enableOnlineSearch
@@ -297,7 +226,7 @@ export function chatPage() {
       this.showModelSelector = false;
 
       // If changing model, keep the messages
-      if (this.messages.length === 0 && this.lastChat && this.lastChat.modelId === this.finalModelId()) {
+      if (this.messages.length === 0 && this.lastChat && this.lastChat.modelId === modelSelector.finalModelId.call(this)) {
         // Restore last chat if same model
         this.messages = this.lastChat.messages;
       }
@@ -340,7 +269,7 @@ export function chatPage() {
 
       try {
         const response = await api.post('/chat', {
-          model: this.finalModelId(),
+          model: modelSelector.finalModelId.call(this),
           messages: this.messages,
           attachments: currentAttachments
         });
@@ -351,7 +280,7 @@ export function chatPage() {
             content: response.message,
             metadata: {
               model: this.selectedModel.name,
-              modelId: this.finalModelId(),
+              modelId: modelSelector.finalModelId.call(this),
               cost: response.usage?.total_cost || 0,
               tokens: response.usage?.total_tokens || 0,
               timestamp: new Date().toISOString(),

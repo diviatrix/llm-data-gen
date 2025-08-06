@@ -1,5 +1,5 @@
 <div class="stack">
-  <!-- Empty State when no file selected -->
+  
   <div x-show="!filePath" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">👁️</div>
@@ -9,9 +9,9 @@
     </div>
   </div>
 
-  <!-- File Viewer Mode -->
+  
   <div x-show="filePath">
-  <!-- Header -->
+  
   <div class="flex justify-between items-center mb-m">
     <div>
       <h2 class="text-2xl font-bold">Data Viewer</h2>
@@ -32,22 +32,22 @@
     </div>
   </div>
   
-  <!-- Loading State -->
+  
   <div x-show="isLoading" class="flex justify-center items-center py-l">
     <div class="spinner"></div>
   </div>
   
-  <!-- Error State -->
+  
   <div x-show="error" class="alert alert-error">
     <p x-text="error"></p>
   </div>
   
-  <!-- Content Viewer -->
+  
   <div x-show="!isLoading && !error && content !== null" class="card">
     <div class="card-body">
-      <!-- JSON Viewer -->
+      
       <div x-show="fileType === 'json'">
-        <!-- JSON Controls -->
+        
         <div class="flex justify-between items-center mb-m">
           <div class="flex gap-s">
             <button @click="expandAll()" class="btn btn-ghost btn-sm">
@@ -65,13 +65,13 @@
           </div>
         </div>
         
-        <!-- JSON Tree View -->
+        
         <div class="json-viewer">
           <div x-html="renderJson(content)"></div>
         </div>
       </div>
       
-      <!-- Code Viewer with Syntax Highlighting -->
+      
       <div x-show="['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text'].includes(fileType)">
         <div class="mb-s">
           <span class="text-sm text-gray-500">Language: </span>
@@ -81,12 +81,12 @@
              :class="`language-${getSyntaxLanguage()}`"><code x-text="content"></code></pre>
       </div>
       
-      <!-- Markdown Viewer -->
+      
       <div x-show="fileType === 'markdown'" class="prose prose-sm max-w-none">
         <div x-html="renderMarkdownContent(content)"></div>
       </div>
       
-      <!-- Unknown File Types -->
+      
       <div x-show="!['json', 'javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text', 'markdown'].includes(fileType)" class="text-center py-8">
         <p class="text-gray-600">Preview not available for this file type.</p>
         <button @click="downloadFile()" class="btn btn-primary mt-4">

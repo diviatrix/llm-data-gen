@@ -1,11 +1,8 @@
 <div class="stack">
-  <!-- Header -->
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">Data Generator</h2>
     <p class="text-gray-600 mt-s">Generate structured data using AI models</p>
   </div>
-  
-  <!-- Progress Indicator -->
   <div class="action-row mb-l">
     <template x-for="(label, index) in ['Select Config', 'Select Model', 'Confirm']" :key="index">
       <div class="flex items-center">
@@ -22,32 +19,22 @@
       </div>
     </template>
   </div>
-  
-  <!-- Step 1: Select Configuration -->
   <div x-show="step === 1" class="card">
     <div class="card-body">
       <h3 class="text-lg font-semibold mb-m">Select Configuration</h3>
-      
-      <!-- Message when no config parameter -->
       <div x-show="!hasConfigParam" class="empty-state">
         <p class="text-gray-600 mb-m">Please select a configuration from the File Manager to generate data.</p>
         <a href="#/files" class="btn btn-primary">Go to File Manager</a>
       </div>
-      
-      <!-- Loading message if config parameter exists but still on step 1 -->
       <div x-show="hasConfigParam" class="flex flex-col items-center justify-center py-l">
         <div class="spinner mb-m"></div>
         <p class="text-gray-600">Loading configuration...</p>
       </div>
     </div>
   </div>
-  
-  <!-- Step 2: Select Model -->
   <div x-show="step === 2" class="card">
     <div class="card-body">
       <h3 class="text-lg font-semibold mb-m">Select AI Model</h3>
-      
-      <!-- Show config model if exists -->
       <div x-show="configModel" class="mb-m">
         <p class="meta-text mb-s">
           Configuration uses this model:
@@ -64,15 +51,11 @@
                   </h4>
                   <span class="text-xs text-gray-500 ml-s" x-text="getProviderName(configModelObject)"></span>
                 </div>
-                
-                <!-- Badges -->
                 <div class="flex flex-wrap gap-s mb-s">
                   <template x-for="badge in getModelBadges(configModelObject)" :key="badge.label">
                     <span :class="badge.class" class="badge text-xs " x-text="badge.label"></span>
                   </template>
                 </div>
-                
-                <!-- Compact Details -->
                 <div class="text-xs text-gray-600">
                   <div class="flex items-center gap-s flex-wrap">
                     <div x-show="configModelObject.max_completion_tokens" class="flex items-center gap-s">
@@ -121,147 +104,237 @@
         </template>
         <div class="mt-m meta-text">Or select a different model below:</div>
       </div>
-      
-      <!-- Model Filters -->
-      <div class="mb-m">
-        <!-- Active filter count and clear button -->
-        <div class="flex justify-between items-center mb-m">
-          <h4 class="text-sm font-medium text-gray-700">
-            Filters
-            <span x-show="getActiveFilterCount() > 0" class="ml-s">
-              (<span x-text="getActiveFilterCount()"></span> active)
-            </span>
-          </h4>
-          <button x-show="getActiveFilterCount() > 0" 
-                  @click="clearAllFilters()" 
-                  class="btn btn-ghost btn-sm">
-            Clear all
-          </button>
-        </div>
-        
-        <!-- Filter groups -->
-        <div class="stack-s">
-          <template x-for="(group, groupKey) in filterGroups" :key="groupKey">
-            <div x-show="config.showFilters">
-              <div class="text-xs font-medium text-gray-600 mb-s" x-text="group.label"></div>
-              <div class="flex flex-wrap gap-s">
-                <template x-for="filter in group.filters" :key="filter.value">
-                  <button @click="toggleFilter(groupKey, filter.value)"
-                          :class="isFilterActive(groupKey, filter.value) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+      <div class="model-selector">
+        <div class="mb-4">
+          <div class="search-box mb-3">
+            <input 
+              type="text" 
+              class="form-input" 
+              placeholder="Search models..."
+              x-model="modelSearch"
+            >
+          </div>
+          <div class="mb-3">
+            <div class="text-sm text-gray-600 mb-2">Quick Filters:</div>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('all')"
+              >
+                🌐 All Models
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'free' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('free')"
+              >
+                🆓 Free
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'cheap' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('cheap')"
+              >
+                💰 Cheap (<$0.001)
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'fast' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('fast')"
+              >
+                ⚡ Fast
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'smart' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('smart')"
+              >
+                🧠 Smart (GPT-4/Claude)
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'multimodal' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('multimodal')"
+              >
+                🖼️ Multimodal
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'large-context' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('large-context')"
+              >
+                📚 100K+ Context
+              </button>
+              <button 
+                class="btn btn-sm"
+                :class="modelFilter === 'coding' ? 'btn-primary' : 'btn-secondary'"
+                @click="setModelFilter('coding')"
+              >
+                💻 Coding
+              </button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="mt-3 space-y-3">
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Provider:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('provider', 'openai')"
+                          :class="isFilterActive('provider', 'openai') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    <span x-text="filter.icon"></span>
-                    <span x-text="filter.label"></span>
-                    <span class="opacity-60">(<span x-text="filter.count"></span>)</span>
+                    OpenAI
                   </button>
-                </template>
+                  <button @click="toggleFilter('provider', 'anthropic')"
+                          :class="isFilterActive('provider', 'anthropic') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Anthropic
+                  </button>
+                  <button @click="toggleFilter('provider', 'google')"
+                          :class="isFilterActive('provider', 'google') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Google
+                  </button>
+                  <button @click="toggleFilter('provider', 'meta')"
+                          :class="isFilterActive('provider', 'meta') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Meta
+                  </button>
+                  <button @click="toggleFilter('provider', 'mistral')"
+                          :class="isFilterActive('provider', 'mistral') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Mistral
+                  </button>
+                  <button @click="toggleFilter('provider', 'perplexity')"
+                          :class="isFilterActive('provider', 'perplexity') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    Perplexity
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Capabilities:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('capabilities', 'function-calling')"
+                          :class="isFilterActive('capabilities', 'function-calling') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    🔧 Function Calling
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'json-mode')"
+                          :class="isFilterActive('capabilities', 'json-mode') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    📋 JSON Mode
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'web-search')"
+                          :class="isFilterActive('capabilities', 'web-search') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    🔍 Web Search
+                  </button>
+                  <button @click="toggleFilter('capabilities', 'vision')"
+                          :class="isFilterActive('capabilities', 'vision') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    👁️ Vision
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 mb-2">Context Size:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button @click="toggleFilter('context', '4k')"
+                          :class="isFilterActive('context', '4k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    4K
+                  </button>
+                  <button @click="toggleFilter('context', '8k')"
+                          :class="isFilterActive('context', '8k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    8K
+                  </button>
+                  <button @click="toggleFilter('context', '16k')"
+                          :class="isFilterActive('context', '16k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    16K
+                  </button>
+                  <button @click="toggleFilter('context', '32k')"
+                          :class="isFilterActive('context', '32k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    32K
+                  </button>
+                  <button @click="toggleFilter('context', '128k+')"
+                          :class="isFilterActive('context', '128k+') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
+                          class="text-xs">
+                    128K+
+                  </button>
+                </div>
+              </div>
+              <div x-show="hasActiveFilters()" class="pt-2">
+                <button @click="clearAllFilters()" class="btn btn-ghost btn-sm">
+                  ❌ Clear All Filters
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <button @click="nextStep()" :disabled="!selectedModel" class="btn btn-primary w-full">
+              Apply Model →
+            </button>
+          </div>
+        </div>
+        <div class="text-center py-8" x-show="isLoading">
+          <div class="spinner"></div>
+          <p class="text-muted mt-2">Loading models...</p>
+        </div>
+        <div class="models-grid" x-show="!isLoading">
+          <template x-for="model in filteredModels" :key="model.id">
+            <div 
+              class="card-interactive"
+              :class="selectedModel?.id === model.id ? 'selected' : ''"
+              @click="selectModel(model)"
+            >
+              <div class="model-header">
+                <h4 class="model-name" x-text="model.name"></h4>
+                <span class="model-provider text-muted" x-text="getProviderName(model)"></span>
+              </div>
+              <div class="model-info">
+                <div class="info-row">
+                  <span class="label">Context:</span>
+                  <span class="value" x-text="formatContext(model.context_length)"></span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Price:</span>
+                  <span class="value" x-text="formatPrice(model.pricing)"></span>
+                </div>
+              </div>
+              <div class="model-tags">
+                <span class="tag tag-blue" x-show="!model.pricing || (model.pricing.prompt === 0 && model.pricing.completion === 0)">
+                  Free
+                </span>
+                <span class="tag tag-green" x-show="model.input_modalities?.includes('image') || model.input_modalities?.includes('audio')">
+                  Multimodal
+                </span>
+                <span class="tag tag-purple" x-show="model.context_length >= 100000">
+                  Large Context
+                </span>
               </div>
             </div>
           </template>
         </div>
-      </div>
-      
-      <!-- Online Search Toggle (only for models that support it) -->
-      <div x-show="selectedModel && selectedModel.supports_web_search" class="mb-m">
-        <div class="card p-m bg-gray-50">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-m">
-              <span class="text-2xl">🌐</span>
-              <div>
-                <h4 class="font-medium">Enable Web Search</h4>
-                <p class="text-xs text-gray-600">Search the web for up-to-date information</p>
-              </div>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" x-model="enableOnlineSearch" class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </div>
-          <div x-show="enableOnlineSearch && getWebSearchPricing(selectedModel)" class="mt-m pt-m border-t border-gray-200">
-            <p class="text-sm text-gray-600">
-              <span class="font-medium">Additional cost:</span> 
-              $<span x-text="getWebSearchPricing(selectedModel)?.price.toFixed(2)"></span> per 1K searches
-            </p>
-          </div>
+        <div class="text-center py-8" x-show="!isLoading && filteredModels.length === 0">
+          <p class="text-muted">No models found matching your criteria</p>
         </div>
-      </div>
-      
-      <!-- Model count -->
-      <div class="flex justify-between items-center mb-m">
-        <p class="meta-text">
-          Showing <span x-text="filteredModels.length" class="font-medium"></span> 
-          of <span x-text="models.length" class="font-medium"></span> models
-        </p>
-      </div>
-      
-      <!-- Model List -->
-      <div class="grid-2 gap-m model-grid overflow-y-auto">
-        <template x-for="model in filteredModels" :key="model.id">
-          <div @click="selectedModel = model; step = 3" 
-               class="card-interactive p-m"
-               :class="selectedModel?.id === model.id ? 'border-primary' : ''">
-            <div class="flex justify-between items-start mb-s">
-              <h4 class="font-medium text-sm " x-text="model.name"></h4>
-              <span class="text-xs text-gray-500 ml-s" x-text="getProviderName(model)"></span>
-            </div>
-            
-            <!-- Badges -->
-            <div class="flex flex-wrap gap-s mb-s">
-              <template x-for="badge in getModelBadges(model)" :key="badge.label">
-                <span :class="badge.class" class="badge text-xs " x-text="badge.label"></span>
-              </template>
-            </div>
-            
-            <!-- Compact Details -->
-            <div class="text-xs text-gray-600">
-              <div class="flex items-center gap-s flex-wrap">
-                <div x-show="model.max_completion_tokens" class="flex items-center gap-s">
-                  <span class="text-gray-500">Max:</span>
-                  <span x-text="model.max_completion_tokens?.toLocaleString() + ' tokens'"></span>
-                </div>
-                <div x-show="model.input_modalities?.length > 0 || model.output_modalities?.length > 0" class="text-gray-500">
-                  <span x-text="formatModalities(model.input_modalities, model.output_modalities)"></span>
-                </div>
-              </div>
-              <div class="flex justify-between mt-s">
-                <template x-if="(model.pricing?.prompt || 0) < 0">
-                  <span class="text-gray-500 col-span-2">Auto-routing (variable pricing)</span>
-                </template>
-                <template x-if="(model.pricing?.prompt || 0) >= 0">
-                  <>
-                    <span class="text-gray-500">$<span x-text="((model.pricing?.prompt || 0) * 1000).toFixed(3)"></span>/1K in</span>
-                    <span class="text-gray-500">$<span x-text="((model.pricing?.completion || 0) * 1000).toFixed(3)"></span>/1K out</span>
-                  </>
-                </template>
-              </div>
-              <div x-show="model.supports_web_search" class="mt-s">
-                <template x-if="getWebSearchPricing(model)">
-                  <span class="text-xs text-primary">
-                    <span x-text="getWebSearchPricing(model).label"></span>: 
-                    $<span x-text="getWebSearchPricing(model).price.toFixed(2)"></span>/1K requests
-                  </span>
-                </template>
-              </div>
-            </div>
-          </div>
-        </template>
+        
       </div>
       
       <div class="flex justify-between mt-l">
         <button @click="prevStep()" class="btn btn-ghost">← Back</button>
-        <div x-show="!configModel || selectedModel?.id !== configModel">
-          <button @click="nextStep()" :disabled="!selectedModel" class="btn btn-primary">Next →</button>
-        </div>
       </div>
     </div>
   </div>
-  
-  <!-- Step 3: Confirm -->
   <div x-show="step === 3" class="card">
     <div class="card-body">
       <h3 class="text-lg font-semibold mb-m">Confirm Generation</h3>
       
       <div class="stack-m">
-        <!-- Configuration Details -->
         <div class="card-sectioned">
           <div class="card-header">
             <h4 class="font-semibold">Configuration Details</h4>
@@ -288,7 +361,6 @@
           </div>
         </div>
 
-        <!-- Model Details -->
         <div class="card-sectioned">
           <div class="card-header">
             <h4 class="font-semibold">Model Configuration</h4>
@@ -322,8 +394,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- Cost Estimation -->
         <div x-show="getEstimatedCost()" class="alert alert-warning">
           <div>
             <p class="font-medium mb-s">💰 Estimated Cost</p>
@@ -347,8 +417,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Actions Info -->
         <div class="meta-text text-center">
           <p>Ready to generate <span x-text="parameters.count" class="font-medium"></span> items using <span x-text="selectedModel?.name" class="font-medium"></span></p>
           <p class="mt-s">Results will be saved to the outputs folder</p>

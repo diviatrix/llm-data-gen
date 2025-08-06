@@ -47,6 +47,15 @@ class Router {
     const contentDiv = document.getElementById('page-content');
     if (!contentDiv) return;
 
+    // Clean up previous page component
+    const existingComponent = contentDiv.querySelector('[x-data]');
+    if (existingComponent && existingComponent._x_dataStack) {
+      const componentData = existingComponent._x_dataStack[0];
+      if (componentData && typeof componentData.destroy === 'function') {
+        componentData.destroy();
+      }
+    }
+
     contentDiv.innerHTML = '';
 
     const pageComponents = {

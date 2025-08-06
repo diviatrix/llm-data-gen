@@ -19,13 +19,18 @@ export function createModelSelector(options = {}) {
     models: [],
     selectedModel: null,
     modelSearch: '',
+    modelFilter: config.defaultFilter, // Quick filter used by template
     enableOnlineSearch: false,
     isLoading: false,
+    showFilters: config.showFilters,
+    showSearch: config.showSearch,
+    showOnlineToggle: config.showOnlineToggle,
     showDetailedFilters: false,
-    initialized: false, // Prevent multiple init calls
+    initialized: false,
 
-    // Active filters (multiple selection)
+    // Active filters (multiple selection for detailed filters)
     activeFilters: {
+      provider: [],
       capabilities: [],
       pricing: [],
       context: [],
@@ -87,6 +92,36 @@ export function createModelSelector(options = {}) {
           m.id === config.selectedModelId || m.id === baseModelId
         );
       }
+
+      // Set up watchers for auto-updating filtered models
+      this._setupWatchers();
+    },
+
+    // Set up reactive watchers
+    _setupWatchers() {
+      // Watch modelSearch
+      let modelSearchValue = this.modelSearch;
+      Object.defineProperty(this, 'modelSearch', {
+        get() {
+          return modelSearchValue;
+        },
+        set(value) {
+          modelSearchValue = value;
+          this.updateFilteredModels();
+        }
+      });
+
+      // Watch modelFilter
+      let modelFilterValue = this.modelFilter;
+      Object.defineProperty(this, 'modelFilter', {
+        get() {
+          return modelFilterValue;
+        },
+        set(value) {
+          modelFilterValue = value;
+          this.updateFilteredModels();
+        }
+      });
     },
 
     // Load available models
@@ -186,7 +221,44 @@ export function createModelSelector(options = {}) {
         );
       }
 
-      // Apply active filters
+      // Apply quick filter first (from template buttons)
+      if (this.modelFilter && this.modelFilter !== 'all') {
+        filtered = filtered.filter(model => {
+          switch (this.modelFilter) {
+          case 'free':
+            return !model.pricing || (parseFloat(model.pricing.prompt || 0) === 0 && parseFloat(model.pricing.completion || 0) === 0);
+          case 'cheap': {
+            const promptPrice = parseFloat(model.pricing?.prompt || 0);
+            const completionPrice = parseFloat(model.pricing?.completion || 0);
+            return promptPrice > 0 && promptPrice < 0.000001 && completionPrice < 0.000003;
+          }
+          case 'fast':
+            // Consider models with small size or known fast models
+            return model.id.includes('gpt-3.5') || model.id.includes('mistral-7b') ||
+                   model.id.includes('llama-3.1-8b') || model.id.includes('llama-3.2') ||
+                   model.id.includes('gemini-flash') || model.id.includes('claude-3-haiku');
+          case 'smart':
+            // Top tier models
+            return model.id.includes('gpt-4') || model.id.includes('claude-3-opus') ||
+                   model.id.includes('claude-3.5') || model.id.includes('gemini-pro') ||
+                   model.id.includes('o1-preview') || model.id.includes('o1-mini');
+          case 'coding':
+            // Models good for coding
+            return model.id.includes('codestral') || model.id.includes('code') ||
+                   model.id.includes('gpt-4') || model.id.includes('claude') ||
+                   model.id.includes('deepseek');
+          case 'multimodal':
+            return model.input_modalities?.includes('image') || model.input_modalities?.includes('audio') ||
+                   model.architecture?.modality === 'multimodal' || model.architecture?.modality === 'text&image->text';
+          case 'large-context':
+            return (model.context_length || 0) >= 100000;
+          default:
+            return true;
+          }
+        });
+      }
+
+      // Apply detailed active filters
       const hasActiveFilters = Object.values(this.activeFilters).some(filters => filters.length > 0);
 
       if (config.showFilters && hasActiveFilters) {
@@ -197,6 +269,20 @@ export function createModelSelector(options = {}) {
 
             const matchesGroup = activeValues.some(filterValue => {
               switch (filterValue) {
+              // Provider filters
+              case 'openai':
+                return model.id.includes('gpt') || model.id.includes('o1-');
+              case 'anthropic':
+                return model.id.includes('claude');
+              case 'google':
+                return model.id.includes('gemini') || model.id.includes('palm');
+              case 'meta':
+                return model.id.includes('llama');
+              case 'mistral':
+                return model.id.includes('mistral') || model.id.includes('mixtral');
+              case 'perplexity':
+                return model.id.includes('perplexity');
+
               // Capabilities
               case 'multimodal':
                 return model.input_modalities?.includes('image') || model.input_modalities?.includes('audio');
@@ -204,12 +290,14 @@ export function createModelSelector(options = {}) {
                 return model.input_modalities?.includes('image');
               case 'audio':
                 return model.input_modalities?.includes('audio');
+              case 'function-calling':
               case 'has-tools':
                 return model.supported_parameters?.includes('tools');
+              case 'json-mode':
               case 'structured-output':
                 return model.supported_parameters?.includes('response_format');
               case 'web-search':
-                return model.supports_web_search === true;
+                return model.supports_web_search === true || model.id.includes('perplexity');
               case 'native-web-search':
                 return model.has_native_web_search === true;
 
@@ -222,6 +310,16 @@ export function createModelSelector(options = {}) {
                 return parseFloat(model.pricing?.prompt || 0) > 0.000001 || parseFloat(model.pricing?.completion || 0) > 0.000003;
 
                 // Context
+              case '4k':
+                return model.context_length >= 4000 && model.context_length < 8000;
+              case '8k':
+                return model.context_length >= 8000 && model.context_length < 16000;
+              case '16k':
+                return model.context_length >= 16000 && model.context_length < 32000;
+              case '32k':
+                return model.context_length >= 32000 && model.context_length < 128000;
+              case '128k+':
+                return model.context_length >= 128000;
               case 'small-context':
                 return model.context_length < 10000;
               case 'medium-context':
@@ -264,17 +362,29 @@ export function createModelSelector(options = {}) {
       this.updateFilteredModels();
     },
 
+    // Set quick model filter
+    setModelFilter(filter) {
+      this.modelFilter = filter;
+      this.updateFilteredModels();
+    },
+
     // Clear all filters
     clearAllFilters() {
       Object.keys(this.activeFilters).forEach(key => {
         this.activeFilters[key] = [];
       });
+      this.modelFilter = 'all';
       this.updateFilteredModels();
+    },
+
+    // Check if any filters are active
+    hasActiveFilters() {
+      return Object.values(this.activeFilters).some(filters => filters.length > 0);
     },
 
     // Check if filter is active
     isFilterActive(groupKey, filterValue) {
-      return this.activeFilters[groupKey].includes(filterValue);
+      return this.activeFilters[groupKey]?.includes(filterValue) || false;
     },
 
     // Get active filter count

@@ -1,27 +1,26 @@
 // Generate Page Component
 import { api } from '../api.js';
 import { notify } from '../utils/notifications.js';
+import { createModelSelector } from '../components/modelSelector.js';
 
 export function generatePage() {
+  // Create model selector instance
+  const modelSelector = createModelSelector({
+    showFilters: true,
+    showSearch: true,
+    showOnlineToggle: false, // Generate page doesn't need online toggle in model selector
+    defaultFilter: 'all',
+    onSelect: (model, modelId) => {
+      console.log('Model selected for generation:', model.name, modelId);
+    }
+  });
+
   return {
-    // Model selection properties (replacing broken modelSelector)
-    models: [],
-    filteredModels: [],
-    selectedModel: null,
-    modelSearch: '',
-    enableOnlineSearch: false,
-    isLoading: false,
+    // Spread model selector properties and methods
+    ...modelSelector,
 
-    // Active filters for model selection
-    activeFilters: {
-      capabilities: [],
-      pricing: [],
-      context: [],
-      moderation: []
-    },
-
-    // State
-    config: { showFilters: true }, // Add config for template
+    // Generate-specific state
+    config: { showFilters: true },
     step: 1, // 1: select config, 2: select model, 3: confirm
     configs: [],
     selectedConfig: null,
@@ -70,6 +69,9 @@ export function generatePage() {
                 const baseModelId = this.configModel.replace(':online', '');
                 const isOnlineSearch = this.configModel.endsWith(':online');
 
+                // Initialize model selector first, then set the model
+                await modelSelector.init.call(this);
+
                 // Find and pre-select the model in the selector
                 const model = this.models.find(m => m.id === baseModelId);
                 if (model) {
@@ -96,8 +98,7 @@ export function generatePage() {
 
             // Skip to step 2 (Select Model) directly
             this.step = 2;
-            // Load models only when we need them
-            await this.loadModels();
+            // Models are already loaded by modelSelector.init
           } else {
             notify.error(`Configuration "${configName}" not found`);
             this.hasConfigParam = false;
@@ -171,9 +172,9 @@ export function generatePage() {
           }
 
           this.step = 2; // Go to Select Model
-          // Load models only when we need them
+          // Initialize model selector if not already done
           if (!this.models || this.models.length === 0) {
-            await this.loadModels();
+            await modelSelector.init.call(this);
           }
         }
       } catch (error) {
@@ -203,7 +204,7 @@ export function generatePage() {
       }
 
       // Prepare configuration with model settings
-      const modelId = this.selectedModel ? this.selectedModel.id + (this.enableOnlineSearch ? ':online' : '') : null;
+      const modelId = modelSelector.finalModelId.call(this);
       console.log('Starting generation with model:', modelId, 'Online search enabled:', this.enableOnlineSearch);
 
       const config = {
@@ -296,192 +297,12 @@ export function generatePage() {
       }
     },
 
-    // Load models
-    async loadModels() {
-      try {
-        this.isLoading = true;
-        const response = await api.get('/models');
-        if (response.success && response.models) {
-          this.models = response.models;
-          this.filteredModels = response.models;
-        }
-      } catch (error) {
-        console.error('Failed to load models:', error);
-        notify.error('Failed to load models');
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    // Update filtered models based on search and filters
-    updateFilteredModels() {
-      let filtered = this.models;
-
-      // Apply search filter
-      if (this.modelSearch.trim()) {
-        const search = this.modelSearch.toLowerCase();
-        filtered = filtered.filter(model =>
-          model.name.toLowerCase().includes(search) ||
-          model.id.toLowerCase().includes(search)
-        );
-      }
-
-      // Apply active filters
-      const hasActiveFilters = Object.values(this.activeFilters).some(filters => filters.length > 0);
-
-      if (hasActiveFilters) {
-        filtered = filtered.filter(model => {
-          // Check each filter group
-          for (const [, activeValues] of Object.entries(this.activeFilters)) {
-            if (activeValues.length === 0) continue;
-
-            const matchesGroup = activeValues.some(filterValue => {
-              switch (filterValue) {
-              case 'free':
-                return !model.pricing || (parseFloat(model.pricing.prompt) === 0 && parseFloat(model.pricing.completion) === 0);
-              case 'web-search':
-                return model.supports_web_search === true;
-              case 'vision':
-                return model.input_modalities?.includes('image');
-              case 'large-context':
-                return model.context_length >= 100000;
-              default:
-                return false;
-              }
-            });
-
-            if (!matchesGroup) return false;
-          }
-
-          return true;
-        });
-      }
-
-      this.filteredModels = filtered;
-    },
-
-    // Toggle filter
-    toggleFilter(groupKey, filterValue) {
-      const group = this.activeFilters[groupKey];
-      const index = group.indexOf(filterValue);
-
-      if (index === -1) {
-        group.push(filterValue);
-      } else {
-        group.splice(index, 1);
-      }
-
-      this.updateFilteredModels();
-    },
-
-    // Check if filter is active
-    isFilterActive(groupKey, filterValue) {
-      return this.activeFilters[groupKey].includes(filterValue);
-    },
-
-    // Select model and move to next step
+    // Select model and move to next step (override the component's selectModel)
     selectModel(model) {
-      this.selectedModel = model;
+      // Use the component's selectModel first
+      modelSelector.selectModel.call(this, model);
+      // Then move to next step
       this.step = 3; // Go to Confirm step
-    },
-
-    // Format price
-    formatPrice(pricing) {
-      if (!pricing) return 'N/A';
-      if (pricing.prompt === 0 && pricing.completion === 0) return 'Free';
-      return `$${pricing.prompt}/$${pricing.completion}`;
-    },
-
-    // Format context length
-    formatContext(length) {
-      if (!length) return 'N/A';
-      if (length >= 1000000) return `${Math.round(length/1000000)}M`;
-      if (length >= 1000) return `${Math.round(length/1000)}K`;
-      return length.toString();
-    },
-
-    // Get model badges
-    getModelBadges(model) {
-      const badges = [];
-      if (model.pricing?.prompt === 0) badges.push({ label: 'Free', class: 'badge-success' });
-      if (model.context_length >= 100000) badges.push({ label: '100K+', class: 'badge-info' });
-      if (model.supports_web_search) badges.push({ label: '🌐 Web', class: 'badge-info' });
-      if (model.input_modalities?.includes('image')) badges.push({ label: '👁️ Vision', class: 'badge-primary' });
-      return badges;
-    },
-
-    // Check if model supports online search
-    supportsOnlineSearch(model) {
-      return model?.supports_web_search === true;
-    },
-
-    // Get web search pricing
-    getWebSearchPricing(model) {
-      if (!model?.web_search_pricing) return null;
-
-      if (model.has_native_web_search && model.web_search_pricing.native) {
-        return {
-          type: 'native',
-          price: model.web_search_pricing.native.medium * 1000,
-          label: 'Native Search'
-        };
-      }
-
-      return {
-        type: 'plugin',
-        price: model.web_search_pricing.plugin * 1000,
-        label: 'Web Search'
-      };
-    },
-
-    // Get provider name from model
-    getProviderName(model) {
-      if (!model) return '';
-      // Extract provider from model ID (e.g., "openai/gpt-4" -> "OpenAI")
-      const provider = model.id.split('/')[0];
-      return provider.charAt(0).toUpperCase() + provider.slice(1);
-    },
-
-    // Format model modalities
-    formatModalities(input, output) {
-      const parts = [];
-      if (input && input.length > 0) {
-        parts.push(input.join(', '));
-      }
-      if (output && output.length > 0) {
-        parts.push('→ ' + output.join(', '));
-      }
-      return parts.join(' ');
-    },
-
-    // Filter groups for model selection
-    filterGroups: {
-      capabilities: [
-        { value: 'web-search', label: '🌐 Web Search' },
-        { value: 'vision', label: '👁️ Vision' }
-      ],
-      pricing: [
-        { value: 'free', label: 'Free' }
-      ],
-      context: [
-        { value: 'large-context', label: '100K+ Context' }
-      ]
-    },
-
-    // Get active filter count
-    getActiveFilterCount() {
-      return Object.values(this.activeFilters).reduce((sum, filters) => sum + filters.length, 0);
-    },
-
-    // Clear all filters
-    clearAllFilters() {
-      this.activeFilters = {
-        capabilities: [],
-        pricing: [],
-        context: [],
-        moderation: []
-      };
-      this.updateFilteredModels();
     },
 
     // Get estimated cost
@@ -504,8 +325,8 @@ export function generatePage() {
       // Calculate web search cost if enabled
       let webSearchCost = 0;
       if (this.enableOnlineSearch && this.selectedModel.supports_web_search) {
-        // Get web search pricing
-        const webSearchPricing = this.getWebSearchPricing(this.selectedModel);
+        // Get web search pricing from model selector
+        const webSearchPricing = modelSelector.getWebSearchPricing.call(this, this.selectedModel);
         if (webSearchPricing) {
           // Estimate 1 web search per generation item
           webSearchCost = (this.parameters.count / 1000) * webSearchPricing.price;

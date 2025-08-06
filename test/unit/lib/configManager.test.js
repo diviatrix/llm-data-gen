@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfigManager } from '../../../lib/configManager.js';
-import { UserStorage } from '../../../lib/userStorage.js';
 import { readJsonFile, writeJsonFile } from '../../../lib/utils/fileIO.js';
 import { ConfigError, ValidationError } from '../../../lib/utils/errors.js';
 import path from 'path';

@@ -1,70 +1,49 @@
 # LLM Data Generator
 
-Universal data generator using Large Language Models. Generate structured JSON data with schemas or any text format (Markdown, CSV, emails, etc.) with LLM assistance.
+A comprehensive data generation platform powered by Large Language Models. Generate structured data, create content, and interact with 100+ AI models through both CLI and web interfaces.
+
+## Overview
+
+LLM Data Generator is a versatile tool that combines the power of modern AI models with user-friendly interfaces to generate high-quality data and content. Whether you need structured JSON data for testing, CSV files for analysis, or creative content like blog posts and documentation, this tool provides an intuitive solution with enterprise-grade features.
 
 ## Features
 
-### 🎯 Schema-driven JSON generation
-```json
-// Input schema
-{
-  "name": { "type": "string" },
-  "price": { "type": "number", "minimum": 10, "maximum": 1000 }
-}
+### 🎯 **Multi-Format Data Generation**
+- **JSON/JSONL**: Schema-validated structured data generation
+- **CSV/TSV**: Tabular data with custom columns and relationships
+- **XML**: Hierarchical data structures
+- **YAML**: Configuration files and data serialization
+- **SQL**: Database schemas and sample data
+- **Markdown**: Documentation, articles, and formatted content
+- **Text**: Custom formats and unstructured content
 
-// Generated output
-{
-  "name": "Wireless Gaming Mouse Pro X",
-  "price": 89.99
-}
-```
+### 🖥️ **Dual Interface Design**
+- **Interactive CLI**: Terminal-based wizard with model selection and progress tracking
+- **Web Interface**: Full-featured browser-based application with visual editors
 
-### 📄 Text format generation
-```bash
-# Generate blog posts, emails, CSV data, SQL scripts, etc.
-llmdatagen --config blog-posts.json
+### 🤖 **Advanced AI Integration**
+- **100+ Models**: Access to OpenRouter's complete model catalog
+- **Smart Model Selection**: Auto-router picks the best model for your task
+- **Real-time Cost Tracking**: Know costs before and after generation
+- **Progress Monitoring**: Live generation status and error handling
 
-# Output: article_1.md
-# How AI is Transforming Healthcare in 2025
-# 
-# The healthcare industry is experiencing a revolutionary...
-```
+### 👥 **User Management & Authentication**
+- **Role-based Access**: Admin and user roles with different permissions
+- **Multi-tenant Support**: Isolated user data and configurations
+- **API Key Management**: Personal and system-wide key management
+- **Storage Quotas**: Configurable limits and usage tracking
 
-### 🤖 Interactive CLI
-```bash
-$ llmdatagen
-
-╔════════════════════════════════════════════╗
-║       LLM Data Generator v1.0.8            ║
-╚════════════════════════════════════════════╝
-
-👤 Account Info:
-  balance: $44.58 of $50.00 (10.8% used)
-  
-? Select LLM model:
-  🤖 Auto Router (selects best available model)
-❯ 🆓 Free    Meta: Llama 3.2 3B Instruct
-  💰 $0.15/M OpenAI: GPT-4o mini
-  
-? How many items to generate? 20
-
-📊 Generating 20 items...
-  ✓ Generated item 1/20
-  ✓ Generated item 2/20
-  ...
-  
-✅ Generated 20 items to output/products.json
-💰 Total cost: $0.0042
-```
-
-- **Live model selection** - Always up-to-date models from OpenRouter
-- **Progress tracking** - Real-time generation status
-- **Cost estimation** - Know costs before and after generation
-- **Validation** - Automatic JSON Schema validation
-- **Extensible** - Add custom configurations and templates
+### 📊 **Advanced Features**
+- **Queue System**: Batch processing for large-scale generation
+- **Generation History**: Track and revisit previous generations
+- **File Management**: Upload, organize, and manage data files
+- **Chat Interface**: Interactive conversations with AI models
+- **Data Viewer/Editor**: Visual editing of generated content
+- **Configuration Wizard**: Step-by-step setup for complex scenarios
 
 ## Installation
 
+### NPM Package (Recommended)
 ```bash
 # Install globally
 npm install -g @1337plus/llmdatagen
@@ -73,101 +52,313 @@ npm install -g @1337plus/llmdatagen
 npx @1337plus/llmdatagen
 ```
 
-For alternative installation methods (from source, development setup, troubleshooting), see [docs/installation.md](docs/installation.md).
+### From Source
+```bash
+# Clone the repository
+git clone https://github.com/diviatrix/llm-data-gen.git
+cd llm-data-gen
+
+# Install dependencies
+npm install
+
+# Run locally
+npm start
+```
+
+### System Requirements
+- **Node.js**: 18.0.0 or higher
+- **Platform**: Windows, macOS, Linux
+- **Memory**: 512MB RAM minimum
+- **Storage**: 100MB available space
 
 ## Quick Start
 
-### Interactive Mode (Default)
-```bash
-# Start interactive wizard
-llmdatagen
-```
+### CLI Interface
 
-This will show a menu with options to:
-- 🚀 Generate data
-- ⚙️ Create/edit configuration
-- 🌐 Open web interface
-- 📊 Test API connection
-- 📂 Open data folder
+```bash
+# Start interactive mode
+llmdatagen
+
+# Direct generation with config file
+llmdatagen generate --config myconfig.json
+
+# Test API connection
+llmdatagen test
+
+# Validate configuration
+llmdatagen validate config.json
+```
 
 ### Web Interface
-```bash
-# Start web UI
-llmdatagen web
-
-# Or use alias
-llmdatagen ui
-```
-
-The web interface runs on `http://localhost:3000` and includes:
-- **Local Mode (localhost)**: Full features + admin panel for user management  
-- **Cloud Mode**: Multi-tenant with authentication (users created via admin panel)
-
-### Command Line
-```bash
-# Generate with specific config
-llmdatagen generate --config myconfig.json
-```
-
-**Note**: The tool stores configurations and outputs in your Documents folder:
-- Configurations: `~/Documents/llmdatagen/configs/`
-- Generated files: `~/Documents/llmdatagen/output/`
-
-For detailed usage instructions, command-line options, and advanced features, see [docs/usage.md](docs/usage.md).
-
-## Output Formats
-
-The generator supports two output formats:
-
-### JSON Format (default)
-- ✅ Schema validation with JSON Schema
-- ✅ Type-safe structured data
-- ✅ Field-level generation control
-- ✅ Perfect for APIs, databases, configurations
-
-### Text Format
-- ✅ Any text-based format (Markdown, CSV, SQL, etc.)
-- ✅ No schema constraints
-- ✅ Template variables in prompts
-- ✅ Perfect for content, documentation, scripts
-
-## Web Interface
-
-Run the web UI for visual configuration and result viewing:
 
 ```bash
-# Start the web server (default port 3000)
+# Start web server (default port 3000)
 npm run web
 
 # Start on custom port
 PORT=8080 npm run web
 
-# The server runs headless - open http://localhost:3000 in your browser
+# Development mode with hot reload
+npm run dev:web
 ```
 
-The web interface provides:
-- 📁 Drag-and-drop configuration upload
-- ✏️ Visual JSON editor with syntax validation
-- 🎯 One-click data generation
-- 📊 Result visualization
-- 💰 Real-time account balance display
-- 💬 Interactive chat with LLM models
-- 👥 User management (admin panel - localhost only)
-- 🔐 Multi-tenant support with isolated user data
+Open `http://localhost:3000` in your browser to access the full web interface.
+
+## Usage Examples
+
+### Schema-driven JSON Generation
+```json
+{
+  "type": "json",
+  "count": 50,
+  "schema": {
+    "name": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "age": { "type": "number", "minimum": 18, "maximum": 80 },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 2,
+      "maxItems": 5
+    }
+  }
+}
+```
+
+### CSV Data Generation
+```json
+{
+  "type": "csv",
+  "count": 100,
+  "prompt": "Generate customer data with columns: name, email, phone, city, purchase_amount",
+  "output": {
+    "format": "csv",
+    "filename": "customers.csv"
+  }
+}
+```
+
+### Content Creation
+```json
+{
+  "type": "text",
+  "count": 10,
+  "prompt": "Write technical blog post titles about AI and machine learning trends in 2025",
+  "output": {
+    "format": "markdown",
+    "filename": "blog_titles.md"
+  }
+}
+```
+
+## Web Interface Features
+
+### 🏠 **Dashboard**
+- System status and health monitoring
+- Quick access to recent projects
+- Usage statistics and quotas
+
+### 💬 **Chat Interface**
+- Interactive conversations with AI models
+- File attachment support (images, documents, code)
+- Conversation history and export
+- Model switching mid-conversation
+
+### 🔧 **Configuration Manager**
+- Visual JSON editor with syntax highlighting
+- Template library with examples
+- Validation and testing tools
+- Import/export configurations
+
+### 📈 **Data Generator**
+- Batch generation with progress tracking
+- Multiple output format support
+- Preview and validation
+- Download and sharing options
+
+### 📂 **File Manager**
+- Upload and organize data files
+- Preview and edit capabilities
+- Bulk operations and organization
+- Integration with generation workflows
+
+### 🎛️ **Admin Panel** (Local Mode)
+- User creation and management
+- Role assignment and permissions
+- System configuration
+- Usage monitoring and quotas
+
+### ⚙️ **Settings**
+- API key management
+- Model preferences and defaults
+- Output directory configuration
+- Notification preferences
+
+## Configuration
+
+### Environment Variables
+```bash
+# OpenRouter API configuration
+OPENROUTER_API_KEY=your_api_key_here
+
+# Server configuration
+PORT=3000
+NODE_ENV=production
+
+# Authentication (optional)
+JWT_SECRET=your_jwt_secret
+SESSION_TIMEOUT=24h
+
+# Storage (optional)
+DATA_DIR=./user-data
+MAX_FILE_SIZE=10485760
+```
+
+### Directory Structure
+```
+~/Documents/llmdatagen/
+├── configs/           # Configuration files
+│   └── examples/      # Template configurations
+├── output/           # Generated data files
+│   └── data/         # Organized by date/project
+└── uploads/          # User uploaded files
+```
+
+## API Reference
+
+### Authentication Endpoints
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/logout` - Session termination
+- `GET /api/auth/me` - Current user info
+
+### Generation Endpoints
+- `POST /api/generate` - Start data generation
+- `GET /api/generate/status/:id` - Check generation status
+- `GET /api/generate/history` - Generation history
+
+### Configuration Endpoints
+- `GET /api/configs` - List configurations
+- `POST /api/configs` - Create configuration
+- `PUT /api/configs/:id` - Update configuration
+- `DELETE /api/configs/:id` - Delete configuration
+
+### File Management Endpoints
+- `GET /api/files` - List files
+- `POST /api/files/upload` - Upload file
+- `GET /api/files/:id` - Download file
+- `DELETE /api/files/:id` - Delete file
+
+For detailed API documentation, see [docs/api_reference.md](docs/api_reference.md).
+
+## Advanced Features
+
+### Queue System
+Process multiple generation tasks in background:
+- Batch processing for large datasets
+- Priority-based task scheduling
+- Progress tracking and notifications
+- Error handling and retry logic
+
+### Model Management
+- Dynamic model selection based on task complexity
+- Cost optimization with model routing
+- Performance monitoring and analytics
+- Custom model preferences per user
+
+### Data Processing
+- Multi-format export capabilities
+- Data validation and cleanup
+- Transformation and filtering
+- Integration with external tools
+
+## Development
+
+### Setup Development Environment
+```bash
+# Clone and install
+git clone https://github.com/diviatrix/llm-data-gen.git
+cd llm-data-gen
+npm install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run tests
+npm test
+npm run test:coverage
+
+# Start development servers
+npm run dev:web    # Web interface
+npm start          # CLI interface
+```
+
+### Available Scripts
+- `npm start` - Run CLI tool
+- `npm run web` - Start web server
+- `npm run lint` - Check code style
+- `npm test` - Run test suite
+- `npm run test:coverage` - Coverage report
+- `npm run build-css` - Build stylesheets
+
+### Project Structure
+```
+llm-data-gen/
+├── lib/                    # Core libraries
+│   ├── cli/               # CLI interface components
+│   ├── streaming/         # Data streaming utilities
+│   ├── utils/            # Shared utilities
+│   └── workers/          # Background processing
+├── public/                # Web interface assets
+│   ├── css/              # Stylesheets
+│   ├── js/               # Frontend JavaScript
+│   └── pages/            # HTML templates
+├── test/                  # Test suites
+│   ├── unit/             # Unit tests
+│   └── integration/      # Integration tests
+├── docs/                  # Documentation
+└── configs/              # Example configurations
+```
 
 ## Documentation
 
-- [Configuration Guide](docs/configuration.md) - Detailed guide on creating configurations
-- [Usage Guide](docs/usage.md) - Command-line options and features
-- [Installation](docs/installation.md) - Alternative installation methods
-- [Examples](docs/examples.md) - Technical details for developers
+- **[Installation Guide](docs/installation.md)** - Detailed installation instructions
+- **[Usage Guide](docs/usage.md)** - Complete feature walkthrough
+- **[Configuration Guide](docs/configuration.md)** - Schema and setup reference
+- **[API Reference](docs/api_reference.md)** - REST API documentation
+- **[Examples](docs/examples.md)** - Real-world use cases and templates
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Submit a pull request
+We welcome contributions from the community! Please read our contributing guidelines:
+
+1. **Fork** the repository on GitHub
+2. **Create** a feature branch from `main`
+3. **Make** your changes with appropriate tests
+4. **Ensure** all tests pass and code follows style guidelines
+5. **Submit** a pull request with clear description
+
+### Development Guidelines
+- Follow existing code style and conventions
+- Add tests for new functionality
+- Update documentation for user-facing changes
+- Use semantic commit messages
+
+### Reporting Issues
+- Use GitHub Issues for bug reports and feature requests
+- Include system information and steps to reproduce
+- Check existing issues to avoid duplicates
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- **GitHub Issues**: Bug reports and feature requests
+- **Documentation**: Comprehensive guides and examples
+- **Community**: Share configurations and use cases
+
+---
+
+Built with ❤️ by [1337.plus](https://github.com/diviatrix)

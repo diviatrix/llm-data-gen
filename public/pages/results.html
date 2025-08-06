@@ -1,11 +1,11 @@
 <div class="stack">
-  <!-- Header -->
+  
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">Files Explorer</h2>
     <p class="text-gray-600 mt-s">Browse your configurations and generated data</p>
   </div>
   
-  <!-- Breadcrumbs -->
+  
   <nav x-show="fileExplorer.currentPath" class="mb-m">
     <ol class="flex items-center gap-s text-sm">
       <template x-for="(crumb, index) in fileExplorer.breadcrumbs()" :key="crumb.path">
@@ -20,11 +20,11 @@
     </ol>
   </nav>
   
-  <!-- Toolbar -->
+  
   <div class="card mb-m">
     <div class="card-body">
       <div class="flex justify-between items-center flex-wrap gap-m">
-        <!-- Search -->
+        
         <div class="flex-1 max-w-md">
           <input type="text" 
                  x-model="fileExplorer.searchQuery" 
@@ -32,9 +32,9 @@
                  class="form-input">
         </div>
         
-        <!-- View Mode & Sort -->
+        
         <div class="flex items-center gap-m">
-          <!-- View Mode Toggle -->
+          
           <div class="flex gap-s">
             <button @click="fileExplorer.viewMode = 'cards'" 
                     :class="fileExplorer.viewMode === 'cards' ? 'btn-primary' : 'btn-ghost'"
@@ -48,7 +48,7 @@
             </button>
           </div>
           
-          <!-- Sort Dropdown -->
+          
           <div class="relative" x-data="{ showSort: false }">
             <button @click="showSort = !showSort" class="btn btn-secondary btn-sm">
               Sort by <span x-text="fileExplorer.sortBy"></span>
@@ -68,7 +68,7 @@
             </div>
           </div>
           
-          <!-- Refresh -->
+          
           <button @click="fileExplorer.loadFiles(fileExplorer.currentPath)" 
                   class="btn btn-ghost btn-sm">
             🔄 Refresh
@@ -78,12 +78,12 @@
     </div>
   </div>
   
-  <!-- Loading State -->
+  
   <div x-show="fileExplorer.isLoading" class="flex justify-center items-center py-l">
     <div class="spinner"></div>
   </div>
   
-  <!-- Files Grid View -->
+  
   <div x-show="!fileExplorer.isLoading && fileExplorer.viewMode === 'cards'" 
        class="grid-2">
     <template x-for="file in fileExplorer.filteredFiles()" :key="file.name">
@@ -120,7 +120,7 @@
     </template>
   </div>
   
-  <!-- Files List View -->
+  
   <div x-show="!fileExplorer.isLoading && fileExplorer.viewMode === 'list'" 
        class="card">
     <table class="w-full">
@@ -165,7 +165,7 @@
     </table>
   </div>
   
-  <!-- Empty State -->
+  
   <div x-show="!fileExplorer.isLoading && fileExplorer.filteredFiles().length === 0" 
        class="card">
     <div class="card-body empty-state">

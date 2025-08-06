@@ -11,7 +11,6 @@ import { readJsonFile } from './lib/utils/fileIO.js';
 import { createApiClient } from './lib/sessionManager.js';
 import { UserStorage } from './lib/userStorage.js';
 import { authManager as authManagerPromise } from './lib/auth.js';
-import { UserManager } from './lib/userManager.js';
 import fs from 'node:fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -193,7 +192,7 @@ app.post('/api/user/api-key', async (req, res) => {
     // Save OpenRouter API key to user's .env file
     await UserStorage.ensureUserStructure(req.user.userId);
     const envPath = UserStorage.getUserApiKeyPath(req.user.userId);
-    
+
     let envContent = '';
     try {
       envContent = await fs.readFile(envPath, 'utf-8');
@@ -203,7 +202,7 @@ app.post('/api/user/api-key', async (req, res) => {
 
     const lines = envContent.split('\n');
     let keyFound = false;
-    
+
     const updatedLines = lines.map(line => {
       if (line.startsWith('OPENROUTER_API_KEY=')) {
         keyFound = true;
@@ -220,7 +219,7 @@ app.post('/api/user/api-key', async (req, res) => {
     }
 
     await fs.writeFile(envPath, updatedLines.join('\n'));
-    
+
     res.json({ success: true, message: 'API key saved successfully' });
   } catch (error) {
     console.error('Error saving API key:', error);
@@ -236,7 +235,7 @@ app.delete('/api/user/api-key', async (req, res) => {
 
     // Delete OpenRouter API key from user's .env file
     const envPath = UserStorage.getUserApiKeyPath(req.user.userId);
-    
+
     try {
       const envContent = await fs.readFile(envPath, 'utf-8');
       const lines = envContent.split('\n');
@@ -245,7 +244,7 @@ app.delete('/api/user/api-key', async (req, res) => {
     } catch {
       // File doesn't exist, nothing to delete
     }
-    
+
     res.json({ success: true, message: 'API key deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to delete API key' });

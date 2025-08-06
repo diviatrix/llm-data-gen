@@ -1,5 +1,4 @@
 <div class="stack">
-  <!-- Header -->
   <div class="mb-m">
     <div class="action-row">
       <div>
@@ -10,7 +9,6 @@
     </div>
   </div>
 
-  <!-- Tabs -->
   <div class="flex gap-s mb-m">
     <button @click="activeTab = 'active'" 
             :class="activeTab === 'active' ? 'btn btn-primary' : 'btn btn-ghost'"
@@ -24,20 +22,16 @@
     </button>
   </div>
 
-  <!-- Active Tab -->
   <div x-show="activeTab === 'active'">
-    <!-- No active generations message -->
     <div x-show="activeGenerations.length === 0" class="empty-state">
       <p class="text-gray-600">No active generation tasks</p>
       <a href="#/generate" class="btn btn-primary mt-m">Start New Generation</a>
     </div>
 
-    <!-- Active generations list -->
     <div x-show="activeGenerations.length > 0" class="stack-m">
       <template x-for="(generation, index) in activeGenerations" :key="generation.id">
         <div class="card">
           <div class="card-body">
-            <!-- Header with config name and status -->
             <div class="action-row mb-m">
               <div>
                 <h3 class="text-lg font-semibold" x-text="generation.configName"></h3>
@@ -46,7 +40,6 @@
               <span class="badge badge-primary">Running</span>
             </div>
 
-            <!-- Progress bar -->
             <div class="mb-m">
               <div class="flex justify-between text-sm mb-s">
                 <span>Progress</span>
@@ -58,7 +51,6 @@
               </div>
             </div>
 
-            <!-- Logs -->
             <div class="mb-m">
               <h4 class="text-sm font-medium text-gray-700 mb-s">Activity Log</h4>
               <div class="bg-gray-50 rounded p-m max-h-64 overflow-y-auto font-mono text-xs">
@@ -72,7 +64,6 @@
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex justify-end">
               <button @click="cancelGeneration(generation.id)" 
                       class="btn btn-secondary btn-sm">
@@ -85,20 +76,16 @@
     </div>
   </div>
 
-  <!-- Completed Tab -->
   <div x-show="activeTab === 'completed'">
-    <!-- No completed generations message -->
     <div x-show="completedGenerations.length === 0" class="empty-state">
       <p class="text-gray-600">No completed generations yet</p>
       <a href="#/generate" class="btn btn-primary mt-m">Start Your First Generation</a>
     </div>
 
-    <!-- Completed generations list -->
     <div x-show="completedGenerations.length > 0" class="stack-m">
       <template x-for="generation in completedGenerations" :key="generation.id">
         <div class="card hover-card">
           <div class="card-body">
-            <!-- Header -->
             <div class="action-row mb-m">
               <div>
                 <h3 class="text-lg font-semibold" x-text="generation.config_name || 'Unnamed Generation'"></h3>
@@ -116,7 +103,6 @@
               </span>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid-4 gap-m mb-m">
               <div>
                 <div class="text-xs text-gray-500">Items Generated</div>
@@ -144,7 +130,6 @@
               </div>
             </div>
 
-            <!-- Token breakdown -->
             <div x-show="generation.prompt_tokens || generation.completion_tokens" 
                  class="text-xs text-gray-600 mb-m">
               <span x-show="generation.prompt_tokens">
@@ -156,7 +141,6 @@
               </span>
             </div>
 
-            <!-- Errors -->
             <div x-show="generation.errors && generation.errors.length > 0" 
                  class="alert alert-warning mb-m">
               <div class="font-medium mb-s">⚠️ Generation completed with errors:</div>
@@ -170,7 +154,6 @@
               </div>
             </div>
 
-            <!-- Output Files -->
             <div x-show="generation.outputFiles && generation.outputFiles.length > 0" class="mb-m">
               <div class="text-sm font-medium text-gray-700 mb-s">Output Files:</div>
               <div class="flex flex-wrap gap-s">
@@ -184,7 +167,6 @@
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex justify-end gap-s">
               <button @click="deleteGeneration(generation.id)" 
                       class="btn btn-ghost btn-sm text-red-600 hover:bg-red-50">

@@ -1,11 +1,11 @@
 <div class="stack">
-  <!-- Header -->
+  
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">File Manager</h2>
     <p class="text-gray-600 mt-s">Manage your configurations and generated data</p>
   </div>
   
-  <!-- Tabs -->
+  
   <div class="flex gap-s mb-m">
     <button @click="switchTab('configs')" 
             class="btn" 
@@ -19,7 +19,7 @@
     </button>
   </div>
   
-  <!-- Breadcrumbs -->
+  
   <nav x-show="currentPath" class="mb-m">
     <ol class="flex items-center gap-s text-sm">
       <template x-for="(crumb, index) in getBreadcrumbs()" :key="crumb.path">
@@ -34,7 +34,7 @@
     </ol>
   </nav>
   
-  <!-- Actions -->
+  
   <div class="flex justify-between items-center mb-m">
     <div class="meta-text">
       <span x-text="currentFiles.length"></span> files
@@ -53,12 +53,12 @@
     </div>
   </div>
   
-  <!-- Loading -->
+  
   <div x-show="isLoading" class="flex justify-center items-center py-l">
     <div class="spinner"></div>
   </div>
   
-  <!-- Files Grid -->
+  
   <div x-show="!isLoading && currentFiles.length > 0" class="grid-2">
     <template x-for="file in currentFiles" :key="file.name">
       <div class="card-interactive" 
@@ -79,7 +79,7 @@
               </div>
             </div>
             <div class="flex gap-s flex-shrink-0">
-              <!-- Config actions -->
+              
               <template x-if="activeTab === 'configs'">
                 <div class="flex gap-s">
                   <template x-if="file.isDirectory">
@@ -116,7 +116,7 @@
                 </div>
               </template>
               
-              <!-- Result actions -->
+              
               <template x-if="activeTab === 'results'">
                 <div class="flex gap-s">
                   <template x-if="file.isDirectory">
@@ -159,7 +159,7 @@
     </template>
   </div>
   
-  <!-- Empty State -->
+  
   <div x-show="!isLoading && currentFiles.length === 0" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">

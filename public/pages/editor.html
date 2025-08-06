@@ -1,5 +1,5 @@
 <div class="stack">
-  <!-- Empty State when no file selected -->
+  
   <div x-show="!filePath" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">✏️</div>
@@ -9,9 +9,9 @@
     </div>
   </div>
 
-  <!-- Editor when file is selected -->
+  
   <div x-show="filePath">
-    <!-- Header -->
+    
     <div class="flex justify-between items-center mb-m">
       <div>
         <h2 class="text-2xl font-bold">Data Editor</h2>
@@ -29,22 +29,22 @@
       </div>
     </div>
     
-    <!-- Loading State -->
+    
     <div x-show="isLoading" class="flex justify-center items-center py-l">
       <div class="spinner"></div>
     </div>
     
-    <!-- Error State -->
+    
     <div x-show="error" class="alert alert-error">
       <p x-text="error"></p>
     </div>
   
-  <!-- Editor -->
+  
   <div x-show="!isLoading && !error && content !== null && filePath" class="card">
     <div class="card-body">
-      <!-- JSON Editor -->
+      
       <div x-show="fileType === 'json'">
-        <!-- JSON Editor Controls -->
+        
         <div class="flex justify-between items-center mb-m">
           <div class="flex gap-s">
             <button @click="formatJson()" class="btn btn-secondary btn-sm">
@@ -65,7 +65,7 @@
           </div>
         </div>
         
-        <!-- Code Editor Mode -->
+        
         <div x-show="!visualMode">
           <textarea 
             x-model="editableContent"
@@ -75,14 +75,14 @@
           ></textarea>
         </div>
         
-        <!-- Visual Editor Mode -->
+        
         <template x-if="visualMode && parsedJson">
         <div class="space-y-4">
           <div class="alert alert-info text-sm">
             Visual editor for JSON configuration files
           </div>
           
-          <!-- Meta Section -->
+          
           <div x-show="parsedJson && parsedJson.meta" class="card">
             <div class="card-header">
               <h4 class="text-medium">Meta Information</h4>
@@ -107,7 +107,7 @@
             </div>
           </div>
           
-          <!-- API Section -->
+          
           <div x-show="parsedJson && parsedJson.api" class="card">
             <div class="card-header">
               <h4 class="text-medium">API Settings</h4>
@@ -139,7 +139,7 @@
             </div>
           </div>
           
-          <!-- Generation Tasks -->
+          
           <div x-show="parsedJson && parsedJson.generation && parsedJson.generation.tasks" class="card">
             <div class="card-header flex-between">
               <h4 class="text-medium">Generation Tasks</h4>
@@ -165,7 +165,7 @@
             </div>
           </div>
           
-          <!-- Raw JSON View -->
+          
           <div class="card">
             <div class="card-header">
               <h4 class="text-medium">Raw JSON</h4>
@@ -178,21 +178,20 @@
         </template>
       </div>
       
-      <!-- Text Editor -->
+      
       <div x-show="fileType === 'text'">
         <textarea 
           x-model="editableContent"
           @input="hasChanges = true"
           class="form-input font-mono text-sm"
           rows="20"
-          style="resize: vertical;"
         ></textarea>
       </div>
       
-      <!-- Markdown Editor -->
+      
       <div x-show="fileType === 'markdown'">
         <div class="grid-2 gap-4">
-          <!-- Editor -->
+          
           <div>
             <h4 class="text-medium mb-2">Editor</h4>
             <textarea 
@@ -203,7 +202,7 @@
               ></textarea>
           </div>
           
-          <!-- Preview -->
+          
           <div>
             <h4 class="text-medium mb-2">Preview</h4>
             <div class="card">

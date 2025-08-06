@@ -112,7 +112,7 @@ export function viewerPage() {
           // Apply syntax highlighting after content is loaded
           this.$nextTick(() => {
             if (window.Prism && ['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv'].includes(this.fileType)) {
-              Prism.highlightAll();
+              window.Prism.highlightAll();
             }
           });
         } else {

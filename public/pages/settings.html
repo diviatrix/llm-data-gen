@@ -1,11 +1,11 @@
 <div class="stack">
-  <!-- Header -->
+  
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">Settings</h2>
     <p class="text-gray-600 mt-s">Manage your account settings and API configuration</p>
   </div>
   
-  <!-- API Key Section -->
+  
   <div class="card">
     <div class="card-header">
       <h3 class="text-lg font-semibold">
@@ -13,14 +13,14 @@
       </h3>
     </div>
     <div class="card-body">
-      <!-- Loading -->
+      
       <div x-show="isLoading" class="flex justify-center py-m">
         <div class="spinner"></div>
       </div>
       
-      <!-- Content -->
+      
       <div x-show="!isLoading">
-        <!-- Has API Key -->
+        
         <div x-show="hasApiKey">
           <div class="alert alert-success mb-m">
             <p>✓ API key is configured</p>
@@ -45,7 +45,7 @@
           </div>
         </div>
         
-        <!-- No API Key or Updating -->
+        
         <div x-show="!hasApiKey || showApiKey">
           <div x-show="!hasApiKey" class="alert alert-warning mb-m">
             <p>⚠️ No API key configured</p>
@@ -86,14 +86,14 @@
     </div>
   </div>
   
-  <!-- System API Key Section (Admin only) -->
+  
   <div class="card" x-show="$root.isAdmin">
     <div class="card-header">
       <h3 class="text-lg font-semibold">System API Key <span class="text-sm font-normal text-gray-600">(Admin Only)</span></h3>
     </div>
     <div class="card-body">
       <div x-show="!isLoadingSystemKey">
-        <!-- Has System API Key -->
+        
         <div x-show="hasSystemApiKey">
           <div class="alert alert-success mb-m">
             <p>✓ System API key is configured</p>
@@ -118,7 +118,7 @@
           </div>
         </div>
         
-        <!-- No System API Key or Updating -->
+        
         <div x-show="!hasSystemApiKey || showSystemApiKey">
           <div x-show="!hasSystemApiKey" class="alert alert-warning mb-m">
             <p>⚠️ No system API key configured</p>
@@ -158,7 +158,7 @@
     </div>
   </div>
 
-  <!-- Account Info Section -->
+  
   <div class="card" x-show="$root.user">
     <div class="card-header">
       <h3 class="text-lg font-semibold">Account Information</h3>
@@ -189,7 +189,7 @@
     </div>
   </div>
 
-  <!-- Change Password Section -->
+  
   <div class="card">
     <div class="card-header">
       <h3 class="text-lg font-semibold">Change Password</h3>

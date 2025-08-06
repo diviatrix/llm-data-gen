@@ -1,9 +1,6 @@
-<!-- Model Selector Template -->
 <template id="model-selector-template">
   <div class="model-selector">
-    <!-- Search and Filters -->
     <div class="mb-4">
-      <!-- Search Input -->
       <div class="search-box mb-3" x-show="showSearch">
         <input 
           type="text" 
@@ -13,7 +10,6 @@
         >
       </div>
       
-      <!-- Filter Buttons -->
       <div class="filter-buttons" x-show="showFilters">
         <button 
           class="btn btn-sm"
@@ -53,13 +49,11 @@
       </div>
     </div>
     
-    <!-- Loading State -->
     <div class="text-center py-8" x-show="isLoading">
       <div class="spinner"></div>
       <p class="text-muted mt-2">Loading models...</p>
     </div>
     
-    <!-- Models Grid -->
     <div class="models-grid" x-show="!isLoading">
       <template x-for="model in filteredModels" :key="model.id">
         <div 
@@ -67,13 +61,11 @@
           :class="selectedModel?.id === model.id ? 'selected' : ''"
           @click="selectModel(model)"
         >
-          <!-- Model Header -->
           <div class="model-header">
             <h4 class="model-name" x-text="model.name"></h4>
             <span class="model-provider text-muted" x-text="getProviderName(model)"></span>
           </div>
           
-          <!-- Model Info -->
           <div class="model-info">
             <div class="info-row">
               <span class="label">Context:</span>
@@ -85,7 +77,6 @@
             </div>
           </div>
           
-          <!-- Model Tags -->
           <div class="model-tags">
             <span class="tag tag-blue" x-show="!model.pricing || (model.pricing.prompt === 0 && model.pricing.completion === 0)">
               Free
@@ -101,142 +92,9 @@
       </template>
     </div>
     
-    <!-- No Results -->
     <div class="text-center py-8" x-show="!isLoading && filteredModels.length === 0">
       <p class="text-muted">No models found matching your criteria</p>
     </div>
     
-    <!-- Online Search Toggle -->
-    <div class="online-toggle mt-4" x-show="showOnlineToggle && selectedModel">
-      <label class="checkbox-label">
-        <input 
-          type="checkbox" 
-          x-model="enableOnlineSearch"
-          :disabled="!supportsOnlineSearch(selectedModel)"
-        >
-        <span>Enable online search for this model</span>
-      </label>
-      <p class="text-muted text-sm mt-1" x-show="enableOnlineSearch">
-        The model will have access to real-time web search results
-      </p>
-    </div>
   </div>
 </template>
-
-<style>
-.model-selector {
-  width: 100%;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.models-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 0.25rem;
-}
-
-.card-interactive {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-}
-
-.card-interactive.selected {
-  border-color: var(--primary);
-  background-color: var(--primary-light);
-}
-
-.model-header {
-  margin-bottom: 0.75rem;
-}
-
-.model-name {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.model-provider {
-  font-size: 0.875rem;
-}
-
-.model-info {
-  margin-bottom: 0.75rem;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.info-row .label {
-  color: var(--text-muted);
-}
-
-.model-tags {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.tag {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-weight: 500;
-}
-
-.tag-blue {
-  background-color: var(--info-light);
-  color: var(--info);
-}
-
-.tag-green {
-  background-color: var(--success-light);
-  color: var(--success);
-}
-
-.tag-purple {
-  background-color: var(--purple-light);
-  color: var(--purple);
-}
-
-.online-toggle {
-  padding: 1rem;
-  background-color: var(--bg-secondary);
-  border-radius: 0.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-</style>
