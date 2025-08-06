@@ -169,8 +169,18 @@
           <span class="meta-text">Email:</span>
           <span class="ml-s font-medium" x-text="$root.user?.email"></span>
         </div>
+        <div x-show="storageInfo">
+          <span class="meta-text">Storage:</span>
+          <span class="ml-s font-medium">
+            <span x-text="formatBytes(storageInfo?.used || 0)"></span> / 
+            <span x-text="formatBytes(storageInfo?.quota || 0)"></span>
+            <span class="text-xs text-gray-500">
+              (<span x-text="Math.round((storageInfo?.used || 0) / (storageInfo?.quota || 1) * 100)"></span>% used)
+            </span>
+          </span>
+        </div>
         <div x-show="$root.accountInfo">
-          <span class="meta-text">Usage:</span>
+          <span class="meta-text">OpenRouter Usage:</span>
           <span class="ml-s font-medium">
             $<span x-text="$root.accountInfo?.usage"></span> / $<span x-text="$root.accountInfo?.limit"></span>
           </span>

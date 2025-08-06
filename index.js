@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
 import { ConfigManager } from './lib/configManager.js';
 import { testConnection, validateFile, createConfig, listExamples } from './lib/cli/commands.js';
 import { runInteractiveMode } from './lib/cli/interactiveMode.js';
 import { executeGenerate } from './lib/cli/generateCommand.js';
 import { readJsonFile } from './lib/utils/fileIO.js';
 import { handleError } from './lib/utils/errors.js';
-import chalk from 'chalk';
+import { chalk } from './lib/utils/colors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,10 +84,8 @@ program
   .action(async (options) => {
     console.log(chalk.cyan('🚀 Starting LLM Data Generator Web UI...\n'));
 
-    // Set the port environment variable
     process.env.PORT = options.port;
 
-    // Start the web server
     const serverPath = path.join(__dirname, 'server.js');
     const serverProcess = spawn('node', [serverPath], {
       stdio: 'inherit',
@@ -95,20 +93,17 @@ program
       cwd: __dirname
     });
 
-    // Open browser after a short delay
     if (options.open) {
       setTimeout(() => {
         const url = `http://localhost:${options.port}`;
         console.log(chalk.green(`\n✅ Web UI available at: ${url}`));
 
-        // Try to open browser
         const platform = process.platform;
         const openCommand = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
         spawn(openCommand, [url], { shell: true, detached: true });
       }, 2000);
     }
 
-    // Handle graceful shutdown
     process.on('SIGINT', () => {
       console.log(chalk.yellow('\n\nShutting down web server...'));
       serverProcess.kill();
@@ -116,13 +111,10 @@ program
     });
   });
 
-// Handle uncaught readline errors gracefully - only in interactive mode
 process.on('uncaughtException', (error) => {
   if (error.code === 'ERR_USE_AFTER_CLOSE') {
-    // Ignore readline close errors - they're not critical
     process.exit(0);
   } else {
-    // Handle other errors normally
     console.error('Unexpected error:', error);
     process.exit(1);
   }
@@ -130,16 +122,13 @@ process.on('uncaughtException', (error) => {
 
 async function main() {
   try {
-    // If no arguments provided, start interactive mode
     if (process.argv.length === 2) {
       await runInteractiveMode(configManager, { version: packageJson.version });
       return;
     }
 
-    // Parse command with commander
     await program.parseAsync(process.argv);
 
-    // If we get here and no command was matched, it's an unknown command
     const parsedArgs = program.args;
     if (parsedArgs.length === 0 && process.argv.length > 2) {
       console.error(`error: unknown command '${process.argv[2]}'`);

@@ -1,7 +1,5 @@
-/* LLM Data Generator Design System - Минималистичная версия */
 
 :root {
-  /* Цвета */
   --color-primary: #3b82f6;
   --color-primary-dark: #2563eb;
   --color-primary-light: #60a5fa;
@@ -19,30 +17,24 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
   
-  /* Отступы - только эти три! */
   --indent-s: 0.5rem;
   --indent-m: 1rem;
   --indent-l: 1.5rem;
   
-  /* Радиусы */
   --radius-s: 0.375rem;
   --radius-m: 0.5rem;
   --radius-l: 0.75rem;
   
-  /* Тени */
   --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-m: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-l: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   
-  /* Анимация */
   --transition: 200ms ease-in-out;
   
-  /* Шрифты */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SF Mono", Monaco, Consolas, monospace;
 }
 
-/* Базовые стили */
 
 * {
   box-sizing: border-box;
@@ -56,7 +48,6 @@ body {
   line-height: 1.5;
 }
 
-/* Контейнер */
 
 .container {
   max-width: 1280px;
@@ -64,7 +55,6 @@ body {
   padding: 0 var(--indent-m);
 }
 
-/* Типографика */
 
 .text-xs { font-size: 0.75rem; }
 
@@ -110,7 +100,6 @@ body {
 
 .text-right { text-align: right; }
 
-/* Кнопки */
 
 .btn {
   display: inline-flex;
@@ -189,7 +178,6 @@ body {
   font-size: 1rem;
 }
 
-/* Формы */
 
 .form-label {
   display: block;
@@ -230,7 +218,6 @@ body {
   accent-color: var(--color-primary);
 }
 
-/* Карточки */
 
 .card {
   background-color: white;
@@ -280,7 +267,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Алерты */
 
 .alert {
   padding: var(--indent-m);
@@ -303,7 +289,6 @@ body {
   color: #991b1b;
 }
 
-/* Навигация */
 
 .nav {
   display: flex;
@@ -333,7 +318,6 @@ body {
   font-weight: 500;
 }
 
-/* Модальные окна */
 
 .modal-backdrop {
   position: fixed;
@@ -378,7 +362,6 @@ body {
   justify-content: flex-end;
 }
 
-/* Утилиты для лейаута */
 
 .flex { display: flex; }
 
@@ -408,7 +391,6 @@ body {
 
 .gap-l { gap: var(--indent-l); }
 
-/* Сетки */
 
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--indent-m); }
 
@@ -422,7 +404,6 @@ body {
   }
 }
 
-/* Отступы */
 
 .m-0 { margin: 0; }
 
@@ -466,7 +447,6 @@ body {
 
 .py-l { padding-top: var(--indent-l); padding-bottom: var(--indent-l); }
 
-/* Размеры */
 
 .w-full { width: 100%; }
 
@@ -490,7 +470,6 @@ body {
 
 .max-w-4xl { max-width: 56rem; }
 
-/* Утилиты */
 
 .block { display: block; }
 
@@ -558,7 +537,6 @@ body {
 
 .whitespace-pre-wrap { white-space: pre-wrap; }
 
-/* Компоненты */
 
 .spinner {
   width: 2rem;
@@ -600,7 +578,6 @@ body {
 
 .badge-error { background-color: var(--color-error); color: white; }
 
-/* Стеки для вертикальных лейаутов */
 
 .stack > * + * { margin-top: var(--indent-m); }
 
@@ -608,7 +585,6 @@ body {
 
 .stack-l > * + * { margin-top: var(--indent-l); }
 
-/* Прогресс */
 
 .progress {
   width: 100%;
@@ -624,7 +600,6 @@ body {
   transition: width var(--transition);
 }
 
-/* Код */
 
 .code-block {
   background-color: var(--color-gray-900);
@@ -636,7 +611,6 @@ body {
   overflow-x: auto;
 }
 
-/* Специальные компоненты */
 
 .line-clamp-2 {
   overflow: hidden;

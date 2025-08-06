@@ -1,9 +1,9 @@
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import multer from 'multer';
-import os from 'os';
+import os from 'node:os';
 import { ConfigManager } from './lib/configManager.js';
 import { DataGenerator } from './lib/generator.js';
 import { readJsonFile } from './lib/utils/fileIO.js';
@@ -11,12 +11,10 @@ import { createApiClient } from './lib/sessionManager.js';
 import { UserStorage } from './lib/userStorage.js';
 import { authManager as authManagerPromise } from './lib/auth.js';
 import { UserManager } from './lib/userManager.js';
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Initialize authManager
 let authManager;
 
 const app = express();
@@ -24,26 +22,21 @@ const PORT = process.env.PORT || 3000;
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Trust proxy to get real client IP
 app.set('trust proxy', true);
 
-// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Auth middleware - always required except for auth endpoints
 async function requireAuth(req, res, next) {
-  // Skip auth for auth endpoints
   if (req.originalUrl.startsWith('/api/auth/')) {
     return next();
   }
 
-  // Check authorization header
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
@@ -61,14 +54,11 @@ async function requireAuth(req, res, next) {
 
     req.user = session;
 
-    // Try to get user's API key
     try {
-      // We need the password hash to decrypt, so we'll need to modify validateSession to return it
-      // For now, we'll fetch it when needed
       if (session.userId) {
-        const hasKey = await authManager.hasApiKey(session.userId);
-        if (hasKey) {
-          // We'll need to pass the password hash somehow, for now skip
+        const apiKey = await UserStorage.getUserApiKey(session.userId);
+        if (apiKey) {
+          req.userApiKey = apiKey;
           req.userHasApiKey = true;
         }
       }
@@ -82,10 +72,8 @@ async function requireAuth(req, res, next) {
   }
 }
 
-// Apply auth middleware to all API routes
 app.use('/api/*', requireAuth);
 
-// Helper function to get user ID from request
 function getUserId(req) {
   return req.user?.userId || 0;
 }
@@ -126,10 +114,10 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     const result = await authManager.createUser(email, password);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'User registered successfully',
-      userId: result.userId 
+      userId: result.userId
     });
   } catch (error) {
     res.status(400).json({
@@ -161,10 +149,32 @@ app.get('/api/user/api-key', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Not authenticated' });
     }
 
-    const hasKey = await authManager.hasApiKey(req.user.userId);
+    // Check if user has OpenRouter API key in their .env file
+    const apiKey = await UserStorage.getUserApiKey(req.user.userId);
+    const hasKey = !!apiKey;
     res.json({ success: true, hasKey });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to check API key' });
+  }
+});
+
+// Get user storage info
+app.get('/api/user/storage-info', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const auth = await authManagerPromise;
+    const storage = await auth.getStorageInfo(req.user.userId);
+
+    res.json({
+      success: true,
+      storage
+    });
+  } catch (error) {
+    console.error('Storage info error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get storage info' });
   }
 });
 
@@ -179,9 +189,40 @@ app.post('/api/user/api-key', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid API key format' });
     }
 
-    await authManager.saveApiKey(req.user.userId, apiKey);
+    // Save OpenRouter API key to user's .env file
+    await UserStorage.ensureUserStructure(req.user.userId);
+    const envPath = UserStorage.getUserApiKeyPath(req.user.userId);
+    
+    let envContent = '';
+    try {
+      envContent = await fs.readFile(envPath, 'utf-8');
+    } catch {
+      // File doesn't exist, will create new
+    }
+
+    const lines = envContent.split('\n');
+    let keyFound = false;
+    
+    const updatedLines = lines.map(line => {
+      if (line.startsWith('OPENROUTER_API_KEY=')) {
+        keyFound = true;
+        return `OPENROUTER_API_KEY=${apiKey}`;
+      }
+      return line;
+    });
+
+    if (!keyFound) {
+      if (envContent && !envContent.endsWith('\n')) {
+        updatedLines.push('');
+      }
+      updatedLines.push(`OPENROUTER_API_KEY=${apiKey}`);
+    }
+
+    await fs.writeFile(envPath, updatedLines.join('\n'));
+    
     res.json({ success: true, message: 'API key saved successfully' });
   } catch (error) {
+    console.error('Error saving API key:', error);
     res.status(500).json({ success: false, error: 'Failed to save API key' });
   }
 });
@@ -192,7 +233,18 @@ app.delete('/api/user/api-key', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Not authenticated' });
     }
 
-    await authManager.deleteApiKey(req.user.userId);
+    // Delete OpenRouter API key from user's .env file
+    const envPath = UserStorage.getUserApiKeyPath(req.user.userId);
+    
+    try {
+      const envContent = await fs.readFile(envPath, 'utf-8');
+      const lines = envContent.split('\n');
+      const updatedLines = lines.filter(line => !line.startsWith('OPENROUTER_API_KEY='));
+      await fs.writeFile(envPath, updatedLines.join('\n'));
+    } catch {
+      // File doesn't exist, nothing to delete
+    }
+    
     res.json({ success: true, message: 'API key deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to delete API key' });
@@ -362,6 +414,70 @@ app.put('/api/admin/users/:id/role', async (req, res) => {
   }
 });
 
+// Update user details (quota and API key) - Admin only
+app.put('/api/admin/users/:id/details', async (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ success: false, error: 'Admin access only' });
+  }
+
+  try {
+    console.log('Update user details request:', {
+      userId: req.params.id,
+      body: req.body
+    });
+
+    const auth = await authManagerPromise;
+    const userId = parseInt(req.params.id);
+    const { quotaMB, apiKey } = req.body;
+
+    // Update storage quota if provided
+    if (quotaMB !== undefined) {
+      const quotaMBNumber = parseInt(quotaMB);
+      if (isNaN(quotaMBNumber) || quotaMBNumber < 1) {
+        return res.status(400).json({ success: false, error: 'Invalid quota value' });
+      }
+      const quotaBytes = quotaMBNumber * 1024 * 1024;
+      console.log(`Updating user ${userId} quota to ${quotaMB}MB (${quotaBytes} bytes)`);
+
+      const result = await auth.db.runAsync(
+        'UPDATE users SET storage_quota = ? WHERE id = ?',
+        [quotaBytes, userId]
+      );
+
+      console.log('Update result:', result);
+
+      // Verify the update
+      const updatedUser = await auth.getUserById(userId);
+      console.log(`User ${userId} quota after update: ${updatedUser.storage_quota} bytes (${updatedUser.storage_quota / 1024 / 1024}MB)`);
+
+      if (updatedUser.storage_quota !== quotaBytes) {
+        console.error(`ERROR: Quota not updated! Expected ${quotaBytes}, got ${updatedUser.storage_quota}`);
+      }
+    }
+
+    // Update API key if provided
+    if (apiKey && apiKey.startsWith('sk-')) {
+      // Get user's password hash to encrypt the key
+      const user = await auth.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      // Save encrypted API key
+      await auth.saveApiKey(userId, apiKey);
+
+      // Also save to user's .env file
+      const userApiKeyPath = UserStorage.getUserApiKeyPath(userId);
+      await fs.writeFile(userApiKeyPath, `OPENROUTER_API_KEY=${apiKey}\n`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update user details error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });
@@ -410,7 +526,7 @@ app.get('/api/account', async (req, res) => {
 // Get available models
 app.get('/api/models', async (req, res) => {
   try {
-    const client = await createApiClient();
+    const client = await createApiClient({}, req);
     const models = await client.getModels();
 
     res.json({
@@ -563,12 +679,12 @@ app.post('/api/generate-stream', async (req, res) => {
 
   const generationId = req.body.generationId || require('crypto').randomUUID();
   const abortController = new AbortController();
-  
+
   try {
     // Get config from request body
     const { config, estimatedCost } = req.body;
     const userId = getUserId(req);
-    
+
     // Store controller for cancellation
     activeGenerations.set(generationId, { abortController, userId });
 
@@ -582,7 +698,7 @@ app.post('/api/generate-stream', async (req, res) => {
 
     // Send initial event with generation ID
     res.write(`data: ${JSON.stringify({ type: 'start', generationId })}\n\n`);
-    
+
     // Create active generation in database
     const auth = await authManagerPromise;
     const logs = [];
@@ -678,7 +794,7 @@ app.post('/api/generate-stream', async (req, res) => {
         if (abortController.signal.aborted) {
           throw new Error('Generation cancelled by user');
         }
-        
+
         // Add progress log
         const progressLog = {
           time: new Date().toISOString(),
@@ -686,14 +802,14 @@ app.post('/api/generate-stream', async (req, res) => {
           message: `Generating item ${progress.current}/${progress.total}: ${progress.currentItem || 'Processing...'}`
         };
         logs.push(progressLog);
-        
+
         // Update database
         await auth.updateActiveGeneration(generationId, {
           progressCurrent: progress.current,
           progressTotal: progress.total,
           logs
         });
-        
+
         // Send progress updates
         res.write(`data: ${JSON.stringify({
           type: 'progress',
@@ -751,7 +867,7 @@ app.post('/api/generate-stream', async (req, res) => {
 
     // Restore original console methods
     Object.assign(console, originalConsole);
-    
+
     // Clean up
     await auth.deleteActiveGeneration(generationId);
     activeGenerations.delete(generationId);
@@ -759,12 +875,12 @@ app.post('/api/generate-stream', async (req, res) => {
     // Restore original console methods
     Object.assign(console, originalConsole);
     console.error('Generate stream error:', error);
-    
+
     // Clean up on error
     const auth = await authManagerPromise;
     await auth.deleteActiveGeneration(generationId);
     activeGenerations.delete(generationId);
-    
+
     res.status(500).end();
   }
 });
@@ -792,6 +908,63 @@ app.post('/api/upload-config', upload.single('config'), async (req, res) => {
   }
 });
 
+// Upload user file with quota check
+app.post('/api/upload-file', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const userId = getUserId(req);
+    const auth = await authManagerPromise;
+
+    // Check storage quota
+    const fileSize = req.file.size;
+    const canUpload = await auth.canUploadFile(userId, fileSize);
+
+    if (!canUpload) {
+      return res.status(400).json({
+        success: false,
+        error: 'Storage quota exceeded',
+        storage: await auth.getStorageInfo(userId)
+      });
+    }
+
+    // Save file to user's uploads directory
+    const uploadsDir = UserStorage.getUserUploadsDir(userId);
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    // Generate safe filename
+    const timestamp = Date.now();
+    const safeFilename = `${timestamp}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const filePath = path.join(uploadsDir, safeFilename);
+
+    // Save file
+    await fs.writeFile(filePath, req.file.buffer);
+
+    // Update user's storage usage
+    await auth.addStorageUsed(userId, fileSize);
+
+    res.json({
+      success: true,
+      file: {
+        name: req.file.originalname,
+        savedAs: safeFilename,
+        size: fileSize,
+        type: req.file.mimetype,
+        path: `uploads/${safeFilename}`
+      },
+      storage: await auth.getStorageInfo(userId)
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload file'
+    });
+  }
+});
+
 // Upload and parse result file
 app.post('/api/upload-result', upload.single('result'), async (req, res) => {
   try {
@@ -815,18 +988,124 @@ app.post('/api/upload-result', upload.single('result'), async (req, res) => {
   }
 });
 
+// List files by type (configs, output, uploads)
+app.get('/api/files/list', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { type } = req.query;
+
+    let dir;
+    switch (type) {
+    case 'configs':
+      dir = UserStorage.getUserConfigsDir(userId);
+      break;
+    case 'output':
+      dir = UserStorage.getUserOutputDir(userId);
+      break;
+    case 'uploads':
+      dir = UserStorage.getUserUploadsDir(userId);
+      break;
+    default:
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid file type'
+      });
+    }
+
+    // Ensure directory exists
+    await fs.mkdir(dir, { recursive: true });
+
+    // Read files from directory
+    const files = await fs.readdir(dir);
+    const fileList = [];
+
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      const stats = await fs.stat(filePath);
+
+      if (stats.isFile()) {
+        // Get relative path from user base directory
+        const userBaseDir = UserStorage.getUserBaseDir(userId);
+        const relativePath = path.relative(userBaseDir, filePath);
+
+        fileList.push({
+          name: file,
+          path: relativePath,
+          size: stats.size,
+          modified: stats.mtime
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      files: fileList
+    });
+  } catch (error) {
+    console.error('List files error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list files'
+    });
+  }
+});
+
+// List user uploaded files
+app.get('/api/user-files', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const uploadsDir = UserStorage.getUserUploadsDir(userId);
+
+    // Ensure directory exists
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    // Read files from uploads directory
+    const files = await fs.readdir(uploadsDir);
+    const fileList = [];
+
+    for (const file of files) {
+      const filePath = path.join(uploadsDir, file);
+      const stats = await fs.stat(filePath);
+
+      if (stats.isFile()) {
+        // Get relative path from user base directory
+        const userBaseDir = UserStorage.getUserBaseDir(userId);
+        const relativePath = path.relative(userBaseDir, filePath);
+
+        fileList.push({
+          name: file,
+          path: relativePath,
+          size: stats.size,
+          modified: stats.mtime
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      files: fileList
+    });
+  } catch (error) {
+    console.error('List user files error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list files'
+    });
+  }
+});
+
 // Generation history / Queue
 app.get('/api/queue', async (req, res) => {
   try {
     const userId = getUserId(req);
     const auth = await authManagerPromise;
-    
+
     // Get both active and completed generations
     const [active, completed] = await Promise.all([
       auth.getActiveGenerations(userId),
       auth.getGenerationHistory(userId, 50)
     ]);
-    
+
     res.json({
       success: true,
       active,
@@ -846,7 +1125,7 @@ app.post('/api/generations/:id/cancel', async (req, res) => {
   try {
     const generationId = req.params.id;
     const userId = getUserId(req);
-    
+
     // Find and abort the generation
     const generation = activeGenerations.get(generationId);
     if (!generation) {
@@ -855,7 +1134,7 @@ app.post('/api/generations/:id/cancel', async (req, res) => {
         error: 'Generation not found or already completed'
       });
     }
-    
+
     // Check user owns this generation
     if (generation.userId !== userId && req.user?.role !== 'admin') {
       return res.status(403).json({
@@ -863,20 +1142,20 @@ app.post('/api/generations/:id/cancel', async (req, res) => {
         error: 'Access denied'
       });
     }
-    
+
     // Abort the generation
     generation.abortController.abort();
-    
+
     // Update database
     const auth = await authManagerPromise;
     await auth.updateActiveGeneration(generationId, { status: 'cancelled' });
-    
+
     // Clean up
     setTimeout(async () => {
       await auth.deleteActiveGeneration(generationId);
       activeGenerations.delete(generationId);
     }, 1000);
-    
+
     res.json({
       success: true,
       message: 'Generation cancelled'
@@ -895,11 +1174,11 @@ app.delete('/api/queue/:id', requireAuth, async (req, res) => {
   try {
     const generationId = parseInt(req.params.id);
     const userId = req.user.userId;
-    
+
     // Delete the generation history entry
     const auth = await authManagerPromise;
     await auth.deleteGenerationHistory(userId, generationId);
-    
+
     res.json({
       success: true,
       message: 'Generation deleted from history'
@@ -935,6 +1214,51 @@ app.get('/api/examples', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+});
+
+// Get user uploaded files
+app.get('/api/user-files', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const uploadsDir = UserStorage.getUserUploadsDir(userId);
+
+    // Ensure directory exists
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    // Get all files
+    const files = await fs.readdir(uploadsDir);
+
+    // Get file stats
+    const fileStats = await Promise.all(
+      files.map(async (file) => {
+        const filePath = path.join(uploadsDir, file);
+        const stats = await fs.stat(filePath);
+        return {
+          name: file,
+          path: `uploads/${file}`,
+          size: stats.size,
+          modified: stats.mtime,
+          type: path.extname(file).toLowerCase()
+        };
+      })
+    );
+
+    // Get storage info
+    const auth = await authManagerPromise;
+    const storageInfo = await auth.getStorageInfo(userId);
+
+    res.json({
+      success: true,
+      files: fileStats.sort((a, b) => b.modified - a.modified),
+      storage: storageInfo
+    });
+  } catch (error) {
+    console.error('Failed to get user files:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load user files'
     });
   }
 });
@@ -1047,20 +1371,20 @@ app.get('/api/result-file/*', async (req, res) => {
     } else {
       // For non-JSON files, read as text and send with proper content-type
       const content = await fs.readFile(filePath, 'utf-8');
-      
+
       // Set appropriate content-type based on file extension
       const ext = path.extname(filename).toLowerCase();
       let contentType = 'text/plain';
       switch (ext) {
-        case '.csv': contentType = 'text/csv'; break;
-        case '.html': contentType = 'text/html'; break;
-        case '.css': contentType = 'text/css'; break;
-        case '.js': contentType = 'text/javascript'; break;
-        case '.xml': contentType = 'text/xml'; break;
-        case '.sql': contentType = 'text/plain'; break;
-        case '.md': contentType = 'text/markdown'; break;
+      case '.csv': contentType = 'text/csv'; break;
+      case '.html': contentType = 'text/html'; break;
+      case '.css': contentType = 'text/css'; break;
+      case '.js': contentType = 'text/javascript'; break;
+      case '.xml': contentType = 'text/xml'; break;
+      case '.sql': contentType = 'text/plain'; break;
+      case '.md': contentType = 'text/markdown'; break;
       }
-      
+
       res.set('Content-Type', contentType);
       res.send(content);
     }
@@ -1375,9 +1699,9 @@ app.post('/api/output-files', async (req, res) => {
 // Chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { model, messages } = req.body;
+    const { model, messages, attachments } = req.body;
 
-    console.log('Chat request:', { model, messageCount: messages?.length });
+    console.log('Chat request:', { model, messageCount: messages?.length, attachments });
 
     if (!model || !messages) {
       return res.status(400).json({
@@ -1386,8 +1710,127 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    const client = await createApiClient();
-    const response = await client.generateCompletion(messages, {
+    // Process attachments if provided
+    const processedMessages = [...messages];
+    if (attachments && attachments.length > 0) {
+      console.log('Processing attachments:', attachments);
+      const userId = getUserId(req);
+      const lastUserMessageIndex = processedMessages.findLastIndex(m => m.role === 'user');
+
+      if (lastUserMessageIndex !== -1) {
+        let attachmentContent = '\n\n--- Attached Files ---\n';
+
+        for (const attachment of attachments) {
+          try {
+            let filePath;
+
+            // Determine file path based on the attachment path or type
+            if (attachment.path) {
+              // Attachment path is relative to user directory
+              const userBaseDir = UserStorage.getUserBaseDir(userId);
+              filePath = path.join(userBaseDir, attachment.path);
+            } else if (attachment.type) {
+              // Legacy format with type field
+              if (attachment.type === 'uploads') {
+                filePath = path.join(UserStorage.getUserUploadsDir(userId), attachment.name);
+              } else if (attachment.type === 'configs') {
+                filePath = path.join(UserStorage.getUserConfigsDir(userId), attachment.name);
+              } else if (attachment.type === 'output') {
+                filePath = path.join(UserStorage.getUserOutputDir(userId), attachment.name);
+              }
+            }
+
+            if (filePath && await fs.access(filePath).then(() => true).catch(() => false)) {
+              const ext = path.extname(attachment.name).toLowerCase();
+
+              // Check if it's an image file
+              const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp'];
+              if (imageExtensions.includes(ext)) {
+                // For images, convert to base64 and include in message for vision models
+                try {
+                  const imageBuffer = await fs.readFile(filePath);
+                  const base64Image = imageBuffer.toString('base64');
+                  const mimeType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' :
+                    ext === '.png' ? 'image/png' :
+                      ext === '.gif' ? 'image/gif' :
+                        ext === '.webp' ? 'image/webp' : 'image/jpeg';
+
+                  // Instead of appending text, we'll modify the message format for vision models
+                  // Store image data for later processing
+                  if (!processedMessages[lastUserMessageIndex].images) {
+                    processedMessages[lastUserMessageIndex].images = [];
+                  }
+                  processedMessages[lastUserMessageIndex].images.push({
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${mimeType};base64,${base64Image}`
+                    }
+                  });
+
+                  console.log(`Added image ${attachment.name} to message as base64`);
+                } catch (error) {
+                  console.error(`Failed to read image ${attachment.name}:`, error);
+                  attachmentContent += `\nFile: ${attachment.name} (Image file - could not be processed)\n`;
+                }
+              } else {
+                // For text files, read the content
+                try {
+                  const content = await fs.readFile(filePath, 'utf-8');
+
+                  // Limit content size for large files
+                  const maxSize = 10000; // 10KB of text
+                  const truncatedContent = content.length > maxSize
+                    ? content.substring(0, maxSize) + '\n... [truncated]'
+                    : content;
+
+                  attachmentContent += `\nFile: ${attachment.name}\n`;
+                  attachmentContent += `\`\`\`${ext.slice(1) || 'text'}\n${truncatedContent}\n\`\`\`\n`;
+                } catch (readError) {
+                  // If we can't read as text, it might be a binary file
+                  attachmentContent += `\nFile: ${attachment.name} (Binary file - cannot display content)\n`;
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to read attachment ${attachment.name}:`, error);
+            attachmentContent += `\nFile: ${attachment.name} [Error reading file]\n`;
+          }
+        }
+
+        // Append attachment content to the last user message
+        if (attachmentContent && attachmentContent.trim() !== '\n\n--- Attached Files ---\n') {
+          processedMessages[lastUserMessageIndex] = {
+            ...processedMessages[lastUserMessageIndex],
+            content: processedMessages[lastUserMessageIndex].content + attachmentContent
+          };
+        }
+
+        // If we have images, convert message to multimodal format
+        if (processedMessages[lastUserMessageIndex].images && processedMessages[lastUserMessageIndex].images.length > 0) {
+          const images = processedMessages[lastUserMessageIndex].images;
+          const textContent = processedMessages[lastUserMessageIndex].content;
+
+          // Convert to OpenRouter multimodal format
+          processedMessages[lastUserMessageIndex] = {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: textContent
+              },
+              ...images
+            ]
+          };
+
+          console.log('Converted message to multimodal format with', images.length, 'image(s)');
+        } else {
+          console.log('Modified message with attachments:', processedMessages[lastUserMessageIndex].content);
+        }
+      }
+    }
+
+    const client = await createApiClient({}, req);
+    const response = await client.generateCompletion(processedMessages, {
       model: model,
       temperature: 0.7,
       maxTokens: 2000,
@@ -1477,7 +1920,7 @@ async function startServer() {
     // Initialize authManager before starting server
     authManager = await authManagerPromise;
     console.log('✅ Authentication system initialized');
-    
+
     // Cleanup stale generations periodically
     setInterval(async () => {
       try {

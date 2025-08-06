@@ -14,6 +14,7 @@ export function adminPage() {
     showCreateModal: false,
     showResetModal: false,
     showRoleModal: false,
+    showEditModal: false,
     selectedUser: null,
     newUser: {
       email: '',
@@ -25,6 +26,10 @@ export function adminPage() {
     roleChangeData: {
       userId: null,
       roleId: null
+    },
+    editUserData: {
+      quotaMB: 10,
+      apiKey: ''
     },
 
     async init() {
@@ -161,6 +166,43 @@ export function adminPage() {
       } catch (error) {
         notify.error('Failed to update user role');
       }
+    },
+
+    editUserDetails(user) {
+      this.selectedUser = user;
+      this.editUserData.quotaMB = Math.round((user.storage_quota || 10485760) / 1048576);
+      this.editUserData.apiKey = '';
+      this.showEditModal = true;
+    },
+
+    async updateUserDetails() {
+      try {
+        const updates = {
+          quotaMB: parseInt(this.editUserData.quotaMB)
+        };
+
+        if (this.editUserData.apiKey) {
+          updates.apiKey = this.editUserData.apiKey;
+        }
+
+        const response = await api.put(`/admin/users/${this.selectedUser.id}/details`, updates);
+
+        if (response.success) {
+          notify.success('User details updated');
+          this.showEditModal = false;
+          await this.loadUsers();
+        }
+      } catch (error) {
+        notify.error(error.response?.data?.error || 'Failed to update user details');
+      }
+    },
+
+    formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
   };
 }

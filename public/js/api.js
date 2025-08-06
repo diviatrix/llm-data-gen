@@ -7,7 +7,7 @@ class APIClient {
   async request(method, path, data) {
     // Always check localStorage for current token
     this.token = localStorage.getItem('token');
-    
+
     const options = {
       method,
       headers: {
@@ -24,11 +24,11 @@ class APIClient {
     }
 
     const response = await fetch(path.startsWith('/api') ? path : this.baseURL + path, options);
-    
+
     // Check if response is JSON or text based on content-type
     const contentType = response.headers.get('content-type');
     let result;
-    
+
     if (contentType && contentType.includes('application/json')) {
       result = await response.json();
     } else {
@@ -45,7 +45,7 @@ class APIClient {
         response: result,
         token: this.token ? 'present' : 'missing'
       });
-      
+
       const error = new Error(result.error || result.content || 'Request failed');
       error.status = response.status;
       error.response = result;

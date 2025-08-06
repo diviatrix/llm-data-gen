@@ -1,4 +1,4 @@
-<div class="stack">
+<div class="stack" x-cloak>
   <!-- Header -->
   <div class="mb-m">
     <h2 class="text-2xl font-semibold">AI Chat</h2>
@@ -8,18 +8,143 @@
   <!-- Last Chat Bubble (if exists and not in chat) -->
   <div x-show="lastChat && !chatStarted && lastChat.messages && lastChat.messages.length > 0" 
        @click="resumeLastChat()"
-       class="card-interactive mb-m">
+       class="card-interactive mb-m cursor-pointer">
     <div class="card-body">
       <div class="action-row mb-s">
         <h4 class="text-sm font-medium text-gray-700">Resume last chat</h4>
         <span class="text-xs text-gray-500" x-text="lastChat?.timestamp ? new Date(lastChat.timestamp).toLocaleString() : ''"></span>
       </div>
-      <div class="flex items-center gap-s text-xs text-gray-600">
-        <span x-text="lastChat?.model || ''"></span>
-        <span x-show="lastChat?.enableOnlineSearch" class="text-primary">🌐 Online</span>
+      <div class="max-h-[50vh] overflow-y-auto">
+        <template x-for="(message, idx) in lastChat.messages.slice(-2)" :key="idx">
+          <div class="mb-s" :class="message.role === 'user' ? 'text-right' : 'text-left'">
+            <div class="inline-block max-w-3xl"
+                 :class="message.role === 'user' ? 'bg-primary text-white' : 'bg-gray-100'"
+                 class="rounded-lg p-3">
+              <div x-show="message.role === 'assistant'" 
+                   class="prose prose-sm max-w-none" 
+                   x-html="renderMarkdown(message.content)"></div>
+              <p x-show="message.role === 'user'" 
+                 class="text-sm whitespace-pre-wrap" 
+                 x-text="message.content"></p>
+              
+              <div x-show="message.role === 'assistant' && message.metadata" 
+                   class="mt-s pt-s border-t border-gray-300">
+                <div class="flex flex-wrap gap-s text-xs text-gray-600">
+                  <span>🤖 <span x-text="message.metadata?.model || lastChat?.model"></span></span>
+                  <span x-show="message.metadata?.online || lastChat?.enableOnlineSearch">🌐 Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
-      <div class="mt-s text-sm text-gray-700 line-clamp-2" 
-           x-text="lastChat?.messages?.[lastChat.messages.length - 1]?.content || ''"></div>
+    </div>
+  </div>
+  
+  <!-- Chat Interface (moved above model selection) -->
+  <div x-show="chatStarted" x-transition class="card flex-1 mb-m">
+    <div class="card-body flex flex-col h-full">
+      <div class="flex justify-between items-center mb-m">
+        <h3 class="text-lg font-semibold">Chat</h3>
+        <button @click="clearChat()" class="btn btn-ghost btn-sm">Clear History</button>
+      </div>
+      
+      <!-- Messages -->
+      <div class="flex-1 chat-messages mb-m stack-s">
+        <template x-for="(message, index) in messages" :key="index">
+          <div :class="message.role === 'user' ? 'text-right' : 'text-left'">
+            <div class="inline-block max-w-3xl"
+                 :class="message.role === 'user' ? 'bg-primary text-white' : 'bg-gray-100'"
+                 class="rounded-lg p-3">
+              <div x-show="!isRawFormat(index) && message.role === 'assistant'" 
+                   class="prose prose-sm max-w-none" 
+                   x-html="renderMarkdown(message.content)"></div>
+              <p x-show="isRawFormat(index) || message.role === 'user'" 
+                 class="text-sm whitespace-pre-wrap" 
+                 x-text="message.content"></p>
+              
+              <!-- Show attached files for user messages -->
+              <div x-show="message.role === 'user' && message.attachments && message.attachments.length > 0" 
+                   class="mt-s pt-s border-t" 
+                   :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
+                <div class="flex flex-wrap gap-s">
+                  <template x-for="attachment in message.attachments" :key="attachment.path">
+                    <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
+                      📎 <span x-text="attachment.name"></span>
+                    </span>
+                  </template>
+                </div>
+              </div>
+              
+              <!-- Metadata for assistant messages -->
+              <div x-show="message.role === 'assistant' && message.metadata" 
+                   class="mt-s pt-s border-t" 
+                   :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
+                <div class="flex flex-wrap gap-s text-xs items-center" 
+                     :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-600'">
+                  <span>🤖 <span x-text="message.metadata?.model"></span></span>
+                  <span x-show="message.metadata?.online">🌐 Online</span>
+                  <span>💰 $<span x-text="message.metadata?.cost?.toFixed(4) || '0'"></span></span>
+                  <span>🔤 <span x-text="message.metadata?.tokens || '0'"></span> tokens</span>
+                  <span>⏱️ <span x-text="message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleTimeString() : ''"></span></span>
+                  <button @click="toggleMessageFormat(index)"
+                          class="ml-auto px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-700">
+                    <span x-text="isRawFormat(index) ? 'MD' : 'Raw'"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        
+        <div x-show="isLoading" class="text-left">
+          <div class="inline-block bg-gray-100 rounded-lg p-3">
+            <div class="flex items-center gap-s">
+              <div class="spinner-inline"></div>
+              <span class="meta-text">AI is thinking...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Attached Files Display -->
+      <div x-show="attachedFiles && attachedFiles.length > 0" class="mb-s">
+        <div class="flex flex-wrap gap-s">
+          <template x-for="(file, index) in (attachedFiles || [])" :key="index">
+            <div class="bg-gray-100 rounded-lg px-3 py-2 flex items-center gap-s">
+              <span class="text-sm" x-text="file.name"></span>
+              <button @click="removeAttachment(index)" class="text-red-500 hover:text-red-700">
+                ×
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+      
+      <!-- Input -->
+      <form @submit.prevent="sendMessage()" class="chat-input-area">
+        <div class="flex gap-s">
+          <textarea x-model="newMessage"
+                    @keydown.enter.prevent="if (!$event.shiftKey) sendMessage()"
+                    placeholder="Type your message..."
+                    class="form-textarea flex-1"
+                    rows="3"
+                    :disabled="isLoading"></textarea>
+          <div class="flex flex-col gap-s">
+            <button type="button"
+                    @click="showFilePicker = true"
+                    class="btn btn-secondary"
+                    title="Attach files">
+              📎
+            </button>
+            <button type="submit" 
+                    :disabled="!newMessage.trim() || isLoading" 
+                    class="btn btn-primary">
+              Send
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
   
@@ -30,12 +155,18 @@
       <!-- Header with toggle -->
       <div class="flex justify-between items-center mb-m">
         <h3 class="text-lg font-semibold">
-          <span x-show="!chatStarted">Select Model</span>
-          <span x-show="chatStarted && showModelSelector">Change Model</span>
-          <span x-show="chatStarted && !showModelSelector">
-            Current: <span x-text="selectedModel?.name" class="text-primary"></span>
-            <span x-show="enableOnlineSearch" class="text-primary text-sm">🌐</span>
-          </span>
+          <template x-if="!chatStarted">
+            <span>Select Model</span>
+          </template>
+          <template x-if="chatStarted && showModelSelector">
+            <span>Change Model</span>
+          </template>
+          <template x-if="chatStarted && !showModelSelector">
+            <span>
+              Current: <span x-text="selectedModel?.name" class="text-primary"></span>
+              <span x-show="enableOnlineSearch" class="text-primary text-sm">🌐</span>
+            </span>
+          </template>
         </h3>
         <button x-show="chatStarted" 
                 @click.stop="toggleModelSelector()" 
@@ -131,74 +262,110 @@
         </div>
         
         <!-- Start/Change Chat Button -->
-        <button @click="startOrChangeChat()" 
+        <button @click="chatStarted = true; showModelSelector = false; startOrChangeChat()" 
                 :disabled="!selectedModel"
+                x-show="!chatStarted || showModelSelector"
                 class="btn btn-primary w-full">
           <span x-show="!chatStarted">Start Chat</span>
-          <span x-show="chatStarted">Change Model</span>
+          <span x-show="chatStarted">Apply Model Change</span>
         </button>
       </div>
     </div>
   </div>
   
-  <!-- Chat Interface -->
-  <div x-show="chatStarted" x-transition class="card flex-1 mt-m">
-    <div class="card-body flex flex-col h-full">
-      <div class="flex justify-between items-center mb-m">
-        <h3 class="text-lg font-semibold">Chat</h3>
-        <button @click="clearChat()" class="btn btn-ghost btn-sm">Clear History</button>
+  <!-- File Picker Modal -->
+  <div x-show="showFilePicker" 
+       @click.away="showFilePicker = false"
+       x-transition
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col" @click.stop>
+      <div class="p-m border-b">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold">Attach Files</h3>
+          <button @click="showFilePicker = false" class="text-gray-500 hover:text-gray-700">✕</button>
+        </div>
       </div>
       
-      <!-- Messages -->
-      <div class="flex-1 chat-messages mb-m stack-s">
-        <template x-for="(message, index) in messages" :key="index">
-          <div :class="message.role === 'user' ? 'text-right' : 'text-left'">
-            <div class="inline-block max-w-3xl"
-                 :class="message.role === 'user' ? 'bg-primary text-white' : 'bg-gray-100'"
-                 class="rounded-lg p-3">
-              <p class="text-sm whitespace-pre-wrap" x-text="message.content"></p>
-              
-              <!-- Metadata for assistant messages -->
-              <div x-show="message.role === 'assistant' && message.metadata" 
-                   class="mt-s pt-s border-t" 
-                   :class="message.role === 'user' ? 'border-blue-400' : 'border-gray-300'">
-                <div class="flex flex-wrap gap-s text-xs" 
-                     :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-600'">
-                  <span>🤖 <span x-text="message.metadata?.model"></span></span>
-                  <span x-show="message.metadata?.online">🌐 Online</span>
-                  <span>💰 $<span x-text="message.metadata?.cost?.toFixed(4) || '0'"></span></span>
-                  <span>🔤 <span x-text="message.metadata?.tokens || '0'"></span> tokens</span>
-                  <span>⏱️ <span x-text="message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleTimeString() : ''"></span></span>
-                </div>
+      <div class="flex-1 overflow-y-auto p-m">
+        <!-- File Categories -->
+        <div class="mb-m">
+          <div class="flex gap-s">
+            <button @click="filePickerTab = 'uploads'; loadFilesForTab()"
+                    :class="filePickerTab === 'uploads' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
+              My Uploads
+            </button>
+            <button @click="filePickerTab = 'configs'; loadFilesForTab()"
+                    :class="filePickerTab === 'configs' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
+              Configurations
+            </button>
+            <button @click="filePickerTab = 'outputs'; loadFilesForTab()"
+                    :class="filePickerTab === 'outputs' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
+              Generated Output
+            </button>
+          </div>
+        </div>
+        
+        <!-- Upload New File (only in uploads tab) -->
+        <div x-show="filePickerTab === 'uploads'" class="mb-m">
+          <div class="card p-m bg-gray-50">
+            <div class="mb-s">
+              <label class="block text-sm font-medium mb-s">Upload New File</label>
+              <input type="file" @change="handleFileUpload($event)" class="form-input" :disabled="isUploading">
+            </div>
+            <div x-show="storageInfo" class="text-xs text-gray-600">
+              Storage: <span x-text="formatBytes(storageInfo?.used || 0)"></span> / <span x-text="formatBytes(storageInfo?.quota || 0)"></span> used
+            </div>
+            <div x-show="isUploading" class="mt-s">
+              <div class="flex items-center gap-s">
+                <div class="spinner-inline"></div>
+                <span class="text-sm text-gray-600">Uploading...</span>
               </div>
             </div>
           </div>
-        </template>
+        </div>
         
-        <div x-show="isLoading" class="text-left">
-          <div class="inline-block bg-gray-100 rounded-lg p-3">
-            <div class="flex items-center gap-s">
-              <div class="spinner-inline"></div>
-              <span class="meta-text">AI is thinking...</span>
+        <!-- File List -->
+        <div class="stack-s">
+          <div x-show="isLoadingFiles" class="text-center py-4">
+            <div class="spinner-inline"></div>
+          </div>
+          
+          <template x-for="file in (availableFiles || [])" :key="file.path">
+            <div @click="toggleFileSelection(file)"
+                 class="card-interactive p-s"
+                 :class="isFileSelected(file) ? 'border-primary bg-blue-50' : ''">
+              <div class="flex justify-between items-center">
+                <div>
+                  <div class="font-medium text-sm" x-text="file.name"></div>
+                  <div class="text-xs text-gray-600">
+                    <span x-text="formatBytes(file.size)"></span> • 
+                    <span x-text="new Date(file.modified).toLocaleDateString()"></span>
+                  </div>
+                </div>
+                <div x-show="isFileSelected(file)" class="text-primary">✓</div>
+              </div>
             </div>
+          </template>
+          
+          <div x-show="!isLoadingFiles && (!availableFiles || availableFiles.length === 0)" class="text-center py-4 text-gray-500">
+            No files available in this category
           </div>
         </div>
       </div>
       
-      <!-- Input -->
-      <form @submit.prevent="sendMessage()" class="flex gap-s">
-        <textarea x-model="newMessage"
-                  @keydown.enter.prevent="if (!$event.shiftKey) sendMessage()"
-                  placeholder="Type your message..."
-                  class="form-textarea flex-1"
-                  rows="3"
-                  :disabled="isLoading"></textarea>
-        <button type="submit" 
-                :disabled="!newMessage.trim() || isLoading" 
-                class="btn btn-primary">
-          Send
-        </button>
-      </form>
+      <div class="p-m border-t">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">
+            <span x-text="(selectedFiles || []).length"></span> file(s) selected
+          </span>
+          <div class="flex gap-s">
+            <button @click="showFilePicker = false" class="btn btn-ghost">Cancel</button>
+            <button @click="attachSelectedFiles()" 
+                    :disabled="!selectedFiles || selectedFiles.length === 0"
+                    class="btn btn-primary">Attach Files</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

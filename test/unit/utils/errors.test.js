@@ -55,11 +55,11 @@ describe('Error Classes', () => {
       const error = new ApiError('API failed');
       expect(error.message).toBe('API failed');
       expect(error.code).toBe('API_ERROR');
-      expect(error.statusCode).toBeNull();
+      expect(error.statusCode).toBe(500); // Default value
     });
 
     it('should create API error with status code', () => {
-      const error = new ApiError('Not found', 404);
+      const error = new ApiError('Not found', { status: 404 });
       expect(error.statusCode).toBe(404);
     });
   });

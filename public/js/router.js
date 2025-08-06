@@ -1,8 +1,7 @@
-// Simple Router
 class Router {
   constructor() {
     this.routes = {
-      '/': 'dashboard',
+      '/': 'chat',
       '/generate': 'generate',
       '/queue': 'queue',
       '/config': 'config',
@@ -21,19 +20,15 @@ class Router {
   init(onRouteChange) {
     this.onRouteChange = onRouteChange;
 
-    // Handle initial route
     this.handleRoute();
 
-    // Listen for hash changes
     window.addEventListener('hashchange', () => this.handleRoute());
 
-    // Listen for popstate
     window.addEventListener('popstate', () => this.handleRoute());
   }
 
   handleRoute() {
     const hash = window.location.hash.slice(1) || '/';
-    // Extract route without query string
     const route = hash.split('?')[0];
     this.currentRoute = route;
 
@@ -41,7 +36,6 @@ class Router {
       this.onRouteChange(route);
     }
 
-    // Load the appropriate page component
     this.loadPageContent(route);
   }
 
@@ -53,12 +47,10 @@ class Router {
     const contentDiv = document.getElementById('page-content');
     if (!contentDiv) return;
 
-    // Clear content
     contentDiv.innerHTML = '';
 
-    // Map routes to Alpine.js components
     const pageComponents = {
-      '/': 'dashboardPage',
+      '/': 'chatPage',
       '/generate': 'generatePage',
       '/queue': 'queuePage',
       '/config': 'configPage',
@@ -78,7 +70,6 @@ class Router {
       return;
     }
 
-    // Create Alpine component wrapper
     const wrapper = document.createElement('div');
     wrapper.setAttribute('x-data', `${componentName}()`);
     wrapper.setAttribute('x-init', 'init');
@@ -86,22 +77,16 @@ class Router {
 
     contentDiv.appendChild(wrapper);
 
-    // Load template content
-    if (route !== '/') {
-      await this.loadTemplate(route, wrapper);
-    } else {
-      // Inline content for dashboard
-      wrapper.innerHTML = '<div class="text-center py-6"><h2 class="text-3xl font-bold mb-4">Welcome to LLM Data Generator</h2><p class="text-gray-600 mb-6">Generate AI-powered data using various language models</p><div class="grid-3 max-w-4xl mx-auto"><a href="#/generate" class="card-interactive"><div class="text-3xl mb-3">🚀</div><h3 class="text-lg font-semibold mb-2">Generate Data</h3><p class="text-sm text-gray-600">Create data using your configurations</p></a><a href="#/files" class="card-interactive"><div class="text-3xl mb-3">📁</div><h3 class="text-lg font-semibold mb-2">File Manager</h3><p class="text-sm text-gray-600">Manage configurations and results</p></a><a href="#/chat" class="card-interactive"><div class="text-3xl mb-3">💬</div><h3 class="text-lg font-semibold mb-2">Chat</h3><p class="text-sm text-gray-600">Interact with AI models</p></a></div></div>';
-    }
+    await this.loadTemplate(route, wrapper);
 
-    // Re-evaluate Alpine components
     if (window.Alpine) {
-      window.Alpine.initTree(contentDiv);
+      window.Alpine.initTree(wrapper);
     }
   }
 
   async loadTemplate(route, wrapper) {
     const templateMap = {
+      '/': 'chat.html',
       '/generate': 'generate.html',
       '/queue': 'queue.html',
       '/config': 'config.html',

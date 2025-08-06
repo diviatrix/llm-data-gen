@@ -1,20 +1,26 @@
 // Generate Page Component
 import { api } from '../api.js';
 import { notify } from '../utils/notifications.js';
-import { createModelSelector } from '../components/modelSelector.js';
 
 export function generatePage() {
-  // Create model selector instance
-  const modelSelector = createModelSelector({
-    showFilters: true,
-    showSearch: false,
-    showOnlineToggle: false, // We handle it separately in the template
-    defaultFilter: 'all'
-  });
-
   return {
+    // Model selection properties (replacing broken modelSelector)
+    models: [],
+    filteredModels: [],
+    selectedModel: null,
+    modelSearch: '',
+    enableOnlineSearch: false,
+    isLoading: false,
+
+    // Active filters for model selection
+    activeFilters: {
+      capabilities: [],
+      pricing: [],
+      context: [],
+      moderation: []
+    },
+
     // State
-    ...modelSelector,
     config: { showFilters: true }, // Add config for template
     step: 1, // 1: select config, 2: select model, 3: confirm
     configs: [],
@@ -29,20 +35,16 @@ export function generatePage() {
       prompt: ''
     },
     isGenerating: false,
-    pageInitialized: false, // Prevent multiple init calls - use different name
+
+    // Computed property for config model object
+    get configModelObject() {
+      if (!this.configModel || !this.models) return null;
+      const baseModelId = this.configModel.replace(':online', '');
+      return this.models.find(m => m.id === baseModelId);
+    },
 
     // Initialize
     async init() {
-      // Prevent multiple init calls
-      if (this.pageInitialized) return;
-      this.pageInitialized = true;
-      
-      // Reset modelSelector's initialized flag since we're using spread operator
-      this.initialized = false;
-      
-      await modelSelector.init.call(this);
-      console.log('GeneratePage after init - models:', this.models?.length, 'filtered:', this.filteredModels?.length);
-
       // Check if config was passed via URL parameter
       const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
       const configName = params.get('config');
@@ -94,6 +96,8 @@ export function generatePage() {
 
             // Skip to step 2 (Select Model) directly
             this.step = 2;
+            // Load models only when we need them
+            await this.loadModels();
           } else {
             notify.error(`Configuration "${configName}" not found`);
             this.hasConfigParam = false;
@@ -167,6 +171,10 @@ export function generatePage() {
           }
 
           this.step = 2; // Go to Select Model
+          // Load models only when we need them
+          if (!this.models || this.models.length === 0) {
+            await this.loadModels();
+          }
         }
       } catch (error) {
         notify.error('Failed to load configuration content');
@@ -288,12 +296,192 @@ export function generatePage() {
       }
     },
 
-    // Override selectModel to move to next step
+    // Load models
+    async loadModels() {
+      try {
+        this.isLoading = true;
+        const response = await api.get('/models');
+        if (response.success && response.models) {
+          this.models = response.models;
+          this.filteredModels = response.models;
+        }
+      } catch (error) {
+        console.error('Failed to load models:', error);
+        notify.error('Failed to load models');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // Update filtered models based on search and filters
+    updateFilteredModels() {
+      let filtered = this.models;
+
+      // Apply search filter
+      if (this.modelSearch.trim()) {
+        const search = this.modelSearch.toLowerCase();
+        filtered = filtered.filter(model =>
+          model.name.toLowerCase().includes(search) ||
+          model.id.toLowerCase().includes(search)
+        );
+      }
+
+      // Apply active filters
+      const hasActiveFilters = Object.values(this.activeFilters).some(filters => filters.length > 0);
+
+      if (hasActiveFilters) {
+        filtered = filtered.filter(model => {
+          // Check each filter group
+          for (const [, activeValues] of Object.entries(this.activeFilters)) {
+            if (activeValues.length === 0) continue;
+
+            const matchesGroup = activeValues.some(filterValue => {
+              switch (filterValue) {
+              case 'free':
+                return !model.pricing || (parseFloat(model.pricing.prompt) === 0 && parseFloat(model.pricing.completion) === 0);
+              case 'web-search':
+                return model.supports_web_search === true;
+              case 'vision':
+                return model.input_modalities?.includes('image');
+              case 'large-context':
+                return model.context_length >= 100000;
+              default:
+                return false;
+              }
+            });
+
+            if (!matchesGroup) return false;
+          }
+
+          return true;
+        });
+      }
+
+      this.filteredModels = filtered;
+    },
+
+    // Toggle filter
+    toggleFilter(groupKey, filterValue) {
+      const group = this.activeFilters[groupKey];
+      const index = group.indexOf(filterValue);
+
+      if (index === -1) {
+        group.push(filterValue);
+      } else {
+        group.splice(index, 1);
+      }
+
+      this.updateFilteredModels();
+    },
+
+    // Check if filter is active
+    isFilterActive(groupKey, filterValue) {
+      return this.activeFilters[groupKey].includes(filterValue);
+    },
+
+    // Select model and move to next step
     selectModel(model) {
-      modelSelector.selectModel.call(this, model);
-      // Don't auto-enable online search when selecting a model
-      // Only enable it if it was specified in config or user toggles it
+      this.selectedModel = model;
       this.step = 3; // Go to Confirm step
+    },
+
+    // Format price
+    formatPrice(pricing) {
+      if (!pricing) return 'N/A';
+      if (pricing.prompt === 0 && pricing.completion === 0) return 'Free';
+      return `$${pricing.prompt}/$${pricing.completion}`;
+    },
+
+    // Format context length
+    formatContext(length) {
+      if (!length) return 'N/A';
+      if (length >= 1000000) return `${Math.round(length/1000000)}M`;
+      if (length >= 1000) return `${Math.round(length/1000)}K`;
+      return length.toString();
+    },
+
+    // Get model badges
+    getModelBadges(model) {
+      const badges = [];
+      if (model.pricing?.prompt === 0) badges.push({ label: 'Free', class: 'badge-success' });
+      if (model.context_length >= 100000) badges.push({ label: '100K+', class: 'badge-info' });
+      if (model.supports_web_search) badges.push({ label: '🌐 Web', class: 'badge-info' });
+      if (model.input_modalities?.includes('image')) badges.push({ label: '👁️ Vision', class: 'badge-primary' });
+      return badges;
+    },
+
+    // Check if model supports online search
+    supportsOnlineSearch(model) {
+      return model?.supports_web_search === true;
+    },
+
+    // Get web search pricing
+    getWebSearchPricing(model) {
+      if (!model?.web_search_pricing) return null;
+
+      if (model.has_native_web_search && model.web_search_pricing.native) {
+        return {
+          type: 'native',
+          price: model.web_search_pricing.native.medium * 1000,
+          label: 'Native Search'
+        };
+      }
+
+      return {
+        type: 'plugin',
+        price: model.web_search_pricing.plugin * 1000,
+        label: 'Web Search'
+      };
+    },
+
+    // Get provider name from model
+    getProviderName(model) {
+      if (!model) return '';
+      // Extract provider from model ID (e.g., "openai/gpt-4" -> "OpenAI")
+      const provider = model.id.split('/')[0];
+      return provider.charAt(0).toUpperCase() + provider.slice(1);
+    },
+
+    // Format model modalities
+    formatModalities(input, output) {
+      const parts = [];
+      if (input && input.length > 0) {
+        parts.push(input.join(', '));
+      }
+      if (output && output.length > 0) {
+        parts.push('→ ' + output.join(', '));
+      }
+      return parts.join(' ');
+    },
+
+    // Filter groups for model selection
+    filterGroups: {
+      capabilities: [
+        { value: 'web-search', label: '🌐 Web Search' },
+        { value: 'vision', label: '👁️ Vision' }
+      ],
+      pricing: [
+        { value: 'free', label: 'Free' }
+      ],
+      context: [
+        { value: 'large-context', label: '100K+ Context' }
+      ]
+    },
+
+    // Get active filter count
+    getActiveFilterCount() {
+      return Object.values(this.activeFilters).reduce((sum, filters) => sum + filters.length, 0);
+    },
+
+    // Clear all filters
+    clearAllFilters() {
+      this.activeFilters = {
+        capabilities: [],
+        pricing: [],
+        context: [],
+        moderation: []
+      };
+      this.updateFilteredModels();
     },
 
     // Get estimated cost

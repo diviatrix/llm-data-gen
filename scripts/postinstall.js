@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import { UserStorage } from '../lib/userStorage.js';
-import chalk from 'chalk';
+import { chalk } from '../lib/utils/colors.js';
 
 async function postInstall() {
   console.log(chalk.blue('\n🚀 Setting up LLM Data Generator...'));
 
   try {
-    // Ensure base directory exists
     await UserStorage.ensureBaseDir();
-    
-    // Create user directories for CLI/local mode (user-0)
+
     await UserStorage.ensureUserStructure(0);
     console.log(chalk.green('✓ Created user directories in user-data/user-0'));
 

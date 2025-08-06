@@ -12,7 +12,7 @@ class AuthStore {
     if (this.token) {
       api.token = this.token;
       this.isAuthenticated = true;
-      
+
       const savedUser = localStorage.getItem('user');
       if (savedUser) {
         try {

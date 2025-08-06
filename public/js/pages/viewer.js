@@ -34,7 +34,7 @@ export function viewerPage() {
         // Determine file type from extension FIRST
         const ext = this.fileName.split('.').pop().toLowerCase();
         console.log('File extension:', ext);
-        
+
         switch (ext) {
         case 'json':
           this.fileType = 'json';
@@ -90,13 +90,13 @@ export function viewerPage() {
 
         if (response.success) {
           console.log('File loaded successfully, content type:', typeof response.content);
-          
+
           // Handle content based on file type
           if (this.fileType === 'json') {
             try {
               // Try to parse as JSON only for .json files
-              this.content = typeof response.content === 'string' 
-                ? JSON.parse(response.content) 
+              this.content = typeof response.content === 'string'
+                ? JSON.parse(response.content)
                 : response.content;
             } catch (jsonError) {
               // If JSON parsing fails, treat as text
@@ -108,7 +108,7 @@ export function viewerPage() {
             // For all non-JSON files, keep as raw text
             this.content = response.content;
           }
-          
+
           // Apply syntax highlighting after content is loaded
           this.$nextTick(() => {
             if (window.Prism && ['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv'].includes(this.fileType)) {
@@ -270,22 +270,22 @@ export function viewerPage() {
     // Get syntax highlighting language
     getSyntaxLanguage() {
       switch (this.fileType) {
-        case 'javascript': return 'javascript';
-        case 'python': return 'python';
-        case 'sql': return 'sql';
-        case 'css': return 'css';
-        case 'html': return 'html';
-        case 'xml': return 'xml';
-        case 'json': return 'json';
-        case 'csv': return 'csv';
-        default: return 'text';
+      case 'javascript': return 'javascript';
+      case 'python': return 'python';
+      case 'sql': return 'sql';
+      case 'css': return 'css';
+      case 'html': return 'html';
+      case 'xml': return 'xml';
+      case 'json': return 'json';
+      case 'csv': return 'csv';
+      default: return 'text';
       }
     },
 
     // Format content for display
     formatContent() {
       if (!this.content) return '';
-      
+
       if (this.fileType === 'json') {
         return this.renderJson(this.content);
       } else if (this.fileType === 'markdown') {

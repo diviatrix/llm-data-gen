@@ -70,13 +70,13 @@ export function queuePage() {
         if (minutes < 1) return 'just now';
         return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
       }
-      
+
       // Less than 24 hours
       if (diff < 86400000) {
         const hours = Math.floor(diff / 3600000);
         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
       }
-      
+
       // Less than 7 days
       if (diff < 604800000) {
         const days = Math.floor(diff / 86400000);
@@ -115,7 +115,7 @@ export function queuePage() {
           // Optimistically remove from UI
           this.activeGenerations = this.activeGenerations.filter(g => g.id !== generationId);
           notify.success('Generation cancelled');
-          
+
           // Refresh to get updated state
           setTimeout(() => this.loadGenerations(), 1000);
         } else {
@@ -132,7 +132,7 @@ export function queuePage() {
       if (!confirm('Are you sure you want to delete this generation from history?')) {
         return;
       }
-      
+
       try {
         const response = await api.delete(`/queue/${generationId}`);
         if (response.success) {
@@ -154,7 +154,7 @@ export function queuePage() {
       // Extract directory and filename
       let directory = '';
       let fileName = filePath;
-      
+
       if (filePath.includes('/')) {
         const parts = filePath.split('/');
         fileName = parts.pop();
@@ -165,7 +165,7 @@ export function queuePage() {
         fileName = parts.pop();
         directory = parts.join('/');
       }
-      
+
       // Navigate to files page with directory and file parameters
       // Switch to results tab and navigate to specific directory
       if (directory) {

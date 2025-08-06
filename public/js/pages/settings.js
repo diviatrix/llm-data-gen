@@ -27,13 +27,40 @@ export function settingsPage() {
     confirmPassword: '',
     isChangingPassword: false,
 
+    // Storage info
+    storageInfo: null,
+
     // Initialize
     async init() {
-      await this.checkApiKey();
+      await Promise.all([
+        this.checkApiKey(),
+        this.loadStorageInfo()
+      ]);
       // Check system API key if admin
       if (this.$root?.isAdmin) {
         await this.checkSystemApiKey();
       }
+    },
+
+    // Load storage info
+    async loadStorageInfo() {
+      try {
+        const response = await api.get('/user/storage-info');
+        if (response.success) {
+          this.storageInfo = response.storage;
+        }
+      } catch (error) {
+        console.error('Failed to load storage info:', error);
+      }
+    },
+
+    // Format bytes
+    formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     },
 
     // Check if user has API key
@@ -171,8 +198,8 @@ export function settingsPage() {
 
     // Password change methods
     canChangePassword() {
-      return this.currentPassword && 
-             this.newPassword && 
+      return this.currentPassword &&
+             this.newPassword &&
              this.newPassword.length >= 4 &&
              this.newPassword === this.confirmPassword;
     },
@@ -203,7 +230,7 @@ export function settingsPage() {
 
       try {
         this.isChangingPassword = true;
-        
+
         const response = await api.post('/auth/change-password', {
           email: this.$root.user.email,
           currentPassword: this.currentPassword,

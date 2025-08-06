@@ -6,24 +6,19 @@
     <title>LLM Data Generator - Create AI-powered data</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
-    <!-- Reset CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
     
-    <!-- Design System -->
     <link rel="stylesheet" href="/css/design-system.css?v=4">
     
-    <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
     
-    <!-- Prism.js for Syntax Highlighting -->
     <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     
-    <!-- Initialize App -->
     <script type="module">
         import './js/app.js';
-        // Load Alpine after app module
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
         script.defer = true;
@@ -32,7 +27,6 @@
 </head>
 <body class="h-screen text-gray-700">
     <div id="app" x-data="app" x-init="init">
-        <!-- Loading Screen -->
         <div x-show="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
             <div class="text-center">
                 <div class="text-3xl mb-m">🤖</div>
@@ -40,21 +34,16 @@
             </div>
         </div>
 
-        <!-- Main App -->
         <div x-show="!loading" x-transition>
-            <!-- Header -->
             <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
                 <div class="container">
                     <div class="action-row py-m">
-                        <!-- Logo & Title -->
                         <div class="flex items-center gap-s">
                             <span class="text-2xl">🤖</span>
                             <h1 class="text-lg font-semibold text-gray-800">LLM Data Generator</h1>
                         </div>
 
-                        <!-- Account Info -->
                         <div class="flex items-center gap-m">
-                            <!-- Balance Display -->
                             <div x-show="accountInfo" class="flex items-center gap-m text-sm">
                                 <div class="flex items-center gap-s">
                                     <span class="text-gray-500">Balance:</span>
@@ -74,7 +63,6 @@
                                 </div>
                             </div>
 
-                            <!-- User Menu -->
                             <div x-show="isAuthenticated" class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" class="btn btn-ghost btn-sm">
                                     <span class="text-lg">👤</span>
@@ -96,39 +84,42 @@
                 </div>
             </header>
 
-            <!-- Main Layout -->
             <div class="flex h-screen">
-                <!-- Sidebar Navigation -->
-                <nav class="sidebar">
+                <nav class="sidebar relative" 
+                     :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-open': !sidebarCollapsed }">
+                    <button @click="sidebarCollapsed = !sidebarCollapsed" 
+                            class="sidebar-toggle">
+                        <span x-text="sidebarCollapsed ? '→' : '←'"></span>
+                    </button>
+                    
                     <div class="stack-s">
                         <template x-for="item in navigation" :key="item.path">
                             <a :href="'#' + item.path"
                                @click="currentRoute = item.path"
-                               :class="currentRoute === item.path ? 'nav-link nav-link-active' : 'nav-link'">
-                                <span class="text-xl" x-text="item.icon"></span>
-                                <span x-text="item.label"></span>
+                               :class="currentRoute === item.path ? 'nav-link nav-link-active' : 'nav-link'"
+                               :title="item.label">
+                                <span class="nav-icon" x-text="item.icon"></span>
+                                <span class="nav-label" x-text="item.label"></span>
                             </a>
                         </template>
                     </div>
 
-                    <!-- Admin Section -->
                     <div x-show="isAdmin" class="mt-l pt-l border-t border-gray-200">
                         <div>
-                            <div class="text-sm font-medium text-gray-500 uppercase mb-s">Admin</div>
+                            <div class="text-sm font-medium text-gray-500 uppercase mb-s nav-label">Admin</div>
                             <a href="#/admin"
                                @click="currentRoute = '/admin'"
-                               :class="currentRoute === '/admin' ? 'nav-link nav-link-active' : 'nav-link'">
-                                <span class="text-xl">👥</span>
-                                <span>Users</span>
+                               :class="currentRoute === '/admin' ? 'nav-link nav-link-active' : 'nav-link'"
+                               :title="'Users'">
+                                <span class="nav-icon">👥</span>
+                                <span class="nav-label">Users</span>
                             </a>
                         </div>
                     </div>
                 </nav>
 
-                <!-- Page Content -->
                 <main class="flex-1 p-m">
                     <div class="max-w-4xl mx-auto">
-                        <!-- API Key Warning -->
                         <div x-show="!loading && !hasApiKey" class="alert alert-warning mb-m">
                             <div class="flex justify-between items-center">
                                 <div>
@@ -141,14 +132,12 @@
                             </div>
                         </div>
                         
-                        <!-- Router Content Container -->
                         <div id="page-content"></div>
                     </div>
                 </main>
             </div>
         </div>
 
-        <!-- Notifications -->
         <div id="notifications" class="notification-container stack-s"></div>
     </div>
 </body>

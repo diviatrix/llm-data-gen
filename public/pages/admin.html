@@ -49,6 +49,8 @@
             <th class="text-left p-m">ID</th>
             <th class="text-left p-m">Email</th>
             <th class="text-left p-m">Role</th>
+            <th class="text-left p-m">API Key</th>
+            <th class="text-left p-m">Storage</th>
             <th class="text-left p-m">Status</th>
             <th class="text-left p-m">Created</th>
             <th class="text-left p-m">Actions</th>
@@ -63,25 +65,38 @@
                 <span class="badge badge-primary" x-text="user.role_name || 'user'"></span>
               </td>
               <td class="p-m">
+                <span :class="user.has_api_key ? 'text-success' : 'text-gray-400'" 
+                      x-text="user.has_api_key ? '✓ Set' : '✗ Not set'"></span>
+              </td>
+              <td class="p-m">
+                <div class="text-xs">
+                  <span x-text="formatBytes(user.storage_used || 0)"></span> / 
+                  <span x-text="formatBytes(user.storage_quota || 10485760)"></span>
+                </div>
+              </td>
+              <td class="p-m">
                 <span class="badge" :class="user.is_active ? 'badge-success' : 'badge-secondary'"
                       x-text="user.is_active ? 'Active' : 'Inactive'"></span>
               </td>
               <td class="p-m meta-text" x-text="formatDate(user.created_at)"></td>
               <td class="p-m">
                 <div class="flex gap-s">
+                  <button @click="editUserDetails(user)" class="btn btn-ghost btn-sm">
+                    ✏️ Edit
+                  </button>
                   <button @click="showChangeRole(user)" class="btn btn-ghost btn-sm">
-                    👤 Change Role
+                    👤 Role
                   </button>
                   <button @click="toggleUserStatus(user)" 
                           class="btn btn-ghost btn-sm"
                           :class="user.is_active ? 'text-warning' : 'text-success'">
-                    <span x-text="user.is_active ? '⏸️ Deactivate' : '▶️ Activate'"></span>
+                    <span x-text="user.is_active ? '⏸️' : '▶️'"></span>
                   </button>
                   <button @click="resetPassword(user)" class="btn btn-ghost btn-sm">
-                    🔑 Reset Password
+                    🔑
                   </button>
                   <button @click="deleteUser(user)" class="btn btn-danger btn-sm">
-                    🗑️ Delete
+                    🗑️
                   </button>
                 </div>
               </td>
@@ -154,6 +169,46 @@
     </div>
   </div>
 
+  <!-- Edit User Details Modal -->
+  <div x-show="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="text-lg font-semibold">Edit User Details</h3>
+        <button @click="showEditModal = false" class="btn btn-ghost btn-sm">✕</button>
+      </div>
+      <form @submit.prevent="updateUserDetails">
+        <div class="modal-body stack">
+          <div>
+            <label>User</label>
+            <input type="text" :value="selectedUser?.email" readonly class="form-input bg-gray-100">
+          </div>
+          <div>
+            <label>Storage Quota (MB)</label>
+            <input type="number" x-model="editUserData.quotaMB" min="1" max="10000" required class="form-input">
+            <p class="text-xs text-gray-600 mt-s">
+              Currently using: <span x-text="formatBytes(selectedUser?.storage_used || 0)"></span>
+            </p>
+          </div>
+          <div>
+            <label>OpenRouter API Key</label>
+            <input type="text" x-model="editUserData.apiKey" placeholder="sk-or-v1-..." class="form-input">
+            <p class="text-xs text-gray-600 mt-s">
+              Leave empty to keep current key. Enter new key to update.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" @click="showEditModal = false" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Update Details
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
   <!-- Change Role Modal -->
   <div x-show="showRoleModal" class="modal-backdrop">
     <div class="modal">

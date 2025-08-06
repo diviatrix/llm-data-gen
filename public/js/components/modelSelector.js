@@ -73,14 +73,11 @@ export function createModelSelector(options = {}) {
 
     // Initialize
     async init() {
-      console.log('ModelSelector init called, initialized:', this.initialized);
       // Prevent multiple init calls
       if (this.initialized) return;
       this.initialized = true;
-      
-      console.log('Calling loadModels...');
+
       await this.loadModels.call(this);
-      console.log('After loadModels - models:', this.models?.length);
 
       // Pre-select model if provided
       if (config.selectedModelId) {
@@ -99,10 +96,8 @@ export function createModelSelector(options = {}) {
         const response = await api.get('/models');
         if (response.success) {
           this.models = response.models;
-          console.log('Loaded models:', this.models.length);
           this.updateFilterCounts();
           this.updateFilteredModels();
-          console.log('Filtered models:', this.filteredModels.length);
         }
       } catch (error) {
         notify.error('Failed to load models');
