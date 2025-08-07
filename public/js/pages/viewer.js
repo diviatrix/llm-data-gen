@@ -69,27 +69,55 @@ export function viewerPage() {
           break;
         case 'txt':
         case 'log':
+          this.fileType = 'text';
+          break;
+        // Images
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+        case 'webp':
+        case 'bmp':
+        case 'svg':
+        case 'ico':
+          this.fileType = 'image';
+          break;
+        // Other binary files
+        case 'pdf':
+        case 'zip':
+        case 'rar':
+        case 'exe':
+        case 'dll':
+        case 'mp3':
+        case 'mp4':
+        case 'avi':
+          this.fileType = 'binary';
+          break;
         default:
           this.fileType = 'text';
         }
 
         console.log('Determined file type:', this.fileType);
 
-        // Determine which endpoint to use based on the path or type parameter
-        let response;
-        const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-        const pathType = params.get('type');
-
-        if (pathType === 'configs') {
-          // For config files
-          response = await api.get(`/config-file/${encodeURIComponent(this.filePath)}`);
-        } else {
-          // For result files
-          response = await api.get(`/result-file/${encodeURIComponent(this.filePath)}`);
+        // Check if it's a binary file type
+        if (this.fileType === 'image' || this.fileType === 'binary') {
+          this.error = '😢 Не текст';
+          this.content = null;
+          return;
         }
+
+        // Load file from unified directory
+        const response = await api.get(`/file/${this.filePath}`);
 
         if (response.success) {
           console.log('File loaded successfully, content type:', typeof response.content);
+          
+          // Check if content is binary
+          if (response.isBinary || (typeof response.content === 'string' && response.content.includes('\ufffd'))) {
+            this.error = '😢 Не текст';
+            this.content = null;
+            return;
+          }
 
           // Handle content based on file type
           if (this.fileType === 'json') {
@@ -310,9 +338,11 @@ export function viewerPage() {
 
     // Edit file
     editFile() {
-      const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-      const fileType = params.get('type');
-      window.location.hash = `#/editor?path=${encodeURIComponent(this.filePath)}${fileType ? '&type=' + fileType : ''}`;
+      if (this.error && this.error.includes('не является текстовым')) {
+        notify.error('Этот файл не может быть отредактирован');
+        return;
+      }
+      window.location.hash = `#/editor?path=${encodeURIComponent(this.filePath)}`;
     },
 
     // Download file

@@ -56,20 +56,17 @@ export function editorPage() {
           this.fileType = 'text';
         }
 
-        // Determine the right endpoint based on type parameter
-        let response;
-        const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-        const fileType = params.get('type');
-
-        if (fileType === 'configs') {
-          // For config files
-          response = await api.get(`/config-file/${encodeURIComponent(this.filePath)}`);
-        } else {
-          // For output files
-          response = await api.get(`/result-file/${encodeURIComponent(this.filePath)}`);
-        }
+        // Load file from unified directory
+        const response = await api.get(`/file/${this.filePath}`);
 
         if (response.success) {
+          // Check if content is binary
+          if (response.isBinary || (typeof response.content === 'string' && response.content.includes('\ufffd'))) {
+            this.error = '😢 Не текст';
+            this.content = null;
+            return;
+          }
+          
           this.content = response.content;
           if (this.fileType === 'json') {
             this.editableContent = JSON.stringify(this.content, null, 2);
@@ -112,11 +109,8 @@ export function editorPage() {
           contentToSave = this.editableContent;
         }
 
-        // Determine API endpoint based on type parameter
-        const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-        const fileType = params.get('type');
-        const isConfig = fileType === 'configs';
-        const endpoint = isConfig ? '/config-files' : '/output-files';
+        // Use unified config-files endpoint
+        const endpoint = '/config-files';
 
         const response = await api.post(endpoint, {
           filename: this.fileName,

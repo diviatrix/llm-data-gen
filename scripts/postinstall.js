@@ -11,8 +11,7 @@ async function postInstall() {
     await UserStorage.ensureUserStructure(0);
     console.log(chalk.green('✓ Created user directories in user-data/user-0'));
 
-    console.log(chalk.cyan(`\n📁 Your configurations are stored in: ${UserStorage.getUserConfigsDir(0)}`));
-    console.log(chalk.cyan(`📁 Generated files will be saved to: ${UserStorage.getUserOutputDir(0)}`));
+    console.log(chalk.cyan(`\n📁 Your files are stored in: ${UserStorage.getUserFilesDir(0)}`));
     console.log(chalk.green('\n✨ Setup complete! Run "llmdatagen" to start generating data.\n'));
   } catch (error) {
     console.error(chalk.red('\n❌ Setup failed:'), error.message);

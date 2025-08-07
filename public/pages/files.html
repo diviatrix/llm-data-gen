@@ -5,19 +5,22 @@
     <p class="text-gray-600 mt-s" x-text="$store.i18n.t('files.manageFiles')"></p>
   </div>
   
-  
-  <div class="flex gap-s mb-m">
-    <button @click="switchTab('configs')" 
-            class="btn" 
-            :class="activeTab === 'configs' ? 'btn-primary' : 'btn-ghost'">
-      ⚙️ <span x-text="$store.i18n.t('files.configurations')"></span>
-    </button>
-    <button @click="switchTab('results')" 
-            class="btn" 
-            :class="activeTab === 'results' ? 'btn-primary' : 'btn-ghost'">
-      📊 <span x-text="$store.i18n.t('files.results')"></span>
-    </button>
+  <!-- Storage Quota Display -->
+  <div x-show="storageInfo" class="card mb-m">
+    <div class="card-body p-s">
+      <div class="flex justify-between items-center mb-s">
+        <span class="text-sm font-medium">Хранилище</span>
+        <span class="text-xs text-gray-600">
+          <span x-text="formatFileSize(storageInfo?.used || 0)"></span> / 
+          <span x-text="formatFileSize(storageInfo?.quota || 0)"></span>
+        </span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" :style="`width: ${storagePercentage}%`"></div>
+      </div>
+    </div>
   </div>
+  
   
   
   <nav x-show="currentPath" class="mb-m">
@@ -42,11 +45,21 @@
     <div class="flex gap-s">
       <button x-show="currentPath" 
               @click="navigateUp()" 
-              class="btn btn-ghost btn-sm">
-        ↑ <span x-text="$store.i18n.t('buttons.up')"></span>
+              @dragover.prevent="$event.currentTarget.classList.add('drag-over')"
+              @dragleave.prevent="$event.currentTarget.classList.remove('drag-over')"
+              @drop.prevent="handleDropOnUpButton($event)"
+              class="btn btn-ghost btn-sm px-m">
+        ↑ <span x-text="$store.i18n.t('buttons.up') || 'Вверх'"></span>
       </button>
-      <button x-show="activeTab === 'configs'" 
-              @click="createNewConfig()" 
+      <button @click="showCreateFolderModal()" 
+              class="btn btn-ghost btn-sm">
+        📁+ Папка
+      </button>
+      <button @click="selectAndUploadFiles()" 
+              class="btn btn-ghost btn-sm">
+        📤 Загрузить
+      </button>
+      <button @click="createNewConfig()" 
               class="btn btn-primary btn-sm">
         + <span x-text="$store.i18n.t('buttons.newConfiguration')"></span>
       </button>
@@ -64,6 +77,12 @@
       <div class="card-interactive" 
            :class="file.isDirectory ? 'cursor-pointer' : ''"
            :data-filename="file.name"
+           :draggable="!file.isDirectory"
+           @dragstart="handleDragStart($event, file)"
+           @dragend="handleDragEnd($event)"
+           @dragover.prevent="file.isDirectory && $event.currentTarget.classList.add('drag-over')"
+           @dragleave.prevent="file.isDirectory && $event.currentTarget.classList.remove('drag-over')"
+           @drop.prevent="file.isDirectory && handleDropOnFolder($event, file)"
            @click="file.isDirectory && navigateToFolder(file)">
         <div class="card-body">
           <div class="flex items-center gap-s">
@@ -80,78 +99,52 @@
             </div>
             <div class="flex gap-s flex-shrink-0">
               
-              <template x-if="activeTab === 'configs'">
-                <div class="flex gap-s">
-                  <template x-if="file.isDirectory">
+              <div class="flex gap-s">
+                <template x-if="file.isDirectory">
+                  <div class="flex gap-s">
                     <button @click.stop="navigateToFolder(file)" 
                             class="btn btn-ghost btn-sm" 
                             :title="$store.i18n.t('files.openFolder')">
                       📂
                     </button>
-                  </template>
-                  <template x-if="!file.isDirectory">
-                    <div class="flex gap-s">
-                      <button @click.stop="viewFile(file)" 
-                              class="btn btn-ghost btn-sm" 
-                              :title="$store.i18n.t('files.view')">
-                        👁️
-                      </button>
-                      <button @click.stop="editFile(file)" 
-                              class="btn btn-ghost btn-sm" 
-                              :title="$store.i18n.t('files.edit')">
-                        ✏️
-                      </button>
-                      <button @click.stop="generateFromConfig(file)" 
-                              class="btn btn-primary btn-sm" 
-                              :title="$store.i18n.t('files.generate')">
-                        🚀
-                      </button>
-                      <button @click.stop="deleteFile(file)" 
-                              class="btn btn-danger btn-sm" 
-                              :title="$store.i18n.t('files.delete')">
-                        🗑️
-                      </button>
-                    </div>
-                  </template>
-                </div>
-              </template>
-              
-              
-              <template x-if="activeTab === 'results'">
-                <div class="flex gap-s">
-                  <template x-if="file.isDirectory">
-                    <button @click.stop="navigateToFolder(file)" 
-                            class="btn btn-ghost btn-sm" 
-                            :title="$store.i18n.t('files.openFolder')">
-                      📂
+                    <button @click.stop="deleteFolder(file)" 
+                            class="btn btn-danger btn-sm" 
+                            title="Удалить папку">
+                      🗑️
                     </button>
-                  </template>
-                  <template x-if="!file.isDirectory">
-                    <div class="flex gap-s">
-                      <button @click.stop="viewFile(file)" 
-                              class="btn btn-ghost btn-sm" 
-                              :title="$store.i18n.t('files.view')">
-                        👁️
-                      </button>
-                      <button @click.stop="editFile(file)" 
-                              class="btn btn-ghost btn-sm" 
-                              :title="$store.i18n.t('files.edit')">
-                        ✏️
-                      </button>
-                      <button @click.stop="downloadFile(file)" 
-                              class="btn btn-ghost btn-sm" 
-                              :title="$store.i18n.t('files.download')">
-                        ⬇️
-                      </button>
-                      <button @click.stop="deleteFile(file)" 
-                              class="btn btn-danger btn-sm" 
-                              :title="$store.i18n.t('files.delete')">
-                        🗑️
-                      </button>
-                    </div>
-                  </template>
-                </div>
-              </template>
+                  </div>
+                </template>
+                <template x-if="!file.isDirectory">
+                  <div class="flex gap-s">
+                    <button @click.stop="viewFile(file)" 
+                            class="btn btn-ghost btn-sm" 
+                            :title="$store.i18n.t('files.view')">
+                      👁️
+                    </button>
+                    <button @click.stop="editFile(file)" 
+                            class="btn btn-ghost btn-sm" 
+                            :title="$store.i18n.t('files.edit')">
+                      ✏️
+                    </button>
+                    <button x-show="canGenerateFromFile(file)"
+                            @click.stop="generateFromConfig(file)" 
+                            class="btn btn-primary btn-sm" 
+                            :title="$store.i18n.t('files.generate')">
+                      🚀
+                    </button>
+                    <button @click.stop="downloadFile(file)" 
+                            class="btn btn-ghost btn-sm" 
+                            :title="$store.i18n.t('files.download')">
+                      ⬇️
+                    </button>
+                    <button @click.stop="deleteFile(file)" 
+                            class="btn btn-danger btn-sm" 
+                            :title="$store.i18n.t('files.delete')">
+                      🗑️
+                    </button>
+                  </div>
+                </template>
+              </div>
             </div>
           </div>
         </div>
@@ -163,20 +156,88 @@
   <div x-show="!isLoading && currentFiles.length === 0" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">
-        <span x-text="activeTab === 'configs' ? '⚙️' : '📊'"></span>
+        <span>📁</span>
       </div>
-      <h3 class="text-xl font-medium mb-s">
-        <span x-show="activeTab === 'configs'" x-text="$store.i18n.t('files.noConfigurationsFound')"></span><span x-show="activeTab === 'results'" x-text="$store.i18n.t('files.noResultsFound')"></span>
-      </h3>
-      <p class="text-gray-600 mb-m">
-        <span x-show="activeTab === 'configs'" x-text="$store.i18n.t('files.createFirstConfiguration')"></span>
-        <span x-show="activeTab === 'results'" x-text="$store.i18n.t('files.generatedDataAppears')"></span>
-      </p>
-      <button x-show="activeTab === 'configs'" 
-              @click="createNewConfig()" 
+      <h3 class="text-xl font-medium mb-s" x-text="$store.i18n.t('files.noFilesFound') || 'Файлы не найдены'"></h3>
+      <p class="text-gray-600 mb-m">Загрузите файлы или создайте новую конфигурацию</p>
+      <button @click="createNewConfig()" 
               class="btn btn-primary">
         <span x-text="$store.i18n.t('buttons.createConfiguration')"></span>
       </button>
+    </div>
+  </div>
+  
+  <!-- Drag and Drop Zone -->
+  <div x-show="!isLoading && currentFiles.length === 0" 
+       @dragover.prevent
+       @drop.prevent="handleDrop($event)"
+       class="drop-zone mb-m">
+    <div class="text-3xl mb-s">📤</div>
+    <p class="text-gray-600 mb-s">Перетащите файлы сюда или</p>
+    <button @click="selectAndUploadFiles()" class="btn btn-primary">Выберите файлы</button>
+  </div>
+  
+  <!-- Create Folder Modal -->
+  <div x-show="showFolderModal" 
+       @click.away="showFolderModal = false"
+       x-transition
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-m" @click.stop>
+      <h3 class="text-lg font-semibold mb-m">Создать папку</h3>
+      <input type="text" 
+             x-model="newFolderName" 
+             @keyup.enter="createFolder()"
+             placeholder="Название папки"
+             class="form-input mb-m"
+             :disabled="isCreatingFolder">
+      <div class="flex justify-end gap-s">
+        <button @click="showFolderModal = false" 
+                class="btn btn-ghost">Отмена</button>
+        <button @click="createFolder()" 
+                :disabled="!newFolderName || isCreatingFolder"
+                class="btn btn-primary">Создать</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Upload Progress Modal -->
+  <div x-show="isUploading" 
+       x-transition
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-m">
+      <h3 class="text-lg font-semibold mb-m">Загрузка файлов</h3>
+      <div class="mb-s">
+        <p class="text-sm text-gray-600 mb-s" x-text="uploadingFileName"></p>
+        <div class="progress">
+          <div class="progress-bar" :style="`width: ${uploadProgress}%`"></div>
+        </div>
+      </div>
+      <div class="text-center">
+        <span class="text-sm text-gray-600" x-text="`${uploadProgress}%`"></span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Config Modal -->
+  <div x-show="showConfigModal" 
+       @click.away="showConfigModal = false"
+       x-transition
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-m" @click.stop>
+      <h3 class="text-lg font-semibold mb-m">Создать конфигурацию</h3>
+      <input type="text" 
+             x-model="newConfigName" 
+             @keyup.enter="createConfigFile()"
+             placeholder="Название файла (например: my-config.json)"
+             class="form-input mb-m"
+             :disabled="isCreatingConfig">
+      <div class="flex justify-end gap-s">
+        <button @click="showConfigModal = false" 
+                class="btn btn-ghost">Отмена</button>
+        <button @click="createConfigFile()" 
+                :disabled="!newConfigName || isCreatingConfig"
+                class="btn btn-primary">Создать</button>
+      </div>
     </div>
   </div>
 </div>

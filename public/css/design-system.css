@@ -508,6 +508,37 @@ input:checked + .toggle-slider:before {
   color: var(--gray-600);
 }
 
+/* Drag and drop styles */
+.drag-over {
+  background-color: var(--primary-light) !important;
+  border: 2px dashed var(--primary) !important;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+.btn.drag-over {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+[draggable="true"] {
+  cursor: move;
+}
+
+.drop-zone {
+  border: 2px dashed var(--gray-400);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  background: var(--gray-50);
+  transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
 .action-row {
   display: flex;
   align-items: center;
@@ -1092,6 +1123,26 @@ input:checked + .toggle-slider:before {
 
 .max-w-none {
   max-width: none;
+}
+
+.drag-over {
+  background-color: var(--primary-light) !important;
+  border-color: var(--primary) !important;
+  border-style: dashed !important;
+}
+
+.drop-zone {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.drop-zone:hover {
+  border-color: var(--primary);
+  background-color: var(--gray-50);
 }
 
 .space-y-4 > * + * {

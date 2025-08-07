@@ -999,14 +999,15 @@ app.post('/api/upload-file', upload.single('file'), async (req, res) => {
       });
     }
 
-    // Save file to user's uploads directory
-    const uploadsDir = UserStorage.getUserUploadsDir(userId);
-    await fs.mkdir(uploadsDir, { recursive: true });
+    // Save file to user's configs directory (or to specified path)
+    const targetPath = req.body.path || '';
+    const configsDir = UserStorage.getUserFilesDir(userId);
+    const targetDir = targetPath ? path.join(configsDir, targetPath) : configsDir;
+    await fs.mkdir(targetDir, { recursive: true });
 
-    // Generate safe filename
-    const timestamp = Date.now();
-    const safeFilename = `${timestamp}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const filePath = path.join(uploadsDir, safeFilename);
+    // Use original filename, just sanitize it
+    const safeFilename = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = path.join(targetDir, safeFilename);
 
     // Save file
     await fs.writeFile(filePath, req.file.buffer);
@@ -1066,13 +1067,10 @@ app.get('/api/files/list', async (req, res) => {
     let dir;
     switch (type) {
     case 'configs':
-      dir = UserStorage.getUserConfigsDir(userId);
+      dir = UserStorage.getUserFilesDir(userId);
       break;
     case 'output':
-      dir = UserStorage.getUserOutputDir(userId);
-      break;
-    case 'uploads':
-      dir = UserStorage.getUserUploadsDir(userId);
+      dir = UserStorage.getUserFilesDir(userId);
       break;
     default:
       return res.status(400).json({
@@ -1287,57 +1285,13 @@ app.get('/api/examples', async (req, res) => {
   }
 });
 
-// Get user uploaded files
-app.get('/api/user-files', async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const uploadsDir = UserStorage.getUserUploadsDir(userId);
-
-    // Ensure directory exists
-    await fs.mkdir(uploadsDir, { recursive: true });
-
-    // Get all files
-    const files = await fs.readdir(uploadsDir);
-
-    // Get file stats
-    const fileStats = await Promise.all(
-      files.map(async (file) => {
-        const filePath = path.join(uploadsDir, file);
-        const stats = await fs.stat(filePath);
-        return {
-          name: file,
-          path: `uploads/${file}`,
-          size: stats.size,
-          modified: stats.mtime,
-          type: path.extname(file).toLowerCase()
-        };
-      })
-    );
-
-    // Get storage info
-    const auth = await authManagerPromise;
-    const storageInfo = await auth.getStorageInfo(userId);
-
-    res.json({
-      success: true,
-      files: fileStats.sort((a, b) => b.modified - a.modified),
-      storage: storageInfo
-    });
-  } catch (error) {
-    console.error('Failed to get user files:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load user files'
-    });
-  }
-});
 
 // Get output directory files
 app.get('/api/output-files', async (req, res) => {
   try {
     const { subpath = '' } = req.query;
     const userId = getUserId(req);
-    const baseDir = UserStorage.getUserOutputDir(userId);
+    const baseDir = UserStorage.getUserFilesDir(userId);
     const targetDir = subpath ? path.join(baseDir, subpath) : baseDir;
 
     // Security check - prevent directory traversal
@@ -1408,7 +1362,7 @@ app.get('/api/result-file/*', async (req, res) => {
   try {
     const filename = req.params[0];
     const userId = getUserId(req);
-    const baseDir = UserStorage.getUserOutputDir(userId);
+    const baseDir = UserStorage.getUserFilesDir(userId);
     const filePath = path.join(baseDir, filename);
 
     // Security check - prevent directory traversal
@@ -1470,7 +1424,7 @@ app.delete('/api/result-file/*', async (req, res) => {
   try {
     const filename = req.params[0];
     const userId = getUserId(req);
-    const baseDir = UserStorage.getUserOutputDir(userId);
+    const baseDir = UserStorage.getUserFilesDir(userId);
     const filePath = path.join(baseDir, filename);
 
     // Security check - prevent directory traversal
@@ -1506,12 +1460,54 @@ app.delete('/api/result-file/*', async (req, res) => {
   }
 });
 
-// Get specific config file content
+// Universal file access endpoint
+app.get('/api/file/*', async (req, res) => {
+  try {
+    const filePath = req.params[0]; // Get everything after /api/file/
+    const userId = getUserId(req);
+    const filesDir = UserStorage.getUserFilesDir(userId);
+    const fullPath = path.join(filesDir, filePath);
+
+    // Security check
+    if (!fullPath.startsWith(filesDir)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+
+    // Check if file exists
+    try {
+      await fs.access(fullPath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      });
+    }
+
+    // Read file
+    const content = await fs.readFile(fullPath, 'utf-8');
+    
+    res.json({
+      success: true,
+      content
+    });
+  } catch (error) {
+    console.error('File read error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to read file'
+    });
+  }
+});
+
+// Get specific config file content (legacy)
 app.get('/api/config-file/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
     const userId = getUserId(req);
-    const configsDir = UserStorage.getUserConfigsDir(userId);
+    const configsDir = UserStorage.getUserFilesDir(userId);
     const filePath = path.join(configsDir, filename);
 
     // Security check
@@ -1551,7 +1547,7 @@ app.get('/api/config-files', async (req, res) => {
   try {
     const { subpath = '' } = req.query;
     const userId = getUserId(req);
-    const baseDir = UserStorage.getUserConfigsDir(userId);
+    const baseDir = UserStorage.getUserFilesDir(userId);
     const targetDir = subpath ? path.join(baseDir, subpath) : baseDir;
 
     // Security check - prevent directory traversal
@@ -1633,7 +1629,7 @@ app.post('/api/config-files', async (req, res) => {
     }
 
     const userId = getUserId(req);
-    const configsDir = UserStorage.getUserConfigsDir(userId);
+    const configsDir = UserStorage.getUserFilesDir(userId);
     const filePath = path.join(configsDir, sanitizedFilename);
 
     // Ensure directory exists
@@ -1670,7 +1666,7 @@ app.delete('/api/config-file/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
     const userId = getUserId(req);
-    const configsDir = UserStorage.getUserConfigsDir(userId);
+    const configsDir = UserStorage.getUserFilesDir(userId);
     const filePath = path.join(configsDir, filename);
 
     // Security check
@@ -1719,7 +1715,7 @@ app.post('/api/output-files', async (req, res) => {
     }
 
     const userId = getUserId(req);
-    const outputsDir = UserStorage.getUserOutputDir(userId);
+    const outputsDir = UserStorage.getUserFilesDir(userId);
 
     // Determine full path
     let fullPath;
@@ -1800,12 +1796,10 @@ app.post('/api/chat', async (req, res) => {
               filePath = path.join(userBaseDir, attachment.path);
             } else if (attachment.type) {
               // Legacy format with type field
-              if (attachment.type === 'uploads') {
-                filePath = path.join(UserStorage.getUserUploadsDir(userId), attachment.name);
-              } else if (attachment.type === 'configs') {
-                filePath = path.join(UserStorage.getUserConfigsDir(userId), attachment.name);
+              if (attachment.type === 'configs') {
+                filePath = path.join(UserStorage.getUserFilesDir(userId), attachment.name);
               } else if (attachment.type === 'output') {
-                filePath = path.join(UserStorage.getUserOutputDir(userId), attachment.name);
+                filePath = path.join(UserStorage.getUserFilesDir(userId), attachment.name);
               }
             }
 
@@ -1973,15 +1967,218 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Serve the main dashboard
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve the chat page
 app.get('/chat', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
+
+app.get('/api/files', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const subpath = req.query.subpath || '';
+    
+    // Get user files directory - single directory for all files
+    const filesDir = UserStorage.getUserFilesDir(userId);
+    const fullPath = subpath ? path.join(filesDir, subpath) : filesDir;
+    
+    // Ensure directory exists
+    await fs.mkdir(fullPath, { recursive: true });
+    
+    // Read all files
+    const files = await fs.readdir(fullPath);
+    const allFiles = [];
+    
+    for (const file of files) {
+      const filePath = path.join(fullPath, file);
+      const stats = await fs.stat(filePath);
+      allFiles.push({
+        name: file,
+        relativePath: subpath ? path.join(subpath, file) : file,
+        isDirectory: stats.isDirectory(),
+        size: stats.size,
+        modified: stats.mtime
+      });
+    }
+    
+    // Sort files: folders first, then by name
+    allFiles.sort((a, b) => {
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    res.json({
+      success: true,
+      files: allFiles
+    });
+  } catch (error) {
+    console.error('Files list error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to list files'
+    });
+  }
+});
+
+// Move file to another location
+app.post('/api/files/move', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { sourcePath, targetPath } = req.body;
+    
+    if (!sourcePath || !targetPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Source and target paths are required'
+      });
+    }
+    
+    const baseDir = UserStorage.getUserFilesDir(userId);
+    const sourceFullPath = path.join(baseDir, sourcePath);
+    const targetFullPath = path.join(baseDir, targetPath);
+    
+    // Security checks
+    if (!sourceFullPath.startsWith(baseDir) || !targetFullPath.startsWith(baseDir)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+    
+    // Check if source exists
+    try {
+      await fs.access(sourceFullPath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        error: 'Source file not found'
+      });
+    }
+    
+    // Ensure target directory exists
+    const targetDir = path.dirname(targetFullPath);
+    await fs.mkdir(targetDir, { recursive: true });
+    
+    // Check if target already exists
+    try {
+      await fs.access(targetFullPath);
+      return res.status(400).json({
+        success: false,
+        error: 'Target file already exists'
+      });
+    } catch {
+      // Good, target doesn't exist
+    }
+    
+    // Move the file
+    await fs.rename(sourceFullPath, targetFullPath);
+    
+    res.json({
+      success: true,
+      message: 'File moved successfully'
+    });
+  } catch (error) {
+    console.error('Move file error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to move file'
+    });
+  }
+});
+
+app.post('/api/files/folder', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { path: folderPath } = req.body;
+    if (!folderPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Folder path is required'
+      });
+    }
+    const baseDir = UserStorage.getUserFilesDir(userId);
+    const fullPath = path.join(baseDir, folderPath);
+    if (!fullPath.startsWith(baseDir)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+    await fs.mkdir(fullPath, { recursive: true });
+    res.json({
+      success: true,
+      message: 'Folder created successfully'
+    });
+  } catch (error) {
+    console.error('Create folder error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create folder'
+    });
+  }
+});
+
+app.delete('/api/files/folder', async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const folderPath = req.query.path;
+    if (!folderPath) {
+      return res.status(400).json({
+        success: false,
+        error: 'Folder path is required'
+      });
+    }
+    const baseDir = UserStorage.getUserFilesDir(userId);
+    const fullPath = path.join(baseDir, folderPath);
+    if (!fullPath.startsWith(baseDir)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
+    const stats = await fs.stat(fullPath);
+    if (!stats.isDirectory()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Path is not a directory'
+      });
+    }
+    const folderSize = await calculateFolderSize(fullPath);
+    await fs.rm(fullPath, { recursive: true, force: true });
+    const auth = await authManagerPromise;
+    await auth.addStorageUsed(userId, -folderSize);
+    res.json({
+      success: true,
+      message: 'Folder deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete folder error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete folder'
+    });
+  }
+});
+
+// Helper function to calculate folder size
+async function calculateFolderSize(folderPath) {
+  let totalSize = 0;
+  const files = await fs.readdir(folderPath);
+  for (const file of files) {
+    const filePath = path.join(folderPath, file);
+    const stats = await fs.stat(filePath);
+    if (stats.isDirectory()) {
+      totalSize += await calculateFolderSize(filePath);
+    } else {
+      totalSize += stats.size;
+    }
+  }
+  return totalSize;
+}
+
 
 // Initialize server
 async function startServer() {
