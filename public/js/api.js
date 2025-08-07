@@ -25,17 +25,8 @@ class APIClient {
 
     const response = await fetch(path.startsWith('/api') ? path : this.baseURL + path, options);
 
-    // Check if response is JSON or text based on content-type
-    const contentType = response.headers.get('content-type');
-    let result;
-
-    if (contentType && contentType.includes('application/json')) {
-      result = await response.json();
-    } else {
-      // For non-JSON responses, get text and wrap in success object
-      const text = await response.text();
-      result = { success: response.ok, content: text };
-    }
+    // Return JSON directly, everything else is an error
+    const result = await response.json();
 
     if (!response.ok) {
       // Log errors with details for debugging
@@ -69,6 +60,26 @@ class APIClient {
 
   delete(path) {
     return this.request('DELETE', path);
+  }
+
+  // Method for fetching raw files
+  async getFile(path) {
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(path.startsWith('/api') ? path : this.baseURL + path, {
+      method: 'GET',
+      headers
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.status}`);
+    }
+
+    return await response.text();
   }
 }
 

@@ -57,30 +57,28 @@ export function editorPage() {
         }
 
         // Load file from unified directory
-        const response = await api.get(`/file/${this.filePath}`);
+        const content = await api.getFile(`/file/${this.filePath}`);
 
-        if (response.success) {
-          // Check if content is binary
-          if (response.isBinary || (typeof response.content === 'string' && response.content.includes('\ufffd'))) {
-            this.error = '😢 Не текст';
-            this.content = null;
-            return;
-          }
-          
-          this.content = response.content;
-          if (this.fileType === 'json') {
-            this.editableContent = JSON.stringify(this.content, null, 2);
-            this.parsedJson = JSON.parse(this.editableContent);
+        // Check if content is binary
+        if (content.includes('\ufffd')) {
+          this.error = '😢 Не текст';
+          this.content = null;
+          return;
+        }
+        
+        this.content = content;
+        if (this.fileType === 'json') {
+          // Parse JSON and format it
+          const parsed = JSON.parse(content);
+          this.editableContent = JSON.stringify(parsed, null, 2);
+          this.parsedJson = parsed;
 
-            // Auto-switch to visual mode for config files
-            if (this.parsedJson.meta && this.parsedJson.generation) {
-              this.visualMode = true;
-            }
-          } else {
-            this.editableContent = this.content;
+          // Auto-switch to visual mode for config files
+          if (this.parsedJson.meta && this.parsedJson.generation) {
+            this.visualMode = true;
           }
         } else {
-          throw new Error(response.error || 'Failed to load file');
+          this.editableContent = content;
         }
       } catch (error) {
         this.error = error.message || 'Failed to load file';

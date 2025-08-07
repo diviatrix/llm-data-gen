@@ -22,6 +22,11 @@ test/
 *.swp
 *.swo
 
+# Project-specific
+output/
+user-data/
+db/
+
 # Documentation source files
 docs/
 

@@ -31,7 +31,7 @@ export function configPage() {
     async loadConfigs() {
       try {
         this.isLoading = true;
-        const response = await api.get('/config-files');
+        const response = await api.get('/files');
         if (response.success) {
           this.configs = response.files;
         }
@@ -48,7 +48,7 @@ export function configPage() {
       }
 
       try {
-        const response = await api.delete(`/config-file/${encodeURIComponent(config.name)}`);
+        const response = await api.delete(`/file/${encodeURIComponent(config.name)}`);
         if (response.success) {
           notify.success('Configuration deleted');
           await this.loadConfigs();

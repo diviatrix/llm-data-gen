@@ -107,45 +107,39 @@ export function viewerPage() {
         }
 
         // Load file from unified directory
-        const response = await api.get(`/file/${this.filePath}`);
-
-        if (response.success) {
-          console.log('File loaded successfully, content type:', typeof response.content);
-          
-          // Check if content is binary
-          if (response.isBinary || (typeof response.content === 'string' && response.content.includes('\ufffd'))) {
-            this.error = '😢 Не текст';
-            this.content = null;
-            return;
-          }
-
-          // Handle content based on file type
-          if (this.fileType === 'json') {
-            try {
-              // Try to parse as JSON only for .json files
-              this.content = typeof response.content === 'string'
-                ? JSON.parse(response.content)
-                : response.content;
-            } catch (jsonError) {
-              // If JSON parsing fails, treat as text
-              this.fileType = 'text';
-              this.content = response.content;
-              this.error = 'File contains invalid JSON, displaying as text';
-            }
-          } else {
-            // For all non-JSON files, keep as raw text
-            this.content = response.content;
-          }
-
-          // Apply syntax highlighting after content is loaded
-          this.$nextTick(() => {
-            if (window.Prism && ['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv'].includes(this.fileType)) {
-              window.Prism.highlightAll();
-            }
-          });
-        } else {
-          throw new Error(response.error || 'Failed to load file');
+        const content = await api.getFile(`/file/${this.filePath}`);
+        
+        console.log('File loaded successfully, content type:', typeof content);
+        
+        // Check if content is binary
+        if (content.includes('\ufffd')) {
+          this.error = '😢 Не текст';
+          this.content = null;
+          return;
         }
+
+        // Handle content based on file type
+        if (this.fileType === 'json') {
+          try {
+            // Try to parse as JSON only for .json files
+            this.content = JSON.parse(content);
+          } catch (jsonError) {
+            // If JSON parsing fails, treat as text
+            this.fileType = 'text';
+            this.content = content;
+            this.error = 'File contains invalid JSON, displaying as text';
+          }
+        } else {
+          // For all non-JSON files, keep as raw text
+          this.content = content;
+        }
+
+        // Apply syntax highlighting after content is loaded
+        this.$nextTick(() => {
+          if (window.Prism && ['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv'].includes(this.fileType)) {
+            window.Prism.highlightAll();
+          }
+        });
       } catch (error) {
         console.error('Load file error:', error);
         this.error = error.message || 'Failed to load file';

@@ -1486,13 +1486,8 @@ app.get('/api/file/*', async (req, res) => {
       });
     }
 
-    // Read file
-    const content = await fs.readFile(fullPath, 'utf-8');
-    
-    res.json({
-      success: true,
-      content
-    });
+    // Send file directly
+    res.sendFile(fullPath);
   } catch (error) {
     console.error('File read error:', error);
     res.status(500).json({
@@ -1502,42 +1497,44 @@ app.get('/api/file/*', async (req, res) => {
   }
 });
 
-// Get specific config file content (legacy)
-app.get('/api/config-file/:filename', async (req, res) => {
+// Delete file endpoint
+app.delete('/api/file/*', async (req, res) => {
   try {
-    const filename = req.params.filename;
+    const filePath = req.params[0];
     const userId = getUserId(req);
-    const configsDir = UserStorage.getUserFilesDir(userId);
-    const filePath = path.join(configsDir, filename);
+    const filesDir = UserStorage.getUserFilesDir(userId);
+    const fullPath = path.join(filesDir, filePath);
 
     // Security check
-    if (filename.includes('..') || path.isAbsolute(filename)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid filename'
-      });
-    }
-
-    // Check if file exists and is within the configs directory
-    const resolvedPath = path.resolve(filePath);
-    const resolvedBase = path.resolve(configsDir);
-    if (!resolvedPath.startsWith(resolvedBase)) {
-      return res.status(400).json({
+    if (!fullPath.startsWith(filesDir)) {
+      return res.status(403).json({
         success: false,
         error: 'Access denied'
       });
     }
 
-    const content = await readJsonFile(filePath);
+    // Check if file exists
+    try {
+      await fs.access(fullPath);
+    } catch {
+      return res.status(404).json({
+        success: false,
+        error: 'File not found'
+      });
+    }
+
+    // Delete the file
+    await fs.unlink(fullPath);
+
     res.json({
       success: true,
-      filename: filename,
-      content: content
+      message: 'File deleted successfully'
     });
   } catch (error) {
-    res.status(404).json({
+    console.error('File delete error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Config file not found'
+      error: 'Failed to delete file'
     });
   }
 });
@@ -1661,46 +1658,6 @@ app.post('/api/config-files', async (req, res) => {
   }
 });
 
-// Delete config file
-app.delete('/api/config-file/:filename', async (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const userId = getUserId(req);
-    const configsDir = UserStorage.getUserFilesDir(userId);
-    const filePath = path.join(configsDir, filename);
-
-    // Security check
-    if (filename.includes('..') || path.isAbsolute(filename)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid filename'
-      });
-    }
-
-    // Check if file exists and is within the configs directory
-    const resolvedPath = path.resolve(filePath);
-    const resolvedBase = path.resolve(configsDir);
-    if (!resolvedPath.startsWith(resolvedBase)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Access denied'
-      });
-    }
-
-    // Delete the file
-    await fs.unlink(filePath);
-
-    res.json({
-      success: true,
-      message: 'Configuration deleted successfully'
-    });
-  } catch (error) {
-    res.status(404).json({
-      success: false,
-      error: 'File not found'
-    });
-  }
-});
 
 // Save output file
 app.post('/api/output-files', async (req, res) => {

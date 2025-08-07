@@ -52,57 +52,52 @@ export function generatePage() {
         this.hasConfigParam = true;
         // Don't load all configs, just load the specific one
         try {
-          const response = await api.get(`/config-file/${encodeURIComponent(configName)}`);
-          if (response.success) {
-            this.selectedConfig = { name: configName };
-            this.configContent = response.content;
+          const content = await api.getFile(`/file/${encodeURIComponent(configName)}`);
+          this.selectedConfig = { name: configName };
+          this.configContent = JSON.parse(content);
 
-            // Load parameters from config
-            if (this.configContent.api) {
-              this.parameters.temperature = this.configContent.api.temperature || 0.7;
-              this.parameters.maxTokens = this.configContent.api.maxTokens || 1000;
+          // Load parameters from config
+          if (this.configContent.api) {
+            this.parameters.temperature = this.configContent.api.temperature || 0.7;
+            this.parameters.maxTokens = this.configContent.api.maxTokens || 1000;
 
-              // Pre-select model from config if specified
-              if (this.configContent.api.model) {
-                this.configModel = this.configContent.api.model;
-                // Handle :online suffix in model ID
-                const baseModelId = this.configModel.replace(':online', '');
-                const isOnlineSearch = this.configModel.endsWith(':online');
+            // Pre-select model from config if specified
+            if (this.configContent.api.model) {
+              this.configModel = this.configContent.api.model;
+              // Handle :online suffix in model ID
+              const baseModelId = this.configModel.replace(':online', '');
+              const isOnlineSearch = this.configModel.endsWith(':online');
 
-                // Initialize model selector first, then set the model
-                await modelSelector.init.call(this);
+              // Initialize model selector first, then set the model
+              await modelSelector.init.call(this);
 
-                // Find and pre-select the model in the selector
-                const model = this.models.find(m => m.id === baseModelId);
-                if (model) {
-                  this.selectedModel = model;
-                  if (isOnlineSearch) {
-                    this.enableOnlineSearch = true;
-                  }
+              // Find and pre-select the model in the selector
+              const model = this.models.find(m => m.id === baseModelId);
+              if (model) {
+                this.selectedModel = model;
+                if (isOnlineSearch) {
+                  this.enableOnlineSearch = true;
                 }
               }
             }
-
-            // Calculate total count from generation.tasks
-            let totalCount = 10; // default
-            if (this.configContent.generation?.tasks && Array.isArray(this.configContent.generation.tasks)) {
-              totalCount = this.configContent.generation.tasks.reduce((sum, task) => sum + (task.count || 1), 0);
-            } else if (this.configContent.output?.count) {
-              totalCount = this.configContent.output.count;
-            }
-            this.parameters.count = totalCount;
-
-            if (this.configContent.prompt) {
-              this.parameters.prompt = this.configContent.prompt;
-            }
-
-            // Skip to step 2 (Select Model) directly
-            this.step = 2;
-            // Models are already loaded by modelSelector.init
-          } else {
-            notify.error(`Configuration "${configName}" not found`);
-            this.hasConfigParam = false;
           }
+
+          // Calculate total count from generation.tasks
+          let totalCount = 10; // default
+          if (this.configContent.generation?.tasks && Array.isArray(this.configContent.generation.tasks)) {
+            totalCount = this.configContent.generation.tasks.reduce((sum, task) => sum + (task.count || 1), 0);
+          } else if (this.configContent.output?.count) {
+            totalCount = this.configContent.output.count;
+          }
+          this.parameters.count = totalCount;
+
+          if (this.configContent.prompt) {
+            this.parameters.prompt = this.configContent.prompt;
+          }
+
+          // Skip to step 2 (Select Model) directly
+          this.step = 2;
+          // Models are already loaded by modelSelector.init
         } catch (error) {
           notify.error(`Failed to load configuration: ${error.message}`);
           this.hasConfigParam = false;
@@ -131,51 +126,49 @@ export function generatePage() {
 
       // Load config content
       try {
-        const response = await api.get(`/config-file/${encodeURIComponent(config.name)}`);
-        if (response.success) {
-          this.configContent = response.content;
+        const content = await api.getFile(`/file/${encodeURIComponent(config.name)}`);
+        this.configContent = JSON.parse(content);
 
-          // Load parameters from config
-          if (this.configContent.api) {
-            this.parameters.temperature = this.configContent.api.temperature || 0.7;
-            this.parameters.maxTokens = this.configContent.api.maxTokens || 1000;
+        // Load parameters from config
+        if (this.configContent.api) {
+          this.parameters.temperature = this.configContent.api.temperature || 0.7;
+          this.parameters.maxTokens = this.configContent.api.maxTokens || 1000;
 
-            // Pre-select model from config if specified
-            if (this.configContent.api.model) {
-              this.configModel = this.configContent.api.model;
-              // Handle :online suffix in model ID
-              const baseModelId = this.configModel.replace(':online', '');
-              const isOnlineSearch = this.configModel.endsWith(':online');
+          // Pre-select model from config if specified
+          if (this.configContent.api.model) {
+            this.configModel = this.configContent.api.model;
+            // Handle :online suffix in model ID
+            const baseModelId = this.configModel.replace(':online', '');
+            const isOnlineSearch = this.configModel.endsWith(':online');
 
-              // Find and pre-select the model in the selector
-              const model = this.models.find(m => m.id === baseModelId);
-              if (model) {
-                this.selectedModel = model;
-                if (isOnlineSearch) {
-                  this.enableOnlineSearch = true;
-                }
+            // Find and pre-select the model in the selector
+            const model = this.models.find(m => m.id === baseModelId);
+            if (model) {
+              this.selectedModel = model;
+              if (isOnlineSearch) {
+                this.enableOnlineSearch = true;
               }
             }
           }
+        }
 
-          // Calculate total count from generation.tasks
-          let totalCount = 10; // default
-          if (this.configContent.generation?.tasks && Array.isArray(this.configContent.generation.tasks)) {
-            totalCount = this.configContent.generation.tasks.reduce((sum, task) => sum + (task.count || 1), 0);
-          } else if (this.configContent.output?.count) {
-            totalCount = this.configContent.output.count;
-          }
-          this.parameters.count = totalCount;
+        // Calculate total count from generation.tasks
+        let totalCount = 10; // default
+        if (this.configContent.generation?.tasks && Array.isArray(this.configContent.generation.tasks)) {
+          totalCount = this.configContent.generation.tasks.reduce((sum, task) => sum + (task.count || 1), 0);
+        } else if (this.configContent.output?.count) {
+          totalCount = this.configContent.output.count;
+        }
+        this.parameters.count = totalCount;
 
-          if (this.configContent.prompt) {
-            this.parameters.prompt = this.configContent.prompt;
-          }
+        if (this.configContent.prompt) {
+          this.parameters.prompt = this.configContent.prompt;
+        }
 
-          this.step = 2; // Go to Select Model
-          // Initialize model selector if not already done
-          if (!this.models || this.models.length === 0) {
-            await modelSelector.init.call(this);
-          }
+        this.step = 2; // Go to Select Model
+        // Initialize model selector if not already done
+        if (!this.models || this.models.length === 0) {
+          await modelSelector.init.call(this);
         }
       } catch (error) {
         notify.error('Failed to load configuration content');

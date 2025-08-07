@@ -185,21 +185,14 @@ export function fileManagerPage() {
       try {
         // First, try to load and validate the file
         const path = file.relativePath || file.name;
-        const endpoint = `/config-file/${encodeURIComponent(path)}`;
+        const endpoint = `/file/${encodeURIComponent(path)}`;
           
-        const response = await api.get(endpoint);
-        
-        if (!response.success) {
-          notify.error('Failed to load file');
-          return;
-        }
+        const content = await api.getFile(endpoint);
         
         // Parse and validate JSON
         let config;
         try {
-          config = typeof response.content === 'string' 
-            ? JSON.parse(response.content) 
-            : response.content;
+          config = JSON.parse(content);
         } catch (e) {
           notify.error('File is not valid JSON');
           return;
@@ -245,7 +238,7 @@ export function fileManagerPage() {
 
       try {
         const path = file.relativePath || file.name;
-        const endpoint = `/config-file/${encodeURIComponent(path)}`;
+        const endpoint = `/file/${encodeURIComponent(path)}`;
 
         const response = await api.delete(endpoint);
 
@@ -265,18 +258,43 @@ export function fileManagerPage() {
     async downloadFile(file) {
       try {
         const path = file.relativePath || file.name;
-        const url = `/api/config-file/${encodeURIComponent(path)}`;
+        const url = `/api/file/${encodeURIComponent(path)}`;
 
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Fetch file with authorization
+        const response = await fetch(url, {
+          method: 'GET',
+          headers
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to download file');
+        }
+
+        // Get blob from response
+        const blob = await response.blob();
+        
+        // Create download link
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = blobUrl;
         a.download = file.name;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        
+        // Clean up
+        URL.revokeObjectURL(blobUrl);
 
         notify.success('Download started');
       } catch (error) {
-        notify.error('Failed to download file');
+        notify.error('Failed to download file: ' + error.message);
       }
     },
 

@@ -170,7 +170,6 @@ document.addEventListener('alpine:init', () => {
       if (!i18n.translations[i18n.currentLocale]) {
         await i18n.init();
       }
-      
       const isAuth = authStore.init();
 
       if (!isAuth) {
@@ -182,7 +181,6 @@ document.addEventListener('alpine:init', () => {
 
       this.isAuthenticated = true;
       this.user = authStore.user;
-      
       // Check if user has only_free_models restriction from settings
       this.onlyFreeModels = this.user?.settings?.onlyFreeModels || this.user?.only_free_models || false;
 
@@ -206,16 +204,13 @@ document.addEventListener('alpine:init', () => {
           api.get('/account'),
           api.get('/user/storage-info')
         ]);
-        
         if (accountResponse.success) {
           this.accountInfo = accountResponse.account;
           this.hasApiKey = true;
         }
-        
         if (storageResponse.success && storageResponse.storage.settings) {
           // Update onlyFreeModels from backend
           this.onlyFreeModels = storageResponse.storage.settings.onlyFreeModels || false;
-          
           // Update user object
           if (this.user) {
             if (!this.user.settings) {
