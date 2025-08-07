@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Data Generator</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/css/design-system.css?v=4">
+    <style>
+        .section { padding: 3rem 2rem; }
+        .section:nth-child(even) { background: var(--gray-50); }
+        .hero { 
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%); 
+            color: white;
+            padding: 4rem 2rem;
+        }
+        .hero h1 { font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem; }
+        .hero p { opacity: 0.9; margin-bottom: 1rem; }
+        .hero a { color: white; text-decoration: underline; }
+        .section h2 { font-size: 1.75rem; font-weight: bold; margin-bottom: 2rem; text-align: center; }
+        .section h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
+        .demo-block { margin-bottom: 3rem; }
+        .demo-block:last-child { margin-bottom: 0; }
+        @media (max-width: 640px) {
+            .section { padding: 2rem 1rem; }
+            .hero h1 { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body x-data="landingApp">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container text-center">
+            <h1 x-text="siteTitle"></h1>
+            <p style="font-size: 1.25rem;">Генератор JSON данных через OpenRouter API</p>
+            <p>Open source инструмент для генерации структурированных данных с помощью LLM</p>
+            <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+                Требуется ваш собственный OpenRouter API ключ<br>
+                Инвайты для веб-версии: <a href="https://t.me/leet_plus" target="_blank">t.me/leet_plus</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- What it is -->
+    <section class="section">
+        <div class="container">
+            <h2>Что это такое</h2>
+            
+            <div class="markdown-content">
+                <p><strong>LLM Data Generator</strong> — инструмент для генерации JSON данных с помощью языковых моделей.</p>
+                
+                <h3>Основные возможности:</h3>
+                <ul>
+                    <li>Генерация данных по JSON шаблонам</li>
+                    <li>Валидация JSON Schema для результатов</li>
+                    <li>Доступ к 300+ моделям через OpenRouter</li>
+                    <li>Web интерфейс для удобной работы</li>
+                    <li>Квоты на хранение данных для каждого пользователя</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Template Example -->
+    <section class="section">
+        <div class="container">
+            <h2>Пример шаблона и результата</h2>
+            
+            <div class="grid grid-2 gap-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h3>Шаблон конфигурации</h3>
+                        <div class="code-block">
+<pre>{
+  "name": "product-catalog",
+  "outputFormat": "json",
+  "model": {
+    "id": "gpt-3.5-turbo",
+    "temperature": 0.7
+  },
+  "schema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "number" },
+      "name": { "type": "string" },
+      "price": { "type": "number" },
+      "description": { "type": "string" },
+      "inStock": { "type": "boolean" }
+    },
+    "required": ["id", "name", "price"]
+  },
+  "tasks": [{
+    "type": "single",
+    "count": 3,
+    "prompt": "Сгенерируй товар для интернет-магазина электроники"
+  }]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h3>Результат с валидацией</h3>
+                        <div class="code-block">
+<pre>[
+  {
+    "id": 1,
+    "name": "Беспроводные наушники Sony WH-1000XM5",
+    "price": 24990,
+    "description": "Премиальные наушники с активным шумоподавлением",
+    "inStock": true
+  },
+  {
+    "id": 2,
+    "name": "Умная колонка Яндекс Станция 2",
+    "price": 12990,
+    "description": "Голосовой помощник Алиса, мощный звук",
+    "inStock": true
+  },
+  {
+    "id": 3,
+    "name": "Powerbank Xiaomi 20000mAh",
+    "price": 2490,
+    "description": "Быстрая зарядка, 2 USB порта",
+    "inStock": false
+  }
+]
+
+✅ Данные прошли валидацию JSON Schema</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interface -->
+    <section class="section">
+        <div class="container">
+            <h2>Интерфейс системы</h2>
+            
+            <!-- Chat -->
+            <div class="demo-block">
+                <h3>💬 Чат с моделями</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div style="margin-bottom: 1rem;">
+                            <div class="filter-buttons">
+                                <button class="btn btn-sm btn-primary">🆓 Бесплатные</button>
+                                <button class="btn btn-sm">OpenAI</button>
+                                <button class="btn btn-sm">Anthropic</button>
+                                <button class="btn btn-sm">Google</button>
+                                <button class="btn btn-sm">Meta</button>
+                            </div>
+                        </div>
+                        <div class="models-grid" style="height: 150px; overflow-y: auto; margin-bottom: 1rem;">
+                            <div class="card-interactive" style="padding: 0.5rem; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span class="font-semibold">gpt-4o-mini</span>
+                                    <span class="badge badge-success">Бесплатно</span>
+                                </div>
+                                <div class="text-sm text-gray-600">128K контекст • $0.15/$0.60</div>
+                            </div>
+                            <div class="card-interactive selected" style="padding: 0.5rem; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span class="font-semibold">claude-3.5-sonnet</span>
+                                    <span class="badge badge-primary">Выбрано</span>
+                                </div>
+                                <div class="text-sm text-gray-600">200K контекст • $3/$15</div>
+                            </div>
+                        </div>
+                        <div class="message-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem; padding: 1rem; background: var(--gray-50); border-radius: var(--radius);">
+                            <div class="message mb-2">
+                                <strong>Вы:</strong> Сгенерируй JSON с данными продукта для интернет-магазина
+                            </div>
+                            <div class="message mb-2">
+                                <strong>Claude 3.5:</strong> Вот JSON с данными продукта:
+                                <div class="code-block" style="margin-top: 0.5rem;">
+<pre>{
+  "id": 1,
+  "name": "Смартфон Samsung Galaxy S24",
+  "price": 84990,
+  "inStock": true
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group" style="display: flex; gap: 0.5rem;">
+                            <input type="text" class="form-input" placeholder="Введите сообщение..." disabled>
+                            <button class="btn btn-primary" disabled>Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generator -->
+            <div class="demo-block">
+                <h3>🚀 Генератор данных</h3>
+                
+                <!-- Step 1 -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <div class="progress-indicator active">1</div>
+                            <span class="ml-s font-semibold">Выбор конфигурации</span>
+                        </div>
+                        <div class="grid grid-2 gap-2">
+                            <div class="card-interactive" style="padding: 0.75rem;">
+                                <div class="font-semibold">📝 product-catalog.json</div>
+                                <div class="text-sm text-gray-600">10 товаров • JSON</div>
+                            </div>
+                            <div class="card-interactive selected" style="padding: 0.75rem;">
+                                <div class="font-semibold">📊 user-data.json</div>
+                                <div class="text-sm text-gray-600">50 пользователей • JSON</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <div class="progress-indicator active">2</div>
+                            <span class="ml-s font-semibold">Выбор модели</span>
+                        </div>
+                        <select class="form-input" style="margin-bottom: 0.5rem;">
+                            <option>gpt-4o-mini (Бесплатно)</option>
+                            <option selected>claude-3.5-sonnet ($3/$15)</option>
+                            <option>gpt-4o ($5/$15)</option>
+                        </select>
+                        <div class="text-sm text-gray-600">Примерная стоимость: $0.12</div>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="card">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <div class="progress-indicator active">3</div>
+                            <span class="ml-s font-semibold">Генерация</span>
+                        </div>
+                        <div class="alert alert-info mb-2">
+                            Генерация 15 из 50 элементов...
+                        </div>
+                        <div class="progress" style="height: 0.75rem;">
+                            <div class="progress-bar" style="width: 30%"></div>
+                        </div>
+                        <div class="text-sm text-gray-600 mt-2">Осталось ~2 минуты</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Viewer -->
+            <div class="demo-block">
+                <h3>👁️ Просмотр результатов (JSON дерево)</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="json-tree">
+                            <div class="json-item">
+                                <span class="json-toggle">▼</span> <span class="json-key">products</span>: [
+                                <div class="json-nested" style="margin-left: 1.5rem;">
+                                    <div class="json-item">
+                                        <span class="json-toggle">▶</span> {
+                                        <span class="json-key">id</span>: <span class="json-value">1</span>,
+                                        <span class="json-key">name</span>: <span class="json-string">"Product 1"</span>
+                                        }
+                                    </div>
+                                    <div class="json-item">
+                                        <span class="json-toggle">▶</span> {
+                                        <span class="json-key">id</span>: <span class="json-value">2</span>,
+                                        <span class="json-key">name</span>: <span class="json-string">"Product 2"</span>
+                                        }
+                                    </div>
+                                </div>
+                                ]
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor -->
+            <div class="demo-block">
+                <h3>✏️ Редактор конфигураций</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="editor-toolbar mb-2">
+                            <button class="btn btn-sm">Форматировать</button>
+                            <button class="btn btn-sm">Валидировать</button>
+                            <button class="btn btn-sm btn-primary">Сохранить</button>
+                        </div>
+                        <div class="code-block" style="min-height: 150px;">
+<pre contenteditable="false">{
+  "name": "my-config",
+  "model": {
+    "id": "gpt-3.5-turbo"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section">
+        <div class="container">
+            <h2>Возможности</h2>
+            
+            <div class="grid grid-3 gap-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h3>🎯 JSON Schema</h3>
+                        <p>Валидация структуры данных, гарантия соответствия схеме</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h3>🤖 300+ моделей</h3>
+                        <p>GPT-4, Claude, Llama, Mistral через единый интерфейс</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h3>📂 Файловый менеджер</h3>
+                        <p>Загрузка и управление файлами</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h3>🌐 Web интерфейс</h3>
+                        <p>Удобная работа через браузер</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h3>👥 Мультипользовательность</h3>
+                        <p>Роли, квоты, изолированные данные</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="section">
+        <div class="container">
+            <h2>Для чего подходит</h2>
+            
+            <div class="markdown-content">
+                <ul>
+                    <li><strong>Тестовые данные:</strong> Mock API, fixtures для тестов, seed для БД</li>
+                    <li><strong>Контент:</strong> Описания товаров, FAQ, документация</li>
+                    <li><strong>Прототипы:</strong> Быстрое наполнение макетов реалистичными данными</li>
+                    <li><strong>Датасеты:</strong> Небольшие выборки для экспериментов с ML</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="section" style="background: var(--gray-900); color: var(--gray-400); padding: 2rem;">
+        <div class="container text-center">
+            <div class="button-group justify-center mb-3">
+                <a href="/login.html" class="btn btn-secondary">Войти</a>
+                <a href="https://github.com/diviatrix/llm-data-gen" target="_blank" class="btn">GitHub</a>
+                <a href="https://www.npmjs.com/package/@1337plus/llmdatagen" target="_blank" class="btn">NPM</a>
+            </div>
+            <p style="margin: 0;">© 2025 LLM Data Generator • MIT License</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('landingApp', () => ({
+                siteTitle: localStorage.getItem('siteTitle') || 'LLM Data Generator'
+            }));
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</body>
+</html>

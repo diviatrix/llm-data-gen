@@ -3,9 +3,9 @@
   <div x-show="!filePath" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">👁️</div>
-      <h3 class="text-xl font-medium mb-s">No File Selected</h3>
-      <p class="text-gray-600 mb-m">Select a file from the File Manager to view its contents.</p>
-      <a href="#/files" class="btn btn-primary">Go to File Manager</a>
+      <h3 class="text-xl font-medium mb-s" x-text="$store.i18n.t('common.noFileSelected')"></h3>
+      <p class="text-gray-600 mb-m" x-text="$store.i18n.t('common.selectFileToView')"></p>
+      <a href="#/files" class="btn btn-primary" x-text="$store.i18n.t('files.goToFileManager')"></a>
     </div>
   </div>
 
@@ -14,20 +14,20 @@
   
   <div class="flex justify-between items-center mb-m">
     <div>
-      <h2 class="text-2xl font-bold">Data Viewer</h2>
+      <h2 class="text-2xl font-bold" x-text="$store.i18n.t('common.dataViewer')"></h2>
       <p class="text-gray-600 mt-s" x-show="fileName">
-        Viewing: <span x-text="fileName" class="font-medium"></span>
+        <span x-text="$store.i18n.t('common.viewing')"></span>: <span x-text="fileName" class="font-medium"></span>
       </p>
     </div>
     <div class="flex gap-s">
       <button @click="goBack()" class="btn btn-ghost">
-        ← Back
+        ← <span x-text="$store.i18n.t('buttons.back')"></span>
       </button>
       <button @click="editFile()" class="btn btn-secondary">
-        ✏️ Edit
+        ✏️ <span x-text="$store.i18n.t('buttons.edit')"></span>
       </button>
       <button @click="downloadFile()" class="btn btn-primary">
-        ⬇️ Download
+        ⬇️ <span x-text="$store.i18n.t('buttons.download')"></span>
       </button>
     </div>
   </div>
@@ -51,16 +51,16 @@
         <div class="flex justify-between items-center mb-m">
           <div class="flex gap-s">
             <button @click="expandAll()" class="btn btn-ghost btn-sm">
-              ➕ Expand All
+              ➕ <span x-text="$store.i18n.t('common.expandAll')"></span>
             </button>
             <button @click="collapseAll()" class="btn btn-ghost btn-sm">
-              ➖ Collapse All
+              ➖ <span x-text="$store.i18n.t('common.collapseAll')"></span>
             </button>
           </div>
           <div class="flex items-center gap-s">
             <label class="flex items-center gap-s">
               <input type="checkbox" x-model="renderMarkdown" class="form-checkbox">
-              <span class="text-sm">Render Markdown</span>
+              <span class="text-sm" x-text="$store.i18n.t('common.renderMarkdown')"></span>
             </label>
           </div>
         </div>
@@ -74,7 +74,7 @@
       
       <div x-show="['javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text'].includes(fileType)">
         <div class="mb-s">
-          <span class="text-sm text-gray-500">Language: </span>
+          <span class="text-sm text-gray-500" x-text="$store.i18n.t('common.language') + ': '"></span>
           <span class="text-sm font-medium" x-text="getSyntaxLanguage()"></span>
         </div>
         <pre class="code-block overflow-auto max-h-[600px] bg-gray-50 p-m rounded border" 
@@ -88,9 +88,9 @@
       
       
       <div x-show="!['json', 'javascript', 'python', 'sql', 'css', 'html', 'xml', 'csv', 'text', 'markdown'].includes(fileType)" class="text-center py-8">
-        <p class="text-gray-600">Preview not available for this file type.</p>
+        <p class="text-gray-600" x-text="$store.i18n.t('common.previewNotAvailable')"></p>
         <button @click="downloadFile()" class="btn btn-primary mt-4">
-          Download File
+          <span x-text="$store.i18n.t('buttons.downloadFile')"></span>
         </button>
       </div>
     </div>

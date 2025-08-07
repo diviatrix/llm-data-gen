@@ -1,8 +1,8 @@
 <div class="stack">
   
   <div class="mb-m">
-    <h2 class="text-2xl font-semibold">File Manager</h2>
-    <p class="text-gray-600 mt-s">Manage your configurations and generated data</p>
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('files.fileManager')"></h2>
+    <p class="text-gray-600 mt-s" x-text="$store.i18n.t('files.manageFiles')"></p>
   </div>
   
   
@@ -10,12 +10,12 @@
     <button @click="switchTab('configs')" 
             class="btn" 
             :class="activeTab === 'configs' ? 'btn-primary' : 'btn-ghost'">
-      ⚙️ Configurations
+      ⚙️ <span x-text="$store.i18n.t('files.configurations')"></span>
     </button>
     <button @click="switchTab('results')" 
             class="btn" 
             :class="activeTab === 'results' ? 'btn-primary' : 'btn-ghost'">
-      📊 Results
+      📊 <span x-text="$store.i18n.t('files.results')"></span>
     </button>
   </div>
   
@@ -37,18 +37,18 @@
   
   <div class="flex justify-between items-center mb-m">
     <div class="meta-text">
-      <span x-text="currentFiles.length"></span> files
+      <span x-text="currentFiles.length"></span> <span x-text="$store.i18n.t('files.files')"></span>
     </div>
     <div class="flex gap-s">
       <button x-show="currentPath" 
               @click="navigateUp()" 
               class="btn btn-ghost btn-sm">
-        ↑ Up
+        ↑ <span x-text="$store.i18n.t('buttons.up')"></span>
       </button>
       <button x-show="activeTab === 'configs'" 
               @click="createNewConfig()" 
               class="btn btn-primary btn-sm">
-        + New Configuration
+        + <span x-text="$store.i18n.t('buttons.newConfiguration')"></span>
       </button>
     </div>
   </div>
@@ -85,7 +85,7 @@
                   <template x-if="file.isDirectory">
                     <button @click.stop="navigateToFolder(file)" 
                             class="btn btn-ghost btn-sm" 
-                            title="Open folder">
+                            :title="$store.i18n.t('files.openFolder')">
                       📂
                     </button>
                   </template>
@@ -93,22 +93,22 @@
                     <div class="flex gap-s">
                       <button @click.stop="viewFile(file)" 
                               class="btn btn-ghost btn-sm" 
-                              title="View">
+                              :title="$store.i18n.t('files.view')">
                         👁️
                       </button>
                       <button @click.stop="editFile(file)" 
                               class="btn btn-ghost btn-sm" 
-                              title="Edit">
+                              :title="$store.i18n.t('files.edit')">
                         ✏️
                       </button>
                       <button @click.stop="generateFromConfig(file)" 
                               class="btn btn-primary btn-sm" 
-                              title="Generate">
+                              :title="$store.i18n.t('files.generate')">
                         🚀
                       </button>
                       <button @click.stop="deleteFile(file)" 
                               class="btn btn-danger btn-sm" 
-                              title="Delete">
+                              :title="$store.i18n.t('files.delete')">
                         🗑️
                       </button>
                     </div>
@@ -122,7 +122,7 @@
                   <template x-if="file.isDirectory">
                     <button @click.stop="navigateToFolder(file)" 
                             class="btn btn-ghost btn-sm" 
-                            title="Open folder">
+                            :title="$store.i18n.t('files.openFolder')">
                       📂
                     </button>
                   </template>
@@ -130,22 +130,22 @@
                     <div class="flex gap-s">
                       <button @click.stop="viewFile(file)" 
                               class="btn btn-ghost btn-sm" 
-                              title="View">
+                              :title="$store.i18n.t('files.view')">
                         👁️
                       </button>
                       <button @click.stop="editFile(file)" 
                               class="btn btn-ghost btn-sm" 
-                              title="Edit">
+                              :title="$store.i18n.t('files.edit')">
                         ✏️
                       </button>
                       <button @click.stop="downloadFile(file)" 
                               class="btn btn-ghost btn-sm" 
-                              title="Download">
+                              :title="$store.i18n.t('files.download')">
                         ⬇️
                       </button>
                       <button @click.stop="deleteFile(file)" 
                               class="btn btn-danger btn-sm" 
-                              title="Delete">
+                              :title="$store.i18n.t('files.delete')">
                         🗑️
                       </button>
                     </div>
@@ -166,16 +166,16 @@
         <span x-text="activeTab === 'configs' ? '⚙️' : '📊'"></span>
       </div>
       <h3 class="text-xl font-medium mb-s">
-        No <span x-text="activeTab === 'configs' ? 'configurations' : 'results'"></span> found
+        <span x-show="activeTab === 'configs'" x-text="$store.i18n.t('files.noConfigurationsFound')"></span><span x-show="activeTab === 'results'" x-text="$store.i18n.t('files.noResultsFound')"></span>
       </h3>
       <p class="text-gray-600 mb-m">
-        <span x-show="activeTab === 'configs'">Create your first configuration to start generating data.</span>
-        <span x-show="activeTab === 'results'">Generated data will appear here.</span>
+        <span x-show="activeTab === 'configs'" x-text="$store.i18n.t('files.createFirstConfiguration')"></span>
+        <span x-show="activeTab === 'results'" x-text="$store.i18n.t('files.generatedDataAppears')"></span>
       </p>
       <button x-show="activeTab === 'configs'" 
               @click="createNewConfig()" 
               class="btn btn-primary">
-        Create Configuration
+        <span x-text="$store.i18n.t('buttons.createConfiguration')"></span>
       </button>
     </div>
   </div>

@@ -3,9 +3,9 @@
   <div x-show="!filePath" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">✏️</div>
-      <h3 class="text-xl font-medium mb-s">No File Selected</h3>
-      <p class="text-gray-600 mb-m">Select a file from the File Manager to edit its contents.</p>
-      <a href="#/files" class="btn btn-primary">Go to File Manager</a>
+      <h3 class="text-xl font-medium mb-s" x-text="$store.i18n.t('editor.noFileSelected')"></h3>
+      <p class="text-gray-600 mb-m" x-text="$store.i18n.t('editor.selectFileToEdit')"></p>
+      <a href="#/files" class="btn btn-primary" x-text="$store.i18n.t('editor.goToFileManager')"></a>
     </div>
   </div>
 
@@ -14,17 +14,17 @@
     
     <div class="flex justify-between items-center mb-m">
       <div>
-        <h2 class="text-2xl font-bold">Data Editor</h2>
+        <h2 class="text-2xl font-bold" x-text="$store.i18n.t('editor.dataEditor')"></h2>
         <p class="text-gray-600 mt-s" x-show="fileName">
-          Editing: <span x-text="fileName" class="font-medium"></span>
+          <span x-text="$store.i18n.t('editor.editing')"></span>: <span x-text="fileName" class="font-medium"></span>
         </p>
       </div>
       <div class="flex gap-s">
         <button @click="goBack()" class="btn btn-ghost">
-          ← Cancel
+          ← <span x-text="$store.i18n.t('buttons.cancel')"></span>
         </button>
         <button @click="saveFile()" class="btn btn-primary" :disabled="!hasChanges">
-          💾 Save
+          💾 <span x-text="$store.i18n.t('buttons.save')"></span>
         </button>
       </div>
     </div>
@@ -48,16 +48,16 @@
         <div class="flex justify-between items-center mb-m">
           <div class="flex gap-s">
             <button @click="formatJson()" class="btn btn-secondary btn-sm">
-              📐 Format
+              📐 <span x-text="$store.i18n.t('editor.format')"></span>
             </button>
             <button @click="validateJson()" class="btn btn-secondary btn-sm">
-              ✓ Validate
+              ✓ <span x-text="$store.i18n.t('editor.validate')"></span>
             </button>
             <button @click="switchToVisualEditor()" class="btn btn-secondary btn-sm" x-show="!visualMode">
-              🎨 Visual Editor
+              🎨 <span x-text="$store.i18n.t('editor.visualEditor')"></span>
             </button>
             <button @click="switchToCodeEditor()" class="btn btn-secondary btn-sm" x-show="visualMode">
-              📝 Code Editor
+              📝 <span x-text="$store.i18n.t('editor.codeEditor')"></span>
             </button>
           </div>
           <div x-show="jsonError" class="text-sm text-error">
@@ -79,27 +79,27 @@
         <template x-if="visualMode && parsedJson">
         <div class="space-y-4">
           <div class="alert alert-info text-sm">
-            Visual editor for JSON configuration files
+            <span x-text="$store.i18n.t('editor.visualEditorDescription')"></span>
           </div>
           
           
           <div x-show="parsedJson && parsedJson.meta" class="card">
             <div class="card-header">
-              <h4 class="text-medium">Meta Information</h4>
+              <h4 class="text-medium" x-text="$store.i18n.t('editor.metaInformation')"></h4>
             </div>
             <div class="card-body space-y-3">
               <template x-if="parsedJson && parsedJson.meta">
               <div class="space-y-3">
                 <div>
-                  <label class="form-label">Name</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.name')"></label>
                   <input type="text" x-model="parsedJson.meta.name" @input="updateFromVisual()" class="form-input">
                 </div>
                 <div>
-                  <label class="form-label">Description</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.description')"></label>
                   <textarea x-model="parsedJson.meta.description" @input="updateFromVisual()" class="form-input" rows="2"></textarea>
                 </div>
                 <div>
-                  <label class="form-label">Version</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.version')"></label>
                   <input type="text" x-model="parsedJson.meta.version" @input="updateFromVisual()" class="form-input">
                 </div>
               </div>
@@ -110,27 +110,27 @@
           
           <div x-show="parsedJson && parsedJson.api" class="card">
             <div class="card-header">
-              <h4 class="text-medium">API Settings</h4>
+              <h4 class="text-medium" x-text="$store.i18n.t('editor.apiSettings')"></h4>
             </div>
             <div class="card-body grid-2 gap-3">
               <template x-if="parsedJson && parsedJson.api">
               <div class="contents">
                 <div>
-                  <label class="form-label">Model</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.model')"></label>
                   <input type="text" x-model="parsedJson.api.model" @input="updateFromVisual()" class="form-input">
                 </div>
                 <div>
-                  <label class="form-label">Temperature</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.temperature')"></label>
                   <input type="number" x-model.number="parsedJson.api.temperature" @input="updateFromVisual()" 
                          class="form-input" min="0" max="2" step="0.1">
                 </div>
                 <div>
-                  <label class="form-label">Max Tokens</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.maxTokens')"></label>
                   <input type="number" x-model.number="parsedJson.api.maxTokens" @input="updateFromVisual()" 
                          class="form-input" min="1">
                 </div>
                 <div>
-                  <label class="form-label">Batch Delay (ms)</label>
+                  <label class="form-label" x-text="$store.i18n.t('forms.batchDelay')"></label>
                   <input type="number" x-model.number="parsedJson.api.batchDelay" @input="updateFromVisual()" 
                          class="form-input" min="0">
                 </div>
@@ -142,19 +142,19 @@
           
           <div x-show="parsedJson && parsedJson.generation && parsedJson.generation.tasks" class="card">
             <div class="card-header flex-between">
-              <h4 class="text-medium">Generation Tasks</h4>
-              <button @click="addTask()" class="btn btn-secondary btn-sm">+ Add Task</button>
+              <h4 class="text-medium" x-text="$store.i18n.t('editor.generationTasks')"></h4>
+              <button @click="addTask()" class="btn btn-secondary btn-sm">+ <span x-text="$store.i18n.t('buttons.addTask')"></span></button>
             </div>
             <div class="card-body space-y-3">
               <template x-if="parsedJson && parsedJson.generation && parsedJson.generation.tasks">
               <template x-for="(task, index) in parsedJson.generation.tasks" :key="index">
                 <div class="flex gap-3 items-end">
                   <div class="flex-1">
-                    <label class="form-label">Theme/Topic</label>
+                    <label class="form-label" x-text="$store.i18n.t('forms.theme')"></label>
                     <input type="text" x-model="task.theme" @input="updateFromVisual()" class="form-input">
                   </div>
                   <div class="w-32">
-                    <label class="form-label">Count</label>
+                    <label class="form-label" x-text="$store.i18n.t('forms.count')"></label>
                     <input type="number" x-model.number="task.count" @input="updateFromVisual()" 
                            class="form-input" min="1">
                   </div>
@@ -168,7 +168,7 @@
           
           <div class="card">
             <div class="card-header">
-              <h4 class="text-medium">Raw JSON</h4>
+              <h4 class="text-medium" x-text="$store.i18n.t('editor.rawJson')"></h4>
             </div>
             <div class="card-body">
               <pre class="code-block text-xs overflow-auto max-h-64" x-text="JSON.stringify(parsedJson, null, 2)"></pre>
@@ -193,7 +193,7 @@
         <div class="grid-2 gap-4">
           
           <div>
-            <h4 class="text-medium mb-2">Editor</h4>
+            <h4 class="text-medium mb-2" x-text="$store.i18n.t('editor.editor')"></h4>
             <textarea 
               x-model="editableContent"
               @input="hasChanges = true"
@@ -204,7 +204,7 @@
           
           
           <div>
-            <h4 class="text-medium mb-2">Preview</h4>
+            <h4 class="text-medium mb-2" x-text="$store.i18n.t('editor.preview')"></h4>
             <div class="card">
               <div class="card-body prose prose-sm max-w-none" x-html="renderMarkdownContent(editableContent)"></div>
             </div>

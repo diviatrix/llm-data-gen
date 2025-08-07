@@ -1,8 +1,31 @@
 <div class="stack">
   
   <div class="mb-m">
-    <h2 class="text-2xl font-semibold">User Management</h2>
-    <p class="meta-text mt-s">Manage system users and permissions</p>
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('admin.settings')"></h2>
+    <p class="meta-text mt-s" x-text="$store.i18n.t('admin.manageSettings')"></p>
+  </div>
+
+  <div class="card mb-l">
+    <div class="card-body">
+      <div class="mb-m">
+        <label class="label" x-text="$store.i18n.t('admin.siteTitle')"></label>
+        <div class="flex gap-s">
+          <input type="text" 
+                 class="form-input flex-1" 
+                 x-model="newSiteTitle"
+                 @keyup.enter="updateSiteTitle()">
+          <button @click="updateSiteTitle()" 
+                  class="btn btn-primary">
+            <span x-text="$store.i18n.t('buttons.save')"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-m">
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('admin.userManagement')"></h2>
+    <p class="meta-text mt-s" x-text="$store.i18n.t('admin.manageUsers')"></p>
   </div>
 
   
@@ -10,28 +33,28 @@
     <div class="card">
       <div class="card-body">
         <div class="text-2xl font-bold" x-text="stats.total || 0"></div>
-        <div class="meta-text">Total Users</div>
+        <div class="meta-text" x-text="$store.i18n.t('admin.totalUsers')"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
         <div class="text-2xl font-bold text-success" x-text="stats.active || 0"></div>
-        <div class="meta-text">Active Users</div>
+        <div class="meta-text" x-text="$store.i18n.t('admin.activeUsers')"></div>
       </div>
     </div>
     <div class="card">
       <div class="card-body">
         <div class="text-2xl font-bold text-error" x-text="stats.inactive || 0"></div>
-        <div class="meta-text">Inactive Users</div>
+        <div class="meta-text" x-text="$store.i18n.t('admin.inactiveUsers')"></div>
       </div>
     </div>
   </div>
 
   
   <div class="action-row mb-m">
-    <h3 class="text-lg font-semibold">Users</h3>
+    <h3 class="text-lg font-semibold" x-text="$store.i18n.t('admin.users')"></h3>
     <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
-      + Add User
+      + <span x-text="$store.i18n.t('buttons.addUser')"></span>
     </button>
   </div>
 
@@ -41,19 +64,18 @@
   </div>
 
   
-  <div x-show="!isLoading" class="card">
-    <div class="overflow-auto">
-      <table class="w-full">
+  <div x-show="!isLoading" class="overflow-auto">
+    <table class="w-full bg-white rounded-lg shadow-sm border border-gray-200">
         <thead>
           <tr class="border-b">
-            <th class="text-left p-m">ID</th>
-            <th class="text-left p-m">Email</th>
-            <th class="text-left p-m">Role</th>
-            <th class="text-left p-m">API Key</th>
-            <th class="text-left p-m">Storage</th>
-            <th class="text-left p-m">Status</th>
-            <th class="text-left p-m">Created</th>
-            <th class="text-left p-m">Actions</th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.id')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.email')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.role')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.apiKey')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.storage')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.status')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.created')"></th>
+            <th class="text-left p-m" x-text="$store.i18n.t('admin.actions')"></th>
           </tr>
         </thead>
         <tbody>
@@ -66,7 +88,7 @@
               </td>
               <td class="p-m">
                 <span :class="user.has_api_key ? 'text-success' : 'text-gray-400'" 
-                      x-text="user.has_api_key ? '✓ Set' : '✗ Not set'"></span>
+                      x-text="user.has_api_key ? '✓ ' + $store.i18n.t('admin.set') : '✗ ' + $store.i18n.t('admin.notSet')"></span>
               </td>
               <td class="p-m">
                 <div class="text-xs">
@@ -76,16 +98,16 @@
               </td>
               <td class="p-m">
                 <span class="badge" :class="user.is_active ? 'badge-success' : 'badge-secondary'"
-                      x-text="user.is_active ? 'Active' : 'Inactive'"></span>
+                      x-text="user.is_active ? $store.i18n.t('admin.active') : $store.i18n.t('admin.inactive')"></span>
               </td>
               <td class="p-m meta-text" x-text="formatDate(user.created_at)"></td>
               <td class="p-m">
                 <div class="flex gap-s">
                   <button @click="editUserDetails(user)" class="btn btn-ghost btn-sm">
-                    ✏️ Edit
+                    ✏️ <span x-text="$store.i18n.t('buttons.edit')"></span>
                   </button>
                   <button @click="showChangeRole(user)" class="btn btn-ghost btn-sm">
-                    👤 Role
+                    👤 <span x-text="$store.i18n.t('admin.role')"></span>
                   </button>
                   <button @click="toggleUserStatus(user)" 
                           class="btn btn-ghost btn-sm"
@@ -103,12 +125,11 @@
             </tr>
           </template>
         </tbody>
-      </table>
-    </div>
+    </table>
 
     
     <div x-show="users.length === 0" class="empty-state">
-      <p>No users found</p>
+      <p x-text="$store.i18n.t('admin.noUsersFound')"></p>
     </div>
   </div>
 
@@ -116,26 +137,26 @@
   <div x-show="showCreateModal" class="modal-backdrop" @click.self="showCreateModal = false">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="text-lg font-semibold">Create New User</h3>
+        <h3 class="text-lg font-semibold" x-text="$store.i18n.t('admin.createNewUser')"></h3>
         <button @click="showCreateModal = false" class="btn btn-ghost btn-sm">✕</button>
       </div>
       <form @submit.prevent="createUser">
         <div class="modal-body stack">
           <div>
-            <label>Email</label>
+            <label x-text="$store.i18n.t('forms.email')"></label>
             <input type="email" x-model="newUser.email" required>
           </div>
           <div>
-            <label>Password</label>
+            <label x-text="$store.i18n.t('forms.password')"></label>
             <input type="password" x-model="newUser.password" required minlength="8">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" @click="showCreateModal = false" class="btn btn-secondary">
-            Cancel
+            <span x-text="$store.i18n.t('buttons.cancel')"></span>
           </button>
           <button type="submit" class="btn btn-primary">
-            Create User
+            <span x-text="$store.i18n.t('buttons.createUser')"></span>
           </button>
         </div>
       </form>
@@ -146,23 +167,23 @@
   <div x-show="showResetModal" class="modal-backdrop" @click.self="showResetModal = false">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="text-lg font-semibold">Reset Password</h3>
+        <h3 class="text-lg font-semibold" x-text="$store.i18n.t('admin.resetPassword')"></h3>
         <button @click="showResetModal = false" class="btn btn-ghost btn-sm">✕</button>
       </div>
       <form @submit.prevent="confirmResetPassword">
         <div class="modal-body stack">
-          <p>Reset password for <strong x-text="selectedUser?.email"></strong>?</p>
+          <p><span x-text="$store.i18n.t('admin.resetPasswordFor', {email: selectedUser?.email})"></span></p>
           <div>
-            <label>New Password</label>
+            <label x-text="$store.i18n.t('forms.newPassword')"></label>
             <input type="password" x-model="resetPasswordData.newPassword" required minlength="8">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" @click="showResetModal = false" class="btn btn-secondary">
-            Cancel
+            <span x-text="$store.i18n.t('buttons.cancel')"></span>
           </button>
           <button type="submit" class="btn btn-primary">
-            Reset Password
+            <span x-text="$store.i18n.t('buttons.resetPassword')"></span>
           </button>
         </div>
       </form>
@@ -173,36 +194,45 @@
   <div x-show="showEditModal" class="modal-backdrop" @click.self="showEditModal = false">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="text-lg font-semibold">Edit User Details</h3>
+        <h3 class="text-lg font-semibold" x-text="$store.i18n.t('admin.editUserDetails')"></h3>
         <button @click="showEditModal = false" class="btn btn-ghost btn-sm">✕</button>
       </div>
       <form @submit.prevent="updateUserDetails">
         <div class="modal-body stack">
           <div>
-            <label>User</label>
+            <label x-text="$store.i18n.t('forms.user')"></label>
             <input type="text" :value="selectedUser?.email" readonly class="form-input bg-gray-100">
           </div>
           <div>
-            <label>Storage Quota (MB)</label>
+            <label x-text="$store.i18n.t('forms.storageQuota')"></label>
             <input type="number" x-model="editUserData.quotaMB" min="1" max="10000" required class="form-input">
             <p class="text-xs text-gray-600 mt-s">
-              Currently using: <span x-text="formatBytes(selectedUser?.storage_used || 0)"></span>
+              <span x-text="$store.i18n.t('admin.currentlyUsing')"></span>: <span x-text="formatBytes(selectedUser?.storage_used || 0)"></span>
             </p>
           </div>
           <div>
-            <label>OpenRouter API Key</label>
+            <label x-text="$store.i18n.t('forms.apiKey')"></label>
             <input type="text" x-model="editUserData.apiKey" placeholder="sk-or-v1-..." class="form-input">
             <p class="text-xs text-gray-600 mt-s">
-              Leave empty to keep current key. Enter new key to update.
+              <span x-text="$store.i18n.t('admin.leaveEmptyToKeep')"></span>
+            </p>
+          </div>
+          <div>
+            <label class="flex items-center gap-s cursor-pointer">
+              <input type="checkbox" x-model="editUserData.onlyFreeModels" class="form-checkbox">
+              <span x-text="$store.i18n.t('admin.onlyFreeModels')"></span>
+            </label>
+            <p class="text-xs text-gray-600 mt-s">
+              <span x-text="$store.i18n.t('admin.onlyFreeModelsDesc')"></span>
             </p>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" @click="showEditModal = false" class="btn btn-secondary">
-            Cancel
+            <span x-text="$store.i18n.t('buttons.cancel')"></span>
           </button>
           <button type="submit" class="btn btn-primary">
-            Update Details
+            <span x-text="$store.i18n.t('admin.updateDetails')"></span>
           </button>
         </div>
       </form>
@@ -213,17 +243,17 @@
   <div x-show="showRoleModal" class="modal-backdrop">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="text-lg font-semibold">Change User Role</h3>
+        <h3 class="text-lg font-semibold" x-text="$store.i18n.t('admin.changeUserRole')"></h3>
         <button @click="showRoleModal = false" class="btn btn-ghost btn-sm">✕</button>
       </div>
       <form @submit.prevent="changeUserRole">
         <div class="modal-body stack">
           <div>
-            <label>User</label>
+            <label x-text="$store.i18n.t('forms.user')"></label>
             <input type="text" :value="selectedUser?.email" readonly class="form-input bg-gray-100">
           </div>
           <div>
-            <label>Role</label>
+            <label x-text="$store.i18n.t('forms.role')"></label>
             <select x-model="roleChangeData.roleId" class="form-input" required>
               <template x-for="role in roles" :key="role.id">
                 <option :value="role.id" x-text="role.name"></option>
@@ -233,10 +263,10 @@
         </div>
         <div class="modal-footer">
           <button type="button" @click="showRoleModal = false" class="btn btn-secondary">
-            Cancel
+            <span x-text="$store.i18n.t('buttons.cancel')"></span>
           </button>
           <button type="submit" class="btn btn-primary">
-            Update Role
+            <span x-text="$store.i18n.t('buttons.updateRole')"></span>
           </button>
         </div>
       </form>

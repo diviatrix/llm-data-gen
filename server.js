@@ -18,11 +18,11 @@ const __dirname = path.dirname(__filename);
 let authManager;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 7333;
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }
+  limits: { fileSize: 100 * 1024 * 1024 }
 });
 
 app.use(cors());
@@ -251,6 +251,49 @@ app.delete('/api/user/api-key', async (req, res) => {
   }
 });
 
+// Update user preferences
+app.put('/api/user/preferences', async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+
+    const auth = await authManagerPromise;
+    const userId = req.user.userId;
+    const { onlyFreeModels } = req.body;
+
+    // Get current user settings
+    const user = await auth.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Parse existing settings
+    let settings = {};
+    try {
+      settings = JSON.parse(user.settings || '{}');
+    } catch (e) {
+      settings = {};
+    }
+
+    // Update the specific preference
+    if (onlyFreeModels !== undefined) {
+      settings.onlyFreeModels = onlyFreeModels;
+    }
+
+    // Save updated settings
+    await auth.db.runAsync(
+      'UPDATE users SET settings = ? WHERE id = ?',
+      [JSON.stringify(settings), userId]
+    );
+
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error('Update user preferences error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update preferences' });
+  }
+});
+
 app.post('/api/auth/change-password', async (req, res) => {
   try {
     const { email, currentPassword, newPassword } = req.body;
@@ -428,7 +471,7 @@ app.put('/api/admin/users/:id/details', async (req, res) => {
 
     const auth = await authManagerPromise;
     const userId = parseInt(req.params.id);
-    const { quotaMB, apiKey } = req.body;
+    const { quotaMB, apiKey, onlyFreeModels } = req.body;
 
     // Update storage quota if provided
     if (quotaMB !== undefined) {
@@ -469,6 +512,32 @@ app.put('/api/admin/users/:id/details', async (req, res) => {
       // Also save to user's .env file
       const userApiKeyPath = UserStorage.getUserApiKeyPath(userId);
       await fs.writeFile(userApiKeyPath, `OPENROUTER_API_KEY=${apiKey}\n`);
+    }
+
+    // Update onlyFreeModels preference if provided
+    if (onlyFreeModels !== undefined) {
+      // Get current user settings
+      const user = await auth.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      // Parse existing settings
+      let settings = {};
+      try {
+        settings = JSON.parse(user.settings || '{}');
+      } catch (e) {
+        settings = {};
+      }
+
+      // Update the preference
+      settings.onlyFreeModels = onlyFreeModels;
+
+      // Save updated settings
+      await auth.db.runAsync(
+        'UPDATE users SET settings = ? WHERE id = ?',
+        [JSON.stringify(settings), userId]
+      );
     }
 
     res.json({ success: true });

@@ -1,14 +1,14 @@
 <div class="stack" x-cloak>
   <div class="mb-m">
-    <h2 class="text-2xl font-semibold">AI Chat</h2>
-    <p class="text-gray-600 mt-s">Chat with AI models</p>
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('chat.aiChat')"></h2>
+    <p class="text-gray-600 mt-s" x-text="$store.i18n.t('chat.chatWithAi')"></p>
   </div>
   <div x-show="lastChat && !chatStarted && lastChat.messages && lastChat.messages.length > 0" 
        @click="resumeLastChat()"
        class="card-interactive mb-m cursor-pointer">
     <div class="card-body">
       <div class="action-row mb-s">
-        <h4 class="text-sm font-medium text-gray-700">Resume last chat</h4>
+        <h4 class="text-sm font-medium text-gray-700" x-text="$store.i18n.t('chat.resumeLastChat')"></h4>
         <span class="text-xs text-gray-500" x-text="lastChat?.timestamp ? new Date(lastChat.timestamp).toLocaleString() : ''"></span>
       </div>
       <div class="max-h-[50vh] overflow-y-auto">
@@ -40,8 +40,8 @@
   <div x-show="chatStarted" x-transition class="card flex-1 mb-m">
     <div class="card-body flex flex-col h-full">
       <div class="flex justify-between items-center mb-m">
-        <h3 class="text-lg font-semibold">Chat</h3>
-        <button @click="clearChat()" class="btn btn-ghost btn-sm">Clear History</button>
+        <h3 class="text-lg font-semibold" x-text="$store.i18n.t('chat.chat')"></h3>
+        <button @click="clearChat()" class="btn btn-ghost btn-sm" x-text="$store.i18n.t('buttons.clearHistory')"></button>
       </div>
       <div class="flex-1 chat-messages mb-m stack-s">
         <template x-for="(message, index) in messages" :key="index">
@@ -90,7 +90,7 @@
           <div class="inline-block bg-gray-100 rounded-lg p-3">
             <div class="flex items-center gap-s">
               <div class="spinner-inline"></div>
-              <span class="meta-text">AI is thinking...</span>
+              <span class="meta-text" x-text="$store.i18n.t('chat.aiThinking')"></span>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@
         <div class="flex gap-s">
           <textarea x-model="newMessage"
                     @keydown.enter.prevent="if (!$event.shiftKey) sendMessage()"
-                    placeholder="Type your message..."
+                    :placeholder="$store.i18n.t('placeholders.typeMessage')"
                     class="form-textarea flex-1"
                     rows="3"
                     :disabled="isLoading"></textarea>
@@ -119,13 +119,13 @@
             <button type="button"
                     @click="showFilePicker = true"
                     class="btn btn-secondary"
-                    title="Attach files">
+                    :title="$store.i18n.t('chat.attachFiles')">
               📎
             </button>
             <button type="submit" 
                     :disabled="!newMessage.trim() || isLoading" 
                     class="btn btn-primary">
-              Send
+              <span x-text="$store.i18n.t('buttons.send')"></span>
             </button>
           </div>
         </div>
@@ -138,14 +138,14 @@
       <div class="flex justify-between items-center mb-m">
         <h3 class="text-lg font-semibold">
           <template x-if="!chatStarted">
-            <span>Select Model</span>
+            <span x-text="$store.i18n.t('models.selectModel')"></span>
           </template>
           <template x-if="chatStarted && showModelSelector">
-            <span>Change Model</span>
+            <span x-text="$store.i18n.t('models.changeModel')"></span>
           </template>
           <template x-if="chatStarted && !showModelSelector">
             <span>
-              Current: <span x-text="selectedModel?.name" class="text-primary"></span>
+              <span x-text="$store.i18n.t('models.currentModel')"></span>: <span x-text="selectedModel?.name" class="text-primary"></span>
               <span x-show="enableOnlineSearch" class="text-primary text-sm">🌐</span>
             </span>
           </template>
@@ -162,68 +162,68 @@
             <input 
               type="text" 
               class="form-input" 
-              placeholder="Search models..."
+              :placeholder="$store.i18n.t('placeholders.searchModels')"
               x-model="modelSearch"
             >
           </div>
           <div class="mb-3">
-            <div class="text-sm text-gray-600 mb-2">Quick Filters:</div>
+            <div class="text-sm text-gray-600 mb-2"><span x-text="$store.i18n.t('forms.quickFilters')"></span>:</div>
             <div class="flex flex-wrap gap-2">
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('all')"
               >
-                🌐 All Models
+                <span x-text="$store.i18n.t('models.allModels')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'free' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('free')"
               >
-                🆓 Free
+                🆓 <span x-text="$store.i18n.t('models.free')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'cheap' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('cheap')"
               >
-                💰 Cheap (<$0.001)
+                💰 <span x-text="$store.i18n.t('models.cheap')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'fast' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('fast')"
               >
-                ⚡ Fast
+                ⚡ <span x-text="$store.i18n.t('models.fast')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'smart' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('smart')"
               >
-                🧠 Smart (GPT-4/Claude)
+                🧠 <span x-text="$store.i18n.t('models.smart')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'multimodal' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('multimodal')"
               >
-                🖼️ Multimodal
+                🖼️ <span x-text="$store.i18n.t('models.multimodal')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'large-context' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('large-context')"
               >
-                📚 100K+ Context
+                📚 <span x-text="$store.i18n.t('models.largeContext')"></span>
               </button>
               <button 
                 class="btn btn-sm"
                 :class="modelFilter === 'coding' ? 'btn-primary' : 'btn-secondary'"
                 @click="setModelFilter('coding')"
               >
-                💻 Coding
+                💻 <span x-text="$store.i18n.t('models.coding')"></span>
               </button>
               <div class="inline-block ml-3">
                 <label class="toggle-label">
@@ -234,7 +234,7 @@
                     >
                     <span class="toggle-slider"></span>
                   </div>
-                  <span>🔍 Online Search</span>
+                  <span>🔍 <span x-text="$store.i18n.t('models.onlineSearch')"></span></span>
                 </label>
               </div>
             </div>
@@ -242,98 +242,98 @@
           <div class="mb-3">
             <div class="mt-3 space-y-3">
               <div>
-                <div class="text-sm text-gray-600 mb-2">Provider:</div>
+                <div class="text-sm text-gray-600 mb-2"><span x-text="$store.i18n.t('models.provider')"></span>:</div>
                 <div class="flex flex-wrap gap-2">
                   <button @click="toggleFilter('provider', 'openai')"
                           :class="isFilterActive('provider', 'openai') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    OpenAI
+                    <span>OpenAI</span>
                   </button>
                   <button @click="toggleFilter('provider', 'anthropic')"
                           :class="isFilterActive('provider', 'anthropic') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    Anthropic
+                    <span>Anthropic</span>
                   </button>
                   <button @click="toggleFilter('provider', 'google')"
                           :class="isFilterActive('provider', 'google') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    Google
+                    <span>Google</span>
                   </button>
                   <button @click="toggleFilter('provider', 'meta')"
                           :class="isFilterActive('provider', 'meta') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    Meta
+                    <span>Meta</span>
                   </button>
                   <button @click="toggleFilter('provider', 'mistral')"
                           :class="isFilterActive('provider', 'mistral') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    Mistral
+                    <span>Mistral</span>
                   </button>
                   <button @click="toggleFilter('provider', 'perplexity')"
                           :class="isFilterActive('provider', 'perplexity') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    Perplexity
+                    <span>Perplexity</span>
                   </button>
                 </div>
               </div>
               <div>
-                <div class="text-sm text-gray-600 mb-2">Capabilities:</div>
+                <div class="text-sm text-gray-600 mb-2"><span x-text="$store.i18n.t('models.capabilities')"></span>:</div>
                 <div class="flex flex-wrap gap-2">
                   <button @click="toggleFilter('capabilities', 'function-calling')"
                           :class="isFilterActive('capabilities', 'function-calling') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    🔧 Function Calling
+                    🔧 <span x-text="$store.i18n.t('models.functionCalling')"></span>
                   </button>
                   <button @click="toggleFilter('capabilities', 'json-mode')"
                           :class="isFilterActive('capabilities', 'json-mode') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    📋 JSON Mode
+                    📋 <span x-text="$store.i18n.t('models.jsonMode')"></span>
                   </button>
                   <button @click="toggleFilter('capabilities', 'web-search')"
                           :class="isFilterActive('capabilities', 'web-search') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    🔍 Web Search
+                    🔍 <span x-text="$store.i18n.t('models.webSearch')"></span>
                   </button>
                   <button @click="toggleFilter('capabilities', 'vision')"
                           :class="isFilterActive('capabilities', 'vision') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    👁️ Vision
+                    👁️ <span x-text="$store.i18n.t('models.vision')"></span>
                   </button>
                 </div>
               </div>
               <div>
-                <div class="text-sm text-gray-600 mb-2">Context Size:</div>
+                <div class="text-sm text-gray-600 mb-2"><span x-text="$store.i18n.t('models.contextSize')"></span>:</div>
                 <div class="flex flex-wrap gap-2">
                   <button @click="toggleFilter('context', '4k')"
                           :class="isFilterActive('context', '4k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    4K
+                    <span>4K</span>
                   </button>
                   <button @click="toggleFilter('context', '8k')"
                           :class="isFilterActive('context', '8k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    8K
+                    <span>8K</span>
                   </button>
                   <button @click="toggleFilter('context', '16k')"
                           :class="isFilterActive('context', '16k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    16K
+                    <span>16K</span>
                   </button>
                   <button @click="toggleFilter('context', '32k')"
                           :class="isFilterActive('context', '32k') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    32K
+                    <span>32K</span>
                   </button>
                   <button @click="toggleFilter('context', '128k+')"
                           :class="isFilterActive('context', '128k+') ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'"
                           class="text-xs">
-                    128K+
+                    <span>128K+</span>
                   </button>
                 </div>
               </div>
               <div x-show="hasActiveFilters()" class="pt-2">
                 <button @click="clearAllFilters()" class="btn btn-ghost btn-sm">
-                  ❌ Clear All Filters
+                  ❌ <span x-text="$store.i18n.t('models.clearAllFilters')"></span>
                 </button>
               </div>
             </div>
@@ -343,14 +343,14 @@
                     :disabled="!selectedModel"
                     x-show="!chatStarted || showModelSelector"
                     class="btn btn-primary w-full">
-              <span x-show="!chatStarted">Start Chat</span>
-              <span x-show="chatStarted">Apply Model Change</span>
+              <span x-show="!chatStarted" x-text="$store.i18n.t('buttons.startChat')"></span>
+              <span x-show="chatStarted" x-text="$store.i18n.t('models.applyModelChange')"></span>
             </button>
           </div>
         </div>
         <div class="text-center py-8" x-show="isLoading">
           <div class="spinner"></div>
-          <p class="text-muted mt-2">Loading models...</p>
+          <p class="text-muted mt-2" x-text="$store.i18n.t('models.loadingModels')"></p>
         </div>
         <div class="models-grid" x-show="!isLoading">
           <template x-for="model in filteredModels" :key="model.id">
@@ -365,30 +365,30 @@
               </div>
               <div class="model-info">
                 <div class="info-row">
-                  <span class="label">Context:</span>
+                  <span class="label" x-text="$store.i18n.t('models.context') + ':'"></span>
                   <span class="value" x-text="formatContext(model.context_length)"></span>
                 </div>
                 <div class="info-row">
-                  <span class="label">Price:</span>
+                  <span class="label" x-text="$store.i18n.t('models.price') + ':'"></span>
                   <span class="value" x-text="formatPrice(model.pricing)"></span>
                 </div>
               </div>
               <div class="model-tags">
                 <span class="tag tag-blue" x-show="!model.pricing || (model.pricing.prompt === 0 && model.pricing.completion === 0)">
-                  Free
+                  <span x-text="$store.i18n.t('models.free')"></span>
                 </span>
                 <span class="tag tag-green" x-show="model.input_modalities?.includes('image') || model.input_modalities?.includes('audio')">
-                  Multimodal
+                  <span x-text="$store.i18n.t('models.multimodal')"></span>
                 </span>
                 <span class="tag tag-purple" x-show="model.context_length >= 100000">
-                  Large Context
+                  <span x-text="$store.i18n.t('models.largeContext')"></span>
                 </span>
               </div>
             </div>
           </template>
         </div>
         <div class="text-center py-8" x-show="!isLoading && filteredModels.length === 0">
-          <p class="text-muted">No models found matching your criteria</p>
+          <p class="text-muted" x-text="$store.i18n.t('models.noModelsFound')"></p>
         </div>
       </div>
     </div>
@@ -400,7 +400,7 @@
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col" @click.stop>
       <div class="p-m border-b">
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">Attach Files</h3>
+          <h3 class="text-lg font-semibold" x-text="$store.i18n.t('chat.attachFiles')"></h3>
           <button @click="showFilePicker = false" class="text-gray-500 hover:text-gray-700">✕</button>
         </div>
       </div>
@@ -410,31 +410,31 @@
           <div class="flex gap-s">
             <button @click="filePickerTab = 'uploads'; loadFilesForTab()"
                     :class="filePickerTab === 'uploads' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
-              My Uploads
+              <span x-text="$store.i18n.t('chat.myUploads')"></span>
             </button>
             <button @click="filePickerTab = 'configs'; loadFilesForTab()"
                     :class="filePickerTab === 'configs' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
-              Configurations
+              <span x-text="$store.i18n.t('chat.configurations')"></span>
             </button>
             <button @click="filePickerTab = 'outputs'; loadFilesForTab()"
                     :class="filePickerTab === 'outputs' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm'">
-              Generated Output
+              <span x-text="$store.i18n.t('chat.generatedOutput')"></span>
             </button>
           </div>
         </div>
         <div x-show="filePickerTab === 'uploads'" class="mb-m">
           <div class="card p-m bg-gray-50">
             <div class="mb-s">
-              <label class="block text-sm font-medium mb-s">Upload New File</label>
+              <label class="block text-sm font-medium mb-s" x-text="$store.i18n.t('chat.uploadNewFile')"></label>
               <input type="file" @change="handleFileUpload($event)" class="form-input" :disabled="isUploading">
             </div>
             <div x-show="storageInfo" class="text-xs text-gray-600">
-              Storage: <span x-text="formatBytes(storageInfo?.used || 0)"></span> / <span x-text="formatBytes(storageInfo?.quota || 0)"></span> used
+              <span x-text="$store.i18n.t('chat.storage')"></span>: <span x-text="formatBytes(storageInfo?.used || 0)"></span> / <span x-text="formatBytes(storageInfo?.quota || 0)"></span> <span x-text="$store.i18n.t('chat.used')"></span>
             </div>
             <div x-show="isUploading" class="mt-s">
               <div class="flex items-center gap-s">
                 <div class="spinner-inline"></div>
-                <span class="text-sm text-gray-600">Uploading...</span>
+                <span class="text-sm text-gray-600" x-text="$store.i18n.t('chat.uploading')"></span>
               </div>
             </div>
           </div>
@@ -462,7 +462,7 @@
           </template>
           
           <div x-show="!isLoadingFiles && (!availableFiles || availableFiles.length === 0)" class="text-center py-4 text-gray-500">
-            No files available in this category
+            <span x-text="$store.i18n.t('chat.noFilesAvailable')"></span>
           </div>
         </div>
       </div>
@@ -470,13 +470,13 @@
       <div class="p-m border-t">
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-600">
-            <span x-text="(selectedFiles || []).length"></span> file(s) selected
+            <span x-text="(selectedFiles || []).length"></span> <span x-text="$store.i18n.t('chat.attachedFiles')"></span>
           </span>
           <div class="flex gap-s">
-            <button @click="showFilePicker = false" class="btn btn-ghost">Cancel</button>
+            <button @click="showFilePicker = false" class="btn btn-ghost" x-text="$store.i18n.t('buttons.cancel')"></button>
             <button @click="attachSelectedFiles()" 
                     :disabled="!selectedFiles || selectedFiles.length === 0"
-                    class="btn btn-primary">Attach Files</button>
+                    class="btn btn-primary" x-text="$store.i18n.t('buttons.attachFiles')"></button>
           </div>
         </div>
       </div>

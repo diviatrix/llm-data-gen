@@ -1,15 +1,15 @@
 <div class="stack">
   
   <div class="mb-m">
-    <h2 class="text-2xl font-semibold">Settings</h2>
-    <p class="text-gray-600 mt-s">Manage your account settings and API configuration</p>
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('settings.settings')"></h2>
+    <p class="text-gray-600 mt-s" x-text="$store.i18n.t('settings.manageSettings')"></p>
   </div>
   
   
   <div class="card">
     <div class="card-header">
       <h3 class="text-lg font-semibold">
-        <span>Personal API Key</span>
+        <span x-text="$store.i18n.t('settings.personalApiKey')"></span>
       </h3>
     </div>
     <div class="card-body">
@@ -23,24 +23,24 @@
         
         <div x-show="hasApiKey">
           <div class="alert alert-success mb-m">
-            <p>✓ API key is configured</p>
+            <p>✓ <span x-text="$store.i18n.t('settings.apiKeyConfigured')"></span></p>
           </div>
           
           <p class="meta-text mb-m">
-            Your OpenRouter API key is securely stored. You can generate data using AI models.
+            <span x-text="$store.i18n.t('settings.apiKeySecurelyStored')"></span>
           </p>
           
           <div class="flex gap-s">
             <button @click="showApiKey = true" 
                     x-show="!showApiKey"
                     class="btn btn-secondary btn-sm">
-              Update API Key
+              <span x-text="$store.i18n.t('buttons.updateApiKey')"></span>
             </button>
             <button @click="deleteApiKey()" 
                     :disabled="isDeleting"
                     class="btn btn-danger btn-sm">
-              <span x-show="!isDeleting">Delete API Key</span>
-              <span x-show="isDeleting">Deleting...</span>
+              <span x-show="!isDeleting" x-text="$store.i18n.t('buttons.deleteApiKey')"></span>
+              <span x-show="isDeleting" x-text="$store.i18n.t('settings.deleting')"></span>
             </button>
           </div>
         </div>
@@ -48,36 +48,35 @@
         
         <div x-show="!hasApiKey || showApiKey">
           <div x-show="!hasApiKey" class="alert alert-warning mb-m">
-            <p>⚠️ No API key configured</p>
+            <p>⚠️ <span x-text="$store.i18n.t('messages.warnings.noApiKeyConfigured')"></span></p>
           </div>
           
           <p class="meta-text mb-m">
-            To use the LLM Data Generator, you need an OpenRouter API key. 
-            You can get one from <a href="https://openrouter.ai/keys" target="_blank" class="text-primary hover:underline">openrouter.ai/keys</a>
+            <span x-text="$store.i18n.t('settings.getApiKeyFrom')"></span> <a href="https://openrouter.ai/keys" target="_blank" class="text-primary hover:underline">openrouter.ai/keys</a>
           </p>
           
           <div class="space-y-m">
             <div>
-              <label class="form-label">API Key</label>
+              <label class="form-label" x-text="$store.i18n.t('forms.apiKey')"></label>
               <input type="password" 
                      x-model="apiKey" 
                      @keyup.enter="saveApiKey()"
-                     placeholder="sk-or-..." 
+                     :placeholder="$store.i18n.t('placeholders.apiKey')" 
                      class="form-input">
-              <p class="text-xs text-gray-500 mt-s">Your API key will be securely stored</p>
+              <p class="text-xs text-gray-500 mt-s" x-text="$store.i18n.t('settings.apiKeyWillBeStored')"></p>
             </div>
             
             <div class="flex gap-s">
               <button @click="saveApiKey()" 
                       :disabled="!apiKey || isSaving"
                       class="btn btn-primary">
-                <span x-show="!isSaving">Save API Key</span>
-                <span x-show="isSaving">Saving...</span>
+                <span x-show="!isSaving" x-text="$store.i18n.t('buttons.saveApiKey')"></span>
+                <span x-show="isSaving" x-text="$store.i18n.t('settings.saving')"></span>
               </button>
               <button @click="showApiKey = false; apiKey = ''" 
                       x-show="hasApiKey && showApiKey"
                       class="btn btn-ghost">
-                Cancel
+                <span x-text="$store.i18n.t('buttons.cancel')"></span>
               </button>
             </div>
           </div>
@@ -87,33 +86,60 @@
   </div>
   
   
+  <div class="card">
+    <div class="card-header">
+      <h3 class="text-lg font-semibold">
+        <span x-text="$store.i18n.t('settings.accountPreferences')"></span>
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="space-y-m">
+        <div>
+          <label class="flex items-center gap-s cursor-pointer">
+            <input type="checkbox" 
+                   x-model="onlyFreeModels" 
+                   @change="updateFreeModelsPreference()"
+                   class="form-checkbox">
+            <div>
+              <span x-text="$store.i18n.t('settings.onlyFreeModels')"></span>
+              <p class="text-xs text-gray-600 mt-1">
+                <span x-text="$store.i18n.t('settings.onlyFreeModelsDesc')"></span>
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
   <div class="card" x-show="$root.isAdmin">
     <div class="card-header">
-      <h3 class="text-lg font-semibold">System API Key <span class="text-sm font-normal text-gray-600">(Admin Only)</span></h3>
+      <h3 class="text-lg font-semibold"><span x-text="$store.i18n.t('settings.systemApiKey')"></span> <span class="text-sm font-normal text-gray-600" x-text="$store.i18n.t('settings.adminOnly')"></span></h3>
     </div>
     <div class="card-body">
       <div x-show="!isLoadingSystemKey">
         
         <div x-show="hasSystemApiKey">
           <div class="alert alert-success mb-m">
-            <p>✓ System API key is configured</p>
+            <p>✓ <span x-text="$store.i18n.t('settings.systemApiKeyConfigured')"></span></p>
           </div>
           
           <p class="meta-text mb-m">
-            The system API key is configured. This key will be used as default for the system operations.
+            <span x-text="$store.i18n.t('settings.systemApiKeyDescription')"></span>
           </p>
           
           <div class="flex gap-s">
             <button @click="showSystemApiKey = true" 
                     x-show="!showSystemApiKey"
                     class="btn btn-secondary btn-sm">
-              Update System API Key
+              <span x-text="$store.i18n.t('buttons.updateApiKey')"></span>
             </button>
             <button @click="deleteSystemApiKey()" 
                     :disabled="isDeletingSystemKey"
                     class="btn btn-danger btn-sm">
-              <span x-show="!isDeletingSystemKey">Delete System API Key</span>
-              <span x-show="isDeletingSystemKey">Deleting...</span>
+              <span x-show="!isDeletingSystemKey" x-text="$store.i18n.t('buttons.deleteApiKey')"></span>
+              <span x-show="isDeletingSystemKey" x-text="$store.i18n.t('settings.deleting')"></span>
             </button>
           </div>
         </div>
@@ -121,35 +147,35 @@
         
         <div x-show="!hasSystemApiKey || showSystemApiKey">
           <div x-show="!hasSystemApiKey" class="alert alert-warning mb-m">
-            <p>⚠️ No system API key configured</p>
+            <p>⚠️ <span x-text="$store.i18n.t('messages.warnings.noSystemApiKeyConfigured')"></span></p>
           </div>
           
           <p class="meta-text mb-m">
-            Configure a system-wide OpenRouter API key for default operations.
+            <span x-text="$store.i18n.t('settings.configureSystemApiKey')"></span>
           </p>
           
           <div class="space-y-m">
             <div>
-              <label class="form-label">System API Key</label>
+              <label class="form-label" x-text="$store.i18n.t('forms.systemApiKey')"></label>
               <input type="password" 
                      x-model="systemApiKey" 
                      @keyup.enter="saveSystemApiKey()"
-                     placeholder="sk-or-..." 
+                     :placeholder="$store.i18n.t('placeholders.apiKey')" 
                      class="form-input">
-              <p class="text-xs text-gray-500 mt-s">This key will be used for system-wide operations</p>
+              <p class="text-xs text-gray-500 mt-s" x-text="$store.i18n.t('settings.systemKeyForOperations')"></p>
             </div>
             
             <div class="flex gap-s">
               <button @click="saveSystemApiKey()" 
                       :disabled="!systemApiKey || isSavingSystemKey"
                       class="btn btn-primary">
-                <span x-show="!isSavingSystemKey">Save System API Key</span>
-                <span x-show="isSavingSystemKey">Saving...</span>
+                <span x-show="!isSavingSystemKey" x-text="$store.i18n.t('buttons.saveApiKey')"></span>
+                <span x-show="isSavingSystemKey" x-text="$store.i18n.t('settings.saving')"></span>
               </button>
               <button @click="showSystemApiKey = false; systemApiKey = ''" 
                       x-show="hasSystemApiKey && showSystemApiKey"
                       class="btn btn-ghost">
-                Cancel
+                <span x-text="$store.i18n.t('buttons.cancel')"></span>
               </button>
             </div>
           </div>
@@ -161,16 +187,16 @@
   
   <div class="card" x-show="$root.user">
     <div class="card-header">
-      <h3 class="text-lg font-semibold">Account Information</h3>
+      <h3 class="text-lg font-semibold" x-text="$store.i18n.t('settings.accountInformation')"></h3>
     </div>
     <div class="card-body">
       <div class="space-y-s">
         <div>
-          <span class="meta-text">Email:</span>
+          <span class="meta-text" x-text="$store.i18n.t('forms.email') + ':'"></span>
           <span class="ml-s font-medium" x-text="$root.user?.email"></span>
         </div>
         <div x-show="storageInfo">
-          <span class="meta-text">Storage:</span>
+          <span class="meta-text" x-text="$store.i18n.t('admin.storage') + ':'"></span>
           <span class="ml-s font-medium">
             <span x-text="formatBytes(storageInfo?.used || 0)"></span> / 
             <span x-text="formatBytes(storageInfo?.quota || 0)"></span>
@@ -180,7 +206,7 @@
           </span>
         </div>
         <div x-show="$root.accountInfo">
-          <span class="meta-text">OpenRouter Usage:</span>
+          <span class="meta-text" x-text="$store.i18n.t('settings.openRouterUsage') + ':'"></span>
           <span class="ml-s font-medium">
             $<span x-text="$root.accountInfo?.usage"></span> / $<span x-text="$root.accountInfo?.limit"></span>
           </span>
@@ -192,51 +218,51 @@
   
   <div class="card">
     <div class="card-header">
-      <h3 class="text-lg font-semibold">Change Password</h3>
+      <h3 class="text-lg font-semibold" x-text="$store.i18n.t('settings.changePassword')"></h3>
     </div>
     <div class="card-body">
       <div x-show="!showPasswordForm">
         <p class="meta-text mb-m">
-          Update your account password. For security, you'll need to enter your current password.
+          <span x-text="$store.i18n.t('settings.updateAccountPassword')"></span>
         </p>
         <button @click="showPasswordForm = true" class="btn btn-secondary">
-          Change Password
+          <span x-text="$store.i18n.t('buttons.changePassword')"></span>
         </button>
       </div>
       
       <div x-show="showPasswordForm" class="space-y-m">
         <div>
-          <label class="form-label">Current Password</label>
+          <label class="form-label" x-text="$store.i18n.t('forms.currentPassword')"></label>
           <input type="password" 
                  x-model="currentPassword" 
                  @keyup.enter="focusNewPassword()"
-                 placeholder="Enter current password" 
+                 :placeholder="$store.i18n.t('placeholders.currentPassword')" 
                  class="form-input">
         </div>
         
         <div>
-          <label class="form-label">New Password</label>
+          <label class="form-label" x-text="$store.i18n.t('forms.newPassword')"></label>
           <input type="password" 
                  x-model="newPassword"
                  x-ref="newPasswordInput"
                  @keyup.enter="focusConfirmPassword()"
-                 placeholder="Enter new password (min 4 characters)" 
+                 :placeholder="$store.i18n.t('placeholders.newPassword')" 
                  class="form-input">
           <p class="text-xs text-gray-500 mt-s" x-show="newPassword && newPassword.length < 4">
-            Password must be at least 4 characters long
+            <span x-text="$store.i18n.t('messages.warnings.passwordTooShort')"></span>
           </p>
         </div>
         
         <div>
-          <label class="form-label">Confirm New Password</label>
+          <label class="form-label" x-text="$store.i18n.t('forms.confirmPassword')"></label>
           <input type="password" 
                  x-model="confirmPassword"
                  x-ref="confirmPasswordInput"
                  @keyup.enter="changePassword()"
-                 placeholder="Confirm new password" 
+                 :placeholder="$store.i18n.t('placeholders.confirmPassword')" 
                  class="form-input">
           <p class="text-xs text-red-500 mt-s" x-show="confirmPassword && newPassword !== confirmPassword">
-            Passwords do not match
+            <span x-text="$store.i18n.t('messages.warnings.passwordsDoNotMatch')"></span>
           </p>
         </div>
         
@@ -244,13 +270,13 @@
           <button @click="changePassword()" 
                   :disabled="!canChangePassword() || isChangingPassword"
                   class="btn btn-primary">
-            <span x-show="!isChangingPassword">Change Password</span>
-            <span x-show="isChangingPassword">Changing...</span>
+            <span x-show="!isChangingPassword" x-text="$store.i18n.t('buttons.changePassword')"></span>
+            <span x-show="isChangingPassword" x-text="$store.i18n.t('settings.changing')"></span>
           </button>
           <button @click="cancelPasswordChange()" 
                   :disabled="isChangingPassword"
                   class="btn btn-ghost">
-            Cancel
+            <span x-text="$store.i18n.t('buttons.cancel')"></span>
           </button>
         </div>
       </div>

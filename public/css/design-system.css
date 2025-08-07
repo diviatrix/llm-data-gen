@@ -276,6 +276,19 @@ label {
 .nav-link-active {
   background: var(--primary);
   color: white;
+  position: relative;
+}
+
+.nav-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: white;
+  border-radius: 0 2px 2px 0;
 }
 
 .modal-backdrop {
@@ -503,26 +516,46 @@ input:checked + .toggle-slider:before {
 }
 
 .sidebar {
+  min-width: 16rem;
   width: 16rem;
+  max-width: 16rem;
+  flex: 0 0 16rem;
   background: var(--gray-50);
   border-right: 1px solid var(--gray-200);
   padding: var(--spacing-m);
-  transition: width var(--transition);
+  transition: all var(--transition);
   overflow: hidden;
+  position: relative;
+  z-index: 100;
 }
 
 .sidebar-collapsed {
-  width: 3.5rem;
+  min-width: 4rem;
+  width: 4rem;
+  max-width: 4rem;
+  flex: 0 0 4rem;
   padding: var(--spacing-s);
+  overflow-x: hidden;
 }
 
-.sidebar-collapsed .nav-link span:not(.nav-icon) {
-  display: none;
+.sidebar-collapsed .nav-label {
+  display: none !important;
 }
 
 .sidebar-collapsed .nav-link {
   justify-content: center;
   padding: var(--spacing-s);
+  margin: 0 auto;
+  width: calc(100% - var(--spacing-xs) * 2);
+}
+
+.sidebar-collapsed .nav-link-active {
+  background: var(--primary);
+  color: white;
+}
+
+.sidebar-collapsed .nav-link-active::before {
+  display: none;
 }
 
 .sidebar-toggle {
@@ -576,8 +609,10 @@ input:checked + .toggle-slider:before {
 }
 
 .progress-indicator {
+  min-width: 2rem;
   width: 2rem;
   height: 2rem;
+  flex-shrink: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -602,9 +637,8 @@ input:checked + .toggle-slider:before {
 }
 
 .progress-connector {
-  width: 4rem;
+  min-width: 2rem;
   height: 0.25rem;
-  margin: 0 var(--spacing-s);
   background: var(--gray-200);
 }
 

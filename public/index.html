@@ -17,13 +17,8 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     
-    <script type="module">
-        import './js/app.js';
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
-        script.defer = true;
-        document.head.appendChild(script);
-    </script>
+    <script type="module" src="/js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="h-screen text-gray-700">
     <div id="app" x-data="app" x-init="init">
@@ -40,27 +35,42 @@
                     <div class="action-row py-m">
                         <div class="flex items-center gap-s">
                             <span class="text-2xl">🤖</span>
-                            <h1 class="text-lg font-semibold text-gray-800">LLM Data Generator</h1>
+                            <h1 class="text-lg font-semibold text-gray-800" x-text="siteTitle || 'LLM Data Generator'"></h1>
                         </div>
 
                         <div class="flex items-center gap-m">
                             <div x-show="accountInfo" class="flex items-center gap-m text-sm">
                                 <div class="flex items-center gap-s">
-                                    <span class="text-gray-500">Balance:</span>
+                                    <span class="text-gray-500" x-text="$store.i18n.t ? $store.i18n.t('account.balance') + ':' : 'Balance:'"></span>
                                     <span class="font-medium text-gray-800">$<span x-text="accountInfo?.balance || '0'"></span></span>
                                 </div>
                                 <div class="text-gray-400">•</div>
                                 <div class="flex items-center gap-s">
-                                    <span class="text-gray-500">Limit:</span>
+                                    <span class="text-gray-500" x-text="$store.i18n.t ? $store.i18n.t('account.limit') + ':' : 'Limit:'"></span>
                                     <span class="font-medium text-gray-800">$<span x-text="accountInfo?.limit || '0'"></span></span>
                                 </div>
                                 <div class="text-gray-400">•</div>
                                 <div class="flex items-center gap-s">
-                                    <span class="text-gray-500">Used:</span>
+                                    <span class="text-gray-500" x-text="$store.i18n.t ? $store.i18n.t('account.used') + ':' : 'Used:'"></span>
                                     <span class="font-medium" 
                                           :class="accountInfo?.percentUsed > 80 ? 'text-error' : accountInfo?.percentUsed > 50 ? 'text-warning' : 'text-success'"
                                           x-text="(accountInfo?.percentUsed || 0) + '%'"></span>
                                 </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button @click="$store.i18n.setLocale('en')" 
+                                        class="btn btn-ghost btn-sm"
+                                        :class="$store.i18n.currentLocale === 'en' ? 'btn-primary' : ''" 
+                                        title="English">
+                                    🇺🇸
+                                </button>
+                                <button @click="$store.i18n.setLocale('ru')" 
+                                        class="btn btn-ghost btn-sm"
+                                        :class="$store.i18n.currentLocale === 'ru' ? 'btn-primary' : ''" 
+                                        title="Русский">
+                                    🇷🇺
+                                </button>
                             </div>
 
                             <div x-show="isAuthenticated" class="relative" x-data="{ open: false }">
@@ -75,7 +85,7 @@
                                         <div class="text-sm font-medium text-gray-700" x-text="user?.email"></div>
                                     </div>
                                     <a href="#" @click="logout" class="nav-link">
-                                        🚪 Sign out
+                                        🚪 <span x-text="$store.i18n.t('buttons.logout')"></span>
                                     </a>
                                 </div>
                             </div>
@@ -85,41 +95,42 @@
             </header>
 
             <div class="flex h-screen">
-                <nav class="sidebar relative" 
-                     :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-open': !sidebarCollapsed }">
-                    <button @click="sidebarCollapsed = !sidebarCollapsed" 
-                            class="sidebar-toggle">
-                        <span x-text="sidebarCollapsed ? '→' : '←'"></span>
-                    </button>
-                    
+                <nav class="sidebar" :class="{'sidebar-collapsed': !sidebarOpen}">
                     <div class="stack-s">
+                        <button @click="toggleSidebar()" 
+                                class="nav-link hover:bg-gray-100"
+                                title="Toggle Sidebar">
+                            <span class="nav-icon">☰</span>
+                            <span class="nav-label" x-show="sidebarOpen">Menu</span>
+                        </button>
+                        
+                        <div class="border-t border-gray-200 mt-s pt-s"></div>
+                        
                         <template x-for="item in navigation" :key="item.path">
                             <a :href="'#' + item.path"
                                @click="currentRoute = item.path"
-                               :class="currentRoute === item.path ? 'nav-link nav-link-active' : 'nav-link'"
-                               :title="item.label">
+                               :class="currentRoute === item.path ? 'nav-link nav-link-active' : 'nav-link'">
                                 <span class="nav-icon" x-text="item.icon"></span>
-                                <span class="nav-label" x-text="item.label"></span>
+                                <span class="nav-label" x-show="sidebarOpen" x-text="$store.i18n.t ? $store.i18n.t(item.labelKey) : item.labelKey"></span>
                             </a>
                         </template>
                     </div>
 
                     <div x-show="isAdmin" class="mt-l pt-l border-t border-gray-200">
                         <div>
-                            <div class="text-sm font-medium text-gray-500 uppercase mb-s nav-label">Admin</div>
+                            <div x-show="sidebarOpen" class="text-sm font-medium text-gray-500 uppercase mb-s nav-label" x-text="$store.i18n.t ? $store.i18n.t('navigation.admin') : 'Admin'"></div>
                             <a href="#/admin"
                                @click="currentRoute = '/admin'"
-                               :class="currentRoute === '/admin' ? 'nav-link nav-link-active' : 'nav-link'"
-                               :title="'Users'">
+                               :class="currentRoute === '/admin' ? 'nav-link nav-link-active' : 'nav-link'">
                                 <span class="nav-icon">👥</span>
-                                <span class="nav-label">Users</span>
+                                <span class="nav-label" x-show="sidebarOpen" x-text="$store.i18n.t ? $store.i18n.t('navigation.users') : 'Users'"></span>
                             </a>
                         </div>
                     </div>
                 </nav>
 
                 <main class="flex-1 p-m">
-                    <div class="max-w-4xl mx-auto">
+                    <div :class="currentRoute === '/admin' ? 'w-full' : 'max-w-4xl mx-auto'">
                         <div x-show="!loading && !hasApiKey" class="alert alert-warning mb-m">
                             <div class="flex justify-between items-center">
                                 <div>

@@ -2,15 +2,15 @@
   
   <div class="flex justify-between items-center">
     <div>
-      <h2 class="text-2xl font-semibold">Configuration Manager</h2>
-      <p class="text-gray-600 mt-s">Create and manage data generation configurations</p>
+      <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('common.configurationManager')"></h2>
+      <p class="text-gray-600 mt-s" x-text="$store.i18n.t('common.createAndManageConfigs')"></p>
     </div>
     <div class="flex gap-s">
       <button @click="createNewConfig()" class="btn btn-primary">
-        ➕ Create New
+        ➕ <span x-text="$store.i18n.t('buttons.createNew')"></span>
       </button>
       <button @click="loadExample()" class="btn btn-secondary">
-        📁 Load Example
+        📁 <span x-text="$store.i18n.t('buttons.loadExample')"></span>
       </button>
     </div>
   </div>
@@ -37,7 +37,7 @@
             </div>
             <div class="flex items-center gap-s flex-shrink-0">
               <button @click.stop="navigateToGenerate(config)" class="btn btn-primary btn-sm">
-                🚀 Generate
+                🚀 <span x-text="$store.i18n.t('buttons.generate')"></span>
               </button>
               <button @click.stop="editConfig(config)" class="btn btn-ghost btn-sm" title="Edit">
                 ✏️
@@ -56,10 +56,10 @@
   <div x-show="!isLoading && configs.length === 0" class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">📋</div>
-      <h3 class="text-xl font-medium mb-s">No Configurations Yet</h3>
-      <p class="text-gray-600 mb-m">Create your first configuration to start generating data</p>
+      <h3 class="text-xl font-medium mb-s" x-text="$store.i18n.t('common.noConfigurationsYet')"></h3>
+      <p class="text-gray-600 mb-m" x-text="$store.i18n.t('common.createFirstConfiguration')"></p>
       <button @click="createNewConfig()" class="btn btn-primary">
-        Create Configuration
+        <span x-text="$store.i18n.t('buttons.createConfiguration')"></span>
       </button>
     </div>
   </div>
@@ -69,38 +69,38 @@
        class="modal-backdrop">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="card-title">Create Configuration</h3>
+        <h3 class="card-title" x-text="$store.i18n.t('common.createConfiguration')"></h3>
         <button @click="showCreateWizard = false" class="btn btn-ghost btn-sm">✕</button>
       </div>
       <div class="modal-body">
         <div class="stack-s">
           <div>
-            <label class="form-label">Configuration Name</label>
+            <label class="form-label" x-text="$store.i18n.t('forms.configurationName')"></label>
             <input type="text" x-model="editingConfig.name" 
-                   class="form-input" placeholder="my-config">
+                   class="form-input" :placeholder="$store.i18n.t('placeholders.configName')">
           </div>
           
           <div>
-            <label class="form-label">Description</label>
+            <label class="form-label" x-text="$store.i18n.t('forms.description')"></label>
             <textarea x-model="editingConfig.content.meta.description" 
                       class="form-input" rows="2" 
-                      placeholder="Describe what this configuration generates"></textarea>
+                      :placeholder="$store.i18n.t('placeholders.description')"></textarea>
           </div>
           
           <div>
-            <label class="form-label">Initial Task</label>
+            <label class="form-label" x-text="$store.i18n.t('forms.initialTask')"></label>
             <input type="text" x-model="editingConfig.content.generation.tasks[0].theme" 
-                   class="form-input" placeholder="e.g., Product Reviews">
+                   class="form-input" :placeholder="$store.i18n.t('placeholders.initialTask')">
           </div>
           
           <p class="meta-text">
-            You can configure more details after creating the configuration.
+            <span x-text="$store.i18n.t('common.configureMoreDetails')"></span>
           </p>
         </div>
       </div>
       <div class="modal-footer">
-        <button @click="showCreateWizard = false" class="btn btn-secondary">Cancel</button>
-        <button @click="saveConfig()" class="btn btn-primary">Create & Edit</button>
+        <button @click="showCreateWizard = false" class="btn btn-secondary" x-text="$store.i18n.t('buttons.cancel')"></button>
+        <button @click="saveConfig()" class="btn btn-primary" x-text="$store.i18n.t('common.createAndEdit')"></button>
       </div>
     </div>
   </div>
@@ -110,7 +110,7 @@
        class="modal-backdrop">
     <div class="modal max-w-3xl">
       <div class="card-header">
-        <h3 class="card-title">Example Configurations</h3>
+        <h3 class="card-title" x-text="$store.i18n.t('common.exampleConfigurations')"></h3>
       </div>
       <div class="card-body">
         <div class="grid-2">
@@ -123,7 +123,7 @@
             </div>
           </template>
         </div>
-        <button @click="showExampleModal = false" class="btn btn-secondary mt-m">Close</button>
+        <button @click="showExampleModal = false" class="btn btn-secondary mt-m" x-text="$store.i18n.t('buttons.close')"></button>
       </div>
     </div>
   </div>

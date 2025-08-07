@@ -1,11 +1,15 @@
 <template id="model-selector-template">
   <div class="model-selector">
     <div class="mb-4">
+      <div x-show="$root.onlyFreeModels" class="alert alert-info mb-3">
+        <span>ℹ️</span>
+        <span x-text="$store.i18n.t('models.onlyFreeModelsNotice')"></span>
+      </div>
       <div class="search-box mb-3" x-show="showSearch">
         <input 
           type="text" 
           class="form-input" 
-          placeholder="Search models..."
+          :placeholder="$store.i18n.t('placeholders.searchModels')"
           x-model="modelSearch"
         >
       </div>
@@ -16,42 +20,42 @@
           :class="modelFilter === 'all' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'all'"
         >
-          All
+          <span x-text="$store.i18n.t('models.allModels')"></span>
         </button>
         <button 
           class="btn btn-sm"
           :class="modelFilter === 'free' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'free'"
         >
-          Free
+          <span x-text="$store.i18n.t('models.free')"></span>
         </button>
         <button 
           class="btn btn-sm"
           :class="modelFilter === 'fast' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'fast'"
         >
-          Fast
+          <span x-text="$store.i18n.t('models.fast')"></span>
         </button>
         <button 
           class="btn btn-sm"
           :class="modelFilter === 'multimodal' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'multimodal'"
         >
-          Multimodal
+          <span x-text="$store.i18n.t('models.multimodal')"></span>
         </button>
         <button 
           class="btn btn-sm"
           :class="modelFilter === 'large-context' ? 'btn-primary' : 'btn-secondary'"
           @click="modelFilter = 'large-context'"
         >
-          Large Context
+          <span x-text="$store.i18n.t('models.largeContext')"></span>
         </button>
       </div>
     </div>
     
     <div class="text-center py-8" x-show="isLoading">
       <div class="spinner"></div>
-      <p class="text-muted mt-2">Loading models...</p>
+      <p class="text-muted mt-2" x-text="$store.i18n.t('models.loadingModels')"></p>
     </div>
     
     <div class="models-grid" x-show="!isLoading">
@@ -68,24 +72,24 @@
           
           <div class="model-info">
             <div class="info-row">
-              <span class="label">Context:</span>
+              <span class="label" x-text="$store.i18n.t('models.context') + ':'"></span>
               <span class="value" x-text="formatContext(model.context_length)"></span>
             </div>
             <div class="info-row">
-              <span class="label">Price:</span>
+              <span class="label" x-text="$store.i18n.t('models.price') + ':'"></span>
               <span class="value" x-text="formatPrice(model.pricing)"></span>
             </div>
           </div>
           
           <div class="model-tags">
             <span class="tag tag-blue" x-show="!model.pricing || (model.pricing.prompt === 0 && model.pricing.completion === 0)">
-              Free
+              <span x-text="$store.i18n.t('models.free')"></span>
             </span>
             <span class="tag tag-green" x-show="model.architecture?.modality === 'multimodal'">
-              Multimodal
+              <span x-text="$store.i18n.t('models.multimodal')"></span>
             </span>
             <span class="tag tag-purple" x-show="model.context_length >= 100000">
-              Large Context
+              <span x-text="$store.i18n.t('models.largeContext')"></span>
             </span>
           </div>
         </div>
@@ -93,7 +97,7 @@
     </div>
     
     <div class="text-center py-8" x-show="!isLoading && filteredModels.length === 0">
-      <p class="text-muted">No models found matching your criteria</p>
+      <p class="text-muted" x-text="$store.i18n.t('models.noModelsFound')"></p>
     </div>
     
   </div>

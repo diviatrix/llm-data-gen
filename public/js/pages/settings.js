@@ -27,6 +27,9 @@ export function settingsPage() {
     confirmPassword: '',
     isChangingPassword: false,
 
+    // Account preferences
+    onlyFreeModels: false,
+
     // Storage info
     storageInfo: null,
 
@@ -48,6 +51,22 @@ export function settingsPage() {
         const response = await api.get('/user/storage-info');
         if (response.success) {
           this.storageInfo = response.storage;
+          
+          // Load user settings from backend
+          if (response.storage.settings) {
+            this.onlyFreeModels = response.storage.settings.onlyFreeModels || false;
+            
+            // Update global state
+            if (this.$root) {
+              this.$root.onlyFreeModels = this.onlyFreeModels;
+              if (this.$root.user && !this.$root.user.settings) {
+                this.$root.user.settings = {};
+              }
+              if (this.$root.user) {
+                this.$root.user.settings.onlyFreeModels = this.onlyFreeModels;
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to load storage info:', error);
@@ -251,6 +270,47 @@ export function settingsPage() {
         }
       } finally {
         this.isChangingPassword = false;
+      }
+    },
+
+    // Update free models preference
+    async updateFreeModelsPreference() {
+      try {
+        const response = await api.put('/user/preferences', {
+          onlyFreeModels: this.onlyFreeModels
+        });
+
+        if (response.success) {
+          // Update the global state
+          if (this.$root) {
+            this.$root.onlyFreeModels = this.onlyFreeModels;
+            // Update user object
+            if (this.$root.user) {
+              // Ensure settings object exists
+              if (!this.$root.user.settings) {
+                this.$root.user.settings = {};
+              }
+              this.$root.user.settings.onlyFreeModels = this.onlyFreeModels;
+            }
+          }
+          
+          notify.success(this.onlyFreeModels ? 
+            'Restricted to free models only' : 
+            'All models are now available');
+            
+          // Force model selector to refresh if it exists
+          const modelSelectors = document.querySelectorAll('.model-selector');
+          modelSelectors.forEach(selector => {
+            const component = selector._x_dataStack?.[0];
+            if (component?.updateFilteredModels) {
+              component.updateFilteredModels();
+            }
+          });
+        }
+      } catch (error) {
+        notify.error('Failed to update preference');
+        // Revert the checkbox
+        this.onlyFreeModels = !this.onlyFreeModels;
       }
     }
   };

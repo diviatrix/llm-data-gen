@@ -1,8 +1,8 @@
 <div class="stack">
   
   <div class="mb-m">
-    <h2 class="text-2xl font-semibold">Files Explorer</h2>
-    <p class="text-gray-600 mt-s">Browse your configurations and generated data</p>
+    <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('files.filesExplorer')"></h2>
+    <p class="text-gray-600 mt-s" x-text="$store.i18n.t('files.browseFiles')"></p>
   </div>
   
   
@@ -28,7 +28,7 @@
         <div class="flex-1 max-w-md">
           <input type="text" 
                  x-model="fileExplorer.searchQuery" 
-                 placeholder="Search files..." 
+                 :placeholder="$store.i18n.t('placeholders.searchFiles')" 
                  class="form-input">
         </div>
         
@@ -39,39 +39,39 @@
             <button @click="fileExplorer.viewMode = 'cards'" 
                     :class="fileExplorer.viewMode === 'cards' ? 'btn-primary' : 'btn-ghost'"
                     class="btn btn-sm">
-              <span>📇</span> Cards
+              <span>📇</span> <span x-text="$store.i18n.t('files.cards')"></span>
             </button>
             <button @click="fileExplorer.viewMode = 'list'" 
                     :class="fileExplorer.viewMode === 'list' ? 'btn-primary' : 'btn-ghost'"
                     class="btn btn-sm">
-              <span>📋</span> List
+              <span>📋</span> <span x-text="$store.i18n.t('files.list')"></span>
             </button>
           </div>
           
           
           <div class="relative" x-data="{ showSort: false }">
             <button @click="showSort = !showSort" class="btn btn-secondary btn-sm">
-              Sort by <span x-text="fileExplorer.sortBy"></span>
+              <span x-text="$store.i18n.t('files.sortBy')"></span> <span x-text="fileExplorer.sortBy"></span>
               <span x-text="fileExplorer.sortDirection === 'asc' ? '↑' : '↓'"></span>
             </button>
             <div x-show="showSort" 
                  @click.away="showSort = false"
                  class="absolute right-0 mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[150px]">
               <button @click="fileExplorer.changeSort('name'); showSort = false" 
-                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Name</button>
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100" x-text="$store.i18n.t('files.name')"></button>
               <button @click="fileExplorer.changeSort('date'); showSort = false" 
-                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Date</button>
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100" x-text="$store.i18n.t('files.date')"></button>
               <button @click="fileExplorer.changeSort('size'); showSort = false" 
-                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Size</button>
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100" x-text="$store.i18n.t('files.size')"></button>
               <button @click="fileExplorer.changeSort('type'); showSort = false" 
-                      class="block w-full text-left px-4 py-2 hover:bg-gray-100">Type</button>
+                      class="block w-full text-left px-4 py-2 hover:bg-gray-100" x-text="$store.i18n.t('files.type')"></button>
             </div>
           </div>
           
           
           <button @click="fileExplorer.loadFiles(fileExplorer.currentPath)" 
                   class="btn btn-ghost btn-sm">
-            🔄 Refresh
+            🔄 <span x-text="$store.i18n.t('buttons.refresh')"></span>
           </button>
         </div>
       </div>
@@ -126,10 +126,10 @@
     <table class="w-full">
       <thead class="border-b">
         <tr>
-          <th class="text-left p-m">Name</th>
-          <th class="text-left p-m">Size</th>
-          <th class="text-left p-m">Modified</th>
-          <th class="text-left p-m" x-show="fileExplorer.showActions">Actions</th>
+          <th class="text-left p-m" x-text="$store.i18n.t('files.name')"></th>
+          <th class="text-left p-m" x-text="$store.i18n.t('files.size')"></th>
+          <th class="text-left p-m" x-text="$store.i18n.t('files.modified')"></th>
+          <th class="text-left p-m" x-show="fileExplorer.showActions" x-text="$store.i18n.t('files.actions')"></th>
         </tr>
       </thead>
       <tbody>
@@ -170,10 +170,10 @@
        class="card">
     <div class="card-body empty-state">
       <div class="text-3xl mb-m">📂</div>
-      <h3 class="text-xl font-medium mb-s">No Files Found</h3>
+      <h3 class="text-xl font-medium mb-s" x-text="$store.i18n.t('files.noFilesFound')"></h3>
       <p class="text-gray-600">
-        <span x-show="fileExplorer.searchQuery">No files match your search.</span>
-        <span x-show="!fileExplorer.searchQuery">This folder is empty.</span>
+        <span x-show="fileExplorer.searchQuery" x-text="$store.i18n.t('files.noFilesMatch')"></span>
+        <span x-show="!fileExplorer.searchQuery" x-text="$store.i18n.t('files.folderEmpty')"></span>
       </p>
     </div>
   </div>

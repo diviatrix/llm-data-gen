@@ -29,10 +29,13 @@ export function adminPage() {
     },
     editUserData: {
       quotaMB: 10,
-      apiKey: ''
+      apiKey: '',
+      onlyFreeModels: false
     },
+    newSiteTitle: '',
 
     async init() {
+      this.newSiteTitle = this.$root.siteTitle || 'LLM Data Generator';
       await Promise.all([
         this.loadUsers(),
         this.loadRoles()
@@ -172,13 +175,24 @@ export function adminPage() {
       this.selectedUser = user;
       this.editUserData.quotaMB = Math.round((user.storage_quota || 10485760) / 1048576);
       this.editUserData.apiKey = '';
+      
+      // Parse settings to get onlyFreeModels
+      let settings = {};
+      try {
+        settings = JSON.parse(user.settings || '{}');
+      } catch (e) {
+        settings = {};
+      }
+      this.editUserData.onlyFreeModels = settings.onlyFreeModels || false;
+      
       this.showEditModal = true;
     },
 
     async updateUserDetails() {
       try {
         const updates = {
-          quotaMB: parseInt(this.editUserData.quotaMB)
+          quotaMB: parseInt(this.editUserData.quotaMB),
+          onlyFreeModels: this.editUserData.onlyFreeModels
         };
 
         if (this.editUserData.apiKey) {
@@ -203,6 +217,26 @@ export function adminPage() {
       const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+
+    updateSiteTitle() {
+      if (!this.newSiteTitle.trim()) {
+        notify.error('Site title cannot be empty');
+        return;
+      }
+      // Update in localStorage and DOM directly
+      localStorage.setItem('siteTitle', this.newSiteTitle);
+      
+      // Update the title in the header if the app component exists
+      const appElement = document.querySelector('#app');
+      if (appElement && appElement._x_dataStack) {
+        const appData = appElement._x_dataStack[0];
+        if (appData) {
+          appData.siteTitle = this.newSiteTitle;
+        }
+      }
+      
+      notify.success('Site title updated successfully');
     }
   };
 }

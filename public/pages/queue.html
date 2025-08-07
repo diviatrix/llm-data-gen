@@ -2,10 +2,10 @@
   <div class="mb-m">
     <div class="action-row">
       <div>
-        <h2 class="text-2xl font-semibold">Generation History</h2>
-        <p class="text-gray-600 mt-s">View completed data generation tasks</p>
+        <h2 class="text-2xl font-semibold" x-text="$store.i18n.t('queue.generationHistory')"></h2>
+        <p class="text-gray-600 mt-s" x-text="$store.i18n.t('queue.viewCompletedTasks')"></p>
       </div>
-      <a href="#/generate" class="btn btn-primary">New Generation</a>
+      <a href="#/generate" class="btn btn-primary" x-text="$store.i18n.t('buttons.newGeneration')"></a>
     </div>
   </div>
 
@@ -13,19 +13,19 @@
     <button @click="activeTab = 'active'" 
             :class="activeTab === 'active' ? 'btn btn-primary' : 'btn btn-ghost'"
             class="btn-sm">
-      Active <span x-show="activeGenerations.length > 0" class="ml-1">(<span x-text="activeGenerations.length"></span>)</span>
+      <span x-text="$store.i18n.t('queue.active')"></span> <span x-show="activeGenerations.length > 0" class="ml-1">(<span x-text="activeGenerations.length"></span>)</span>
     </button>
     <button @click="activeTab = 'completed'" 
             :class="activeTab === 'completed' ? 'btn btn-primary' : 'btn btn-ghost'"
             class="btn-sm">
-      Completed <span x-show="completedGenerations.length > 0" class="ml-1">(<span x-text="completedGenerations.length"></span>)</span>
+      <span x-text="$store.i18n.t('queue.completed')"></span> <span x-show="completedGenerations.length > 0" class="ml-1">(<span x-text="completedGenerations.length"></span>)</span>
     </button>
   </div>
 
   <div x-show="activeTab === 'active'">
     <div x-show="activeGenerations.length === 0" class="empty-state">
-      <p class="text-gray-600">No active generation tasks</p>
-      <a href="#/generate" class="btn btn-primary mt-m">Start New Generation</a>
+      <p class="text-gray-600" x-text="$store.i18n.t('queue.noActiveTasks')"></p>
+      <a href="#/generate" class="btn btn-primary mt-m" x-text="$store.i18n.t('queue.startNewGeneration')"></a>
     </div>
 
     <div x-show="activeGenerations.length > 0" class="stack-m">
@@ -35,14 +35,14 @@
             <div class="action-row mb-m">
               <div>
                 <h3 class="text-lg font-semibold" x-text="generation.configName"></h3>
-                <p class="meta-text">Started <span x-text="formatTime(generation.startTime)"></span></p>
+                <p class="meta-text"><span x-text="$store.i18n.t('queue.started')"></span> <span x-text="formatTime(generation.startTime)"></span></p>
               </div>
-              <span class="badge badge-primary">Running</span>
+              <span class="badge badge-primary" x-text="$store.i18n.t('queue.running')"></span>
             </div>
 
             <div class="mb-m">
               <div class="flex justify-between text-sm mb-s">
-                <span>Progress</span>
+                <span x-text="$store.i18n.t('queue.progress')"></span>
                 <span><span x-text="generation.progress || 0"></span>%</span>
               </div>
               <div class="bg-gray-200 rounded-full h-2">
@@ -52,7 +52,7 @@
             </div>
 
             <div class="mb-m">
-              <h4 class="text-sm font-medium text-gray-700 mb-s">Activity Log</h4>
+              <h4 class="text-sm font-medium text-gray-700 mb-s" x-text="$store.i18n.t('queue.activityLog')"></h4>
               <div class="bg-gray-50 rounded p-m max-h-64 overflow-y-auto font-mono text-xs">
                 <template x-if="generation.logs && generation.logs.length > 0">
                   <div class="stack-s">
@@ -67,7 +67,7 @@
             <div class="flex justify-end">
               <button @click="cancelGeneration(generation.id)" 
                       class="btn btn-secondary btn-sm">
-                ❌ Cancel
+                ❌ <span x-text="$store.i18n.t('buttons.cancel')"></span>
               </button>
             </div>
           </div>
@@ -78,8 +78,8 @@
 
   <div x-show="activeTab === 'completed'">
     <div x-show="completedGenerations.length === 0" class="empty-state">
-      <p class="text-gray-600">No completed generations yet</p>
-      <a href="#/generate" class="btn btn-primary mt-m">Start Your First Generation</a>
+      <p class="text-gray-600" x-text="$store.i18n.t('queue.noCompletedGenerations')"></p>
+      <a href="#/generate" class="btn btn-primary mt-m" x-text="$store.i18n.t('queue.startFirstGeneration')"></a>
     </div>
 
     <div x-show="completedGenerations.length > 0" class="stack-m">
@@ -105,25 +105,25 @@
 
             <div class="grid-4 gap-m mb-m">
               <div>
-                <div class="text-xs text-gray-500">Items Generated</div>
+                <div class="text-xs text-gray-500" x-text="$store.i18n.t('queue.itemsGenerated')"></div>
                 <div class="font-semibold text-lg">
                   <span x-text="generation.items_generated || 0"></span>
                 </div>
               </div>
               <div>
-                <div class="text-xs text-gray-500">Total Cost</div>
+                <div class="text-xs text-gray-500" x-text="$store.i18n.t('queue.totalCost')"></div>
                 <div class="font-semibold text-lg">
                   $<span x-text="(generation.total_cost || 0).toFixed(4)"></span>
                 </div>
               </div>
               <div>
-                <div class="text-xs text-gray-500">Tokens Used</div>
+                <div class="text-xs text-gray-500" x-text="$store.i18n.t('queue.tokensUsed')"></div>
                 <div class="font-semibold text-lg">
                   <span x-text="(generation.total_tokens || 0).toLocaleString()"></span>
                 </div>
               </div>
               <div>
-                <div class="text-xs text-gray-500">Duration</div>
+                <div class="text-xs text-gray-500" x-text="$store.i18n.t('queue.duration')"></div>
                 <div class="font-semibold text-lg">
                   <span x-text="generation.metadata?.duration || '0'"></span>s
                 </div>
@@ -133,29 +133,29 @@
             <div x-show="generation.prompt_tokens || generation.completion_tokens" 
                  class="text-xs text-gray-600 mb-m">
               <span x-show="generation.prompt_tokens">
-                📝 <span x-text="(generation.prompt_tokens || 0).toLocaleString()"></span> prompt tokens
+                📝 <span x-text="(generation.prompt_tokens || 0).toLocaleString()"></span> <span x-text="$store.i18n.t('queue.promptTokens')"></span>
               </span>
               <span x-show="generation.prompt_tokens && generation.completion_tokens" class="mx-1">•</span>
               <span x-show="generation.completion_tokens">
-                ✨ <span x-text="(generation.completion_tokens || 0).toLocaleString()"></span> completion tokens
+                ✨ <span x-text="(generation.completion_tokens || 0).toLocaleString()"></span> <span x-text="$store.i18n.t('queue.completionTokens')"></span>
               </span>
             </div>
 
             <div x-show="generation.errors && generation.errors.length > 0" 
                  class="alert alert-warning mb-m">
-              <div class="font-medium mb-s">⚠️ Generation completed with errors:</div>
+              <div class="font-medium mb-s">⚠️ <span x-text="$store.i18n.t('messages.warnings.generationCompletedWithErrors')"></span></div>
               <ul class="list-disc list-inside text-sm">
                 <template x-for="error in generation.errors.slice(0, 3)" :key="error">
                   <li x-text="error"></li>
                 </template>
               </ul>
               <div x-show="generation.errors.length > 3" class="text-sm mt-s">
-                ... and <span x-text="generation.errors.length - 3"></span> more
+                ... <span x-text="$store.i18n.t('queue.andMore', {count: generation.errors.length - 3})"></span>
               </div>
             </div>
 
             <div x-show="generation.outputFiles && generation.outputFiles.length > 0" class="mb-m">
-              <div class="text-sm font-medium text-gray-700 mb-s">Output Files:</div>
+              <div class="text-sm font-medium text-gray-700 mb-s" x-text="$store.i18n.t('queue.outputFiles')"></div>
               <div class="flex flex-wrap gap-s">
                 <template x-for="file in generation.outputFiles" :key="file">
                   <a @click.prevent="navigateToFile(file)" 
@@ -170,11 +170,11 @@
             <div class="flex justify-end gap-s">
               <button @click="deleteGeneration(generation.id)" 
                       class="btn btn-ghost btn-sm text-red-600 hover:bg-red-50">
-                🗑️ Delete
+                🗑️ <span x-text="$store.i18n.t('buttons.delete')"></span>
               </button>
-              <a href="#/files" class="btn btn-ghost btn-sm">View Files</a>
+              <a href="#/files" class="btn btn-ghost btn-sm" x-text="$store.i18n.t('buttons.viewFiles')"></a>
               <button @click="rerunGeneration(generation)" class="btn btn-primary btn-sm">
-                🔄 Run Again
+                🔄 <span x-text="$store.i18n.t('buttons.runAgain')"></span>
               </button>
             </div>
           </div>

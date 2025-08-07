@@ -95,6 +95,11 @@ export function createModelSelector(options = {}) {
 
       // Set up watchers for auto-updating filtered models
       this._setupWatchers();
+      
+      // Force initial filter update after Alpine is ready
+      this.$nextTick(() => {
+        this.updateFilteredModels();
+      });
     },
 
     // Set up reactive watchers
@@ -211,6 +216,14 @@ export function createModelSelector(options = {}) {
     // Update filtered models
     updateFilteredModels() {
       let filtered = this.models;
+
+      // Check if user is restricted to free models only
+      const appComponent = document.querySelector('#app')?._x_dataStack?.[0];
+      if (appComponent?.onlyFreeModels) {
+        filtered = filtered.filter(model => 
+          !model.pricing || (parseFloat(model.pricing.prompt || 0) === 0 && parseFloat(model.pricing.completion || 0) === 0)
+        );
+      }
 
       // Apply search filter
       if (this.modelSearch.trim()) {
