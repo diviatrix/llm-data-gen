@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import chalk from 'chalk';
+// After removing the external colors module, we now import chalk from
+// console.js where the minimal styling helpers live.
+import { chalk } from '../../../lib/utils/console.js';
 import * as console from '../../../lib/utils/console.js';
 
 describe('console utilities', () => {

@@ -10,7 +10,7 @@ import { runInteractiveMode } from './lib/cli/interactiveMode.js';
 import { executeGenerate } from './lib/cli/generateCommand.js';
 import { readJsonFile } from './lib/utils/fileIO.js';
 import { handleError } from './lib/utils/errors.js';
-import { chalk } from './lib/utils/colors.js';
+import { chalk } from './lib/utils/console.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +47,11 @@ program
   .command('test')
   .description('Test connection to OpenRouter API')
   .option('-k, --api-key <key>', 'API key to test (optional)')
-  .action(testConnection);
+  .action(async (options) => {
+    const success = await testConnection(options);
+    // ensure the process exits in CLI mode
+    process.exit(success ? 0 : 1);
+  });
 
 program
   .command('validate <file>')

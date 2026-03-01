@@ -84,13 +84,30 @@ export function createModelSelector(options = {}) {
 
       await this.loadModels.call(this);
 
-      // Pre-select model if provided
-      if (config.selectedModelId) {
-        const baseModelId = config.selectedModelId.replace(':online', '');
-        this.enableOnlineSearch = config.selectedModelId.endsWith(':online');
+      // Determine initial selection: provided > localStorage > first free model
+      let initialModelId = config.selectedModelId || localStorage.getItem('last_model_id');
+      
+      if (initialModelId) {
+        const baseModelId = initialModelId.replace(':online', '');
+        this.enableOnlineSearch = initialModelId.endsWith(':online');
         this.selectedModel = this.models.find(m =>
-          m.id === config.selectedModelId || m.id === baseModelId
+          m.id === initialModelId || m.id === baseModelId
         );
+      }
+
+      // If still no model selected, try to find a free one as default
+      if (!this.selectedModel && this.models.length > 0) {
+        // Prefer anything with ":free" in the ID
+        const freeModel = this.models.find(m => m.id.includes(':free')) || 
+                        this.models.find(m => !m.pricing || (parseFloat(m.pricing.prompt || 0) === 0 && parseFloat(m.pricing.completion || 0) === 0));
+        
+        if (freeModel) {
+          this.selectedModel = freeModel;
+          // Don't auto-save to localStorage here, wait for explicit user choice or page usage
+        } else {
+          // Absolute fallback to first available model
+          this.selectedModel = this.models[0];
+        }
       }
 
       // Set up watchers for auto-updating filtered models
@@ -408,6 +425,9 @@ export function createModelSelector(options = {}) {
     // Select model
     selectModel(model) {
       this.selectedModel = model;
+      if (model?.id) {
+        localStorage.setItem('last_model_id', model.id + (this.enableOnlineSearch ? ':online' : ''));
+      }
       if (config.onSelect) {
         const modelId = model.id + (this.enableOnlineSearch ? ':online' : '');
         config.onSelect(model, modelId);

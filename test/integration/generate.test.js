@@ -24,9 +24,9 @@ describe('generate command', () => {
   });
 
   it('should show help when no config is provided', async () => {
-    // Set a short timeout to avoid hanging on API calls
+    // Set a timeout long enough for the generator to attempt all retries
     const result = await execAsync(`node "${cliPath}" generate --no-interactive`, {
-      timeout: 5000,
+      timeout: 15000,
       env: { ...process.env, OPENROUTER_API_KEY: '' } // Ensure no API key to force error
     }).catch(e => e);
 

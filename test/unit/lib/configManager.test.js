@@ -6,6 +6,7 @@ import path from 'path';
 
 vi.mock('../../../lib/userStorage.js', () => ({
   UserStorage: {
+    getUserFilesDir: vi.fn(() => path.sep + path.join('test', 'user', 'files')),
     getUserConfigsDir: vi.fn(() => path.sep + path.join('test', 'user', 'configs')),
     getUserOutputDir: vi.fn(() => path.sep + path.join('test', 'user', 'output'))
   }
@@ -77,7 +78,7 @@ describe('ConfigManager', () => {
       const result = await configManager.loadDefaultConfig();
 
       expect(readJsonFile).toHaveBeenCalledWith(
-        path.join(path.sep + path.join('test', 'user', 'configs'), 'default.json')
+        path.join(path.sep + path.join('test', 'user', 'files'), 'default.json')
       );
       expect(result).toEqual(mockConfig);
     });

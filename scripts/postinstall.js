@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { UserStorage } from '../lib/userStorage.js';
-import { chalk } from '../lib/utils/colors.js';
+import { chalk } from '../lib/utils/console.js';
 
 async function postInstall() {
   console.log(chalk.blue('\n🚀 Setting up LLM Data Generator...'));
