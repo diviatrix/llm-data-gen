@@ -1,10 +1,13 @@
 # LLM Data Generator
 
-A comprehensive data generation platform powered by Large Language Models. Generate structured data, create content, and interact with 100+ AI models through both CLI and web interfaces.
+Sometimes you just need to prepare the DATA.
+And it's very often JSON, MD, csv, or just plain text with exact formatting and structure.
+
+Well, you can create fine prompt and prepare 100 rows of text or so, but when you need hundreds of validated objects? 
 
 ## Overview
 
-LLM Data Generator is a versatile tool that combines the power of modern AI models with user-friendly interfaces to generate high-quality data and content. Whether you need structured JSON data for testing, CSV files for analysis, or creative content like blog posts and documentation, this tool provides an intuitive solution with enterprise-grade features.
+LLM Data Generator is a tool to batch your llm text processing with templates, fine model selection, JSON validation and different output formats. (Examples and wizard included!)
 
 ## Features
 
@@ -19,15 +22,16 @@ LLM Data Generator is a versatile tool that combines the power of modern AI mode
 
 ### 🖥️ **Dual Interface Design**
 - **Interactive CLI**: Terminal-based wizard with model selection and progress tracking
-- **Web Interface**: Full-featured browser-based application with visual editors
+- **Web Interface**: Full-featured (but laggy af, sry this one full vibe code) browser-based application with visual editors
 
-### 🤖 **Advanced AI Integration**
-- **100+ Models**: Access to OpenRouter's complete model catalog
-- **Smart Model Selection**: Auto-router picks the best model for your task
+### 🤖 Integrations**
+- **Openrouter**
+
+### 🖥️ Batching **
 - **Real-time Cost Tracking**: Know costs before and after generation
 - **Progress Monitoring**: Live generation status and error handling
 
-### 👥 **User Management & Authentication**
+### 👥 **Web User Management & Authentication**
 - **Role-based Access**: Admin and user roles with different permissions
 - **Multi-tenant Support**: Isolated user data and configurations
 - **API Key Management**: Personal and system-wide key management
